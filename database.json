@@ -1,0 +1,38 @@
+{
+  "BOOKINGS": [],
+  "REPORTS": [],
+  "CHATS": [
+    {
+      "sender": "guest",
+      "text": "hi sup dawg",
+      "id": 1769069713994,
+      "timestamp": "2026-01-22T08:15:13.994Z"
+    },
+    {
+      "sender": "guest",
+      "text": "hi sup dawg",
+      "id": 1769069719192,
+      "timestamp": "2026-01-22T08:15:19.192Z"
+    },
+    {
+      "sender": "guest",
+      "text": "hi sup dawg",
+      "id": 1769069719199,
+      "timestamp": "2026-01-22T08:15:19.199Z"
+    },
+    {
+      "sender": "guest",
+      "text": "hi sup dawg",
+      "id": 1769069719201,
+      "timestamp": "2026-01-22T08:15:19.201Z"
+    },
+    {
+      "sender": "guest",
+      "text": "hi sup dawg",
+      "id": 1769069719205,
+      "timestamp": "2026-01-22T08:15:19.205Z"
+    }
+  ],
+  "USERS": [],
+  "REVIEWS": []
+}

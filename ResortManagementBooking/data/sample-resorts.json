@@ -1,0 +1,80 @@
+[
+  {
+    "_id": "6566072befbb78591fadc601",
+    "userId": "6554f2ecd4f07417501dcbf1",
+    "name": "Tropical Paradise Beach Resort",
+    "city": "Glan",
+    "country": "Philippines",
+    "description": "Experience the ultimate beach getaway at Tropical Paradise Beach Resort. Our pristine white sand beaches and crystal clear waters provide the perfect backdrop for your dream vacation. Enjoy world-class amenities including beachfront villas, infinity pool, spa services, and water sports activities. Our resort offers breathtaking ocean views, gourmet dining options, and warm Filipino hospitality that will make your stay unforgettable.",
+    "type": "Beach Resort",
+    "adultCount": 2,
+    "childCount": 2,
+    "facilities": ["Airport Shuttle", "Family Rooms", "Non-Smoking Rooms", "Spa", "WiFi", "Parking", "Pool", "Fitness Center"],
+    "pricePerNight": 3500,
+    "starRating": 4,
+    "imageUrls": [
+      "https://images.unsplash.com/photo-1571003123894-1fba9f7d5116?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&auto=format&fit=crop"
+    ],
+    "contact": {
+      "email": "info@tropicalparadise.com",
+      "phone": "+63 123 456 7890",
+      "website": "www.tropicalparadise.com"
+    },
+    "lastUpdated": "2024-03-17T10:00:00.000Z",
+    "__v": 0
+  },
+  {
+    "_id": "6566072befbb78591fadc602",
+    "userId": "6554f2ecd4f07417501dcbf1",
+    "name": "Sandy Shores Beach Haven",
+    "city": "Gumasa",
+    "country": "Philippines",
+    "description": "Sandy Shores Beach Haven is your tropical escape from the everyday hustle. Nestled along the stunning Gumasa coastline, our resort offers direct beach access, comfortable accommodations, and a range of recreational activities. Whether you're looking to relax by the sea, explore marine life through snorkeling, or enjoy sunset cocktails at our beach bar, we have something for everyone. Our friendly staff is dedicated to making your beach vacation truly memorable.",
+    "type": "Beachfront Resort",
+    "adultCount": 4,
+    "childCount": 3,
+    "facilities": ["Family Rooms", "Non-Smoking Rooms", "WiFi", "Parking", "Pool", "Restaurant", "Beach Bar"],
+    "pricePerNight": 2800,
+    "starRating": 3,
+    "imageUrls": [
+      "https://images.unsplash.com/photo-1519046900-41e7e70b98da?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1520250498154-507d016aa0b0?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&auto=format&fit=crop"
+    ],
+    "contact": {
+      "email": "hello@sandyshores.com",
+      "phone": "+63 234 567 8901",
+      "website": "www.sandyshores.com"
+    },
+    "lastUpdated": "2024-03-17T10:00:00.000Z",
+    "__v": 0
+  },
+  {
+    "_id": "6566072befbb78591fadc603",
+    "userId": "6554f2ecd4f07417501dcbf1",
+    "name": "Ocean Breeze Luxury Resort",
+    "city": "Lago",
+    "country": "Philippines",
+    "description": "Indulge in luxury at Ocean Breeze Luxury Resort, where sophistication meets tropical paradise. Our exclusive resort features premium beachfront suites, private cabanas, world-class dining, and personalized service. Enjoy stunning ocean views from every room, relax in our infinity pool overlooking the sea, or rejuvenate at our award-winning spa. Perfect for romantic getaways, special celebrations, or those who appreciate the finer things in life.",
+    "type": "Luxury Resort",
+    "adultCount": 2,
+    "childCount": 1,
+    "facilities": ["Airport Shuttle", "Spa", "WiFi", "Parking", "Pool", "Restaurant", "Bar", "Room Service"],
+    "pricePerNight": 5500,
+    "starRating": 5,
+    "imageUrls": [
+      "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1549795561-14bfeeb30d0f?w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&auto=format&fit=crop"
+    ],
+    "contact": {
+      "email": "reservations@oceanbreeze.com",
+      "phone": "+63 345 678 9012",
+      "website": "www.oceanbreeze.com"
+    },
+    "lastUpdated": "2024-03-17T10:00:00.000Z",
+    "__v": 0
+  }
+]

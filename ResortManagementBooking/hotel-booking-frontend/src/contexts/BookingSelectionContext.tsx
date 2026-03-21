@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { HotelType } from "../../../shared/types";
 
 export interface SelectedRoom {
   id: string;
@@ -34,7 +33,10 @@ interface BookingSelectionContextType {
   accommodationTotal: number;
   amenitiesTotal: number;
   totalCost: number;
+  downPaymentAmount: number;
+  remainingAmount: number;
   numberOfNights: number;
+  depositPercentage: number;
   addRoom: (room: SelectedRoom) => void;
   removeRoom: (roomId: string) => void;
   addCottage: (cottage: SelectedCottage) => void;
@@ -44,6 +46,7 @@ interface BookingSelectionContextType {
   clearSelections: () => void;
   setBasePrice: (price: number) => void;
   setNumberOfNights: (nights: number) => void;
+  setDepositPercentage: (percentage: number) => void;
   calculateTotal: () => void;
   isRoomSelected: (roomId: string) => boolean;
   isCottageSelected: (cottageId: string) => boolean;
@@ -70,6 +73,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   const [selectedAmenities, setSelectedAmenities] = useState<SelectedAmenity[]>([]);
   const [basePrice, setBasePrice] = useState<number>(0);
   const [numberOfNights, setNumberOfNights] = useState<number>(1);
+  const [depositPercentage, setDepositPercentage] = useState<number>(50); // Default 50% down payment
 
   const calculateTotal = () => {
     const accommodationTotal = 
@@ -78,7 +82,15 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     
     const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
     
-    return basePrice + accommodationTotal + amenitiesTotal;
+    const total = basePrice + accommodationTotal + amenitiesTotal;
+    const downPayment = Math.round(total * (depositPercentage / 100));
+    const remaining = total - downPayment;
+    
+    return {
+      total,
+      downPayment,
+      remaining
+    };
   };
 
   const accommodationTotal = 
@@ -87,7 +99,10 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
 
   const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
 
-  const totalCost = calculateTotal();
+  const totalCalculation = calculateTotal();
+  const totalCost = totalCalculation.total;
+  const downPaymentAmount = totalCalculation.downPayment;
+  const remainingAmount = totalCalculation.remaining;
 
   const addRoom = (room: SelectedRoom) => {
     setSelectedRooms(prev => {
@@ -151,7 +166,10 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     accommodationTotal,
     amenitiesTotal,
     totalCost,
+    downPaymentAmount,
+    remainingAmount,
     numberOfNights,
+    depositPercentage,
     addRoom,
     removeRoom,
     addCottage,
@@ -161,6 +179,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     clearSelections,
     setBasePrice,
     setNumberOfNights,
+    setDepositPercentage,
     calculateTotal,
     isRoomSelected,
     isCottageSelected,

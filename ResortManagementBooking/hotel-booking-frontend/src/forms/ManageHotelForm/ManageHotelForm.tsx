@@ -9,7 +9,6 @@ import PoliciesSection from "./PoliciesSection";
 import AmenitiesSection from "./AmenitiesSection";
 import RoomsSection from "./RoomsSection";
 import CottagesSection from "./CottagesSection";
-import DiscountsSection from "./DiscountsSection";
 import { HotelType } from "../../../../shared/types";
 import { useEffect } from "react";
 
@@ -86,15 +85,6 @@ export type HotelFormData = {
     seniorCitizenPercentage: number;
     pwdEnabled: boolean;
     pwdPercentage: number;
-    customDiscounts?: Array<{
-      id: string;
-      name: string;
-      percentage: number;
-      promoCode: string;
-      isEnabled: boolean;
-      maxUses?: number;
-      validUntil?: string;
-    }>;
   };
 };
 
@@ -146,7 +136,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         seniorCitizenPercentage: 20,
         pwdEnabled: true,
         pwdPercentage: 20,
-        customDiscounts: [],
       },
       isFeatured: false,
     },
@@ -184,8 +173,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           seniorCitizenEnabled: true,
           seniorCitizenPercentage: 20,
           pwdEnabled: true,
-          pwdPercentage: 20,
-          customDiscounts: []
+          pwdPercentage: 20
         },
       };
       reset(formData);
@@ -304,22 +292,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       formData.append("discounts.seniorCitizenPercentage", formDataJson.discounts.seniorCitizenPercentage.toString());
       formData.append("discounts.pwdEnabled", formDataJson.discounts.pwdEnabled.toString());
       formData.append("discounts.pwdPercentage", formDataJson.discounts.pwdPercentage.toString());
-      
-      if (formDataJson.discounts.customDiscounts && formDataJson.discounts.customDiscounts.length > 0) {
-        formDataJson.discounts.customDiscounts.forEach((discount, index) => {
-          formData.append(`discounts.customDiscounts[${index}][id]`, discount.id);
-          formData.append(`discounts.customDiscounts[${index}][name]`, discount.name);
-          formData.append(`discounts.customDiscounts[${index}][percentage]`, discount.percentage.toString());
-          formData.append(`discounts.customDiscounts[${index}][promoCode]`, discount.promoCode);
-          formData.append(`discounts.customDiscounts[${index}][isEnabled]`, discount.isEnabled.toString());
-          if (discount.maxUses) {
-            formData.append(`discounts.customDiscounts[${index}][maxUses]`, discount.maxUses.toString());
-          }
-          if (discount.validUntil) {
-            formData.append(`discounts.customDiscounts[${index}][validUntil]`, discount.validUntil);
-          }
-        });
-      }
     }
 
     if (formDataJson.imageUrls) {
@@ -356,7 +328,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         <AmenitiesSection />
         <ContactSection />
         <PoliciesSection />
-        <DiscountsSection />
         <ImagesSection />
         <span className="flex justify-end">
           <button

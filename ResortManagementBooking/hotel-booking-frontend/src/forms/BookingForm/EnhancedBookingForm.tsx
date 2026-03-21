@@ -16,11 +16,15 @@ import { User, Phone, MessageSquare, CreditCard, Shield, CheckCircle, Copy, Smar
 import { useState } from "react";
 import GCashPaymentForm, { GCashPaymentData } from "../../components/GCashPaymentForm";
 import { SelectedRoom, SelectedCottage, SelectedAmenity } from "../../contexts/BookingSelectionContext";
+import GuestDiscountInputComponent from "../../components/GuestDiscountInput";
+import type { DiscountCalculationResult } from "../../components/GuestDiscountInput";
 
 type Props = {
   currentUser: UserType;
   paymentIntent: PaymentIntentResponse;
   calculatedTotal: number;
+  downPaymentAmount: number;
+  remainingAmount: number;
   selectedRooms: SelectedRoom[];
   selectedCottages: SelectedCottage[];
   selectedAmenities: SelectedAmenity[];
@@ -75,6 +79,8 @@ const EnhancedBookingForm = ({
   const [specialRequests, setSpecialRequests] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">("card");
+  const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
+  const [discountVerified, setDiscountVerified] = useState<boolean>(false);
 
   const { mutate: bookRoom, isLoading: isCardLoading } = useMutation(
     apiClient.createRoomBooking,
@@ -163,6 +169,33 @@ MM/YY: 12/35 CVC: 123`;
     }
   };
 
+  // Calculate total with discount applied
+  const getFinalPricing = () => {
+    if (discountResult) {
+      return {
+        originalTotal: calculatedTotal,
+        discountedTotal: discountResult.finalPayableAmount,
+        discountAmount: discountResult.totalSavings,
+        hasDiscount: discountResult.totalSavings > 0
+      };
+    }
+    return {
+      originalTotal: calculatedTotal,
+      discountedTotal: calculatedTotal,
+      discountAmount: 0,
+      hasDiscount: false
+    };
+  };
+
+  const finalPricing = getFinalPricing();
+  const finalDownPayment = Math.round(finalPricing.discountedTotal * 0.5);
+  const finalRemaining = finalPricing.discountedTotal - finalDownPayment;
+
+  const handleDiscountChange = (result: DiscountCalculationResult) => {
+    setDiscountResult(result);
+    setDiscountVerified(false); // Reset verification when discount changes
+  };
+
   const onCardSubmit = async (formData: BookingFormData) => {
     if (!stripe || !elements) {
       showToast({
@@ -173,13 +206,23 @@ MM/YY: 12/35 CVC: 123`;
       return;
     }
 
+    // Check if discount requires verification
+    if (finalPricing.hasDiscount && !discountVerified) {
+      showToast({
+        title: "Discount Verification Required",
+        description: "Please verify your discount documents before proceeding with payment.",
+        type: "ERROR",
+      });
+      return;
+    }
+
     const completeFormData = {
       ...formData,
       phone,
       specialRequests,
       paymentMethod: "card",
-      totalCost: calculatedTotal,
-      basePrice: paymentIntent.totalCost,
+      totalCost: finalDownPayment, // Use final down payment amount
+      basePrice: finalPricing.discountedTotal, // Keep discounted total as base
       checkInTime: "12:00 PM",
       checkOutTime: "11:00 AM",
       selectedRooms,
@@ -206,6 +249,16 @@ MM/YY: 12/35 CVC: 123`;
   };
 
   const onGCashSubmit = (paymentData: GCashPaymentData) => {
+    // Check if discount requires verification
+    if (finalPricing.hasDiscount && !discountVerified) {
+      showToast({
+        title: "Discount Verification Required",
+        description: "Please verify your discount documents before proceeding with payment.",
+        type: "ERROR",
+      });
+      return;
+    }
+
     const formData = {
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
@@ -218,8 +271,8 @@ MM/YY: 12/35 CVC: 123`;
       checkInTime: "12:00 PM",
       checkOutTime: "11:00 AM",
       hotelId: hotelId || "",
-      totalCost: calculatedTotal,
-      basePrice: paymentIntent.totalCost,
+      totalCost: finalDownPayment, // Use final down payment amount
+      basePrice: finalPricing.discountedTotal, // Keep discounted total as base
       paymentIntentId: paymentIntent.paymentIntentId,
       specialRequests,
       paymentMethod: "gcash" as const,
@@ -331,6 +384,21 @@ MM/YY: 12/35 CVC: 123`;
           </CardContent>
         </Card>
 
+        {/* Discount Input */}
+        <GuestDiscountInputComponent
+          totalGuests={search.adultCount + search.childCount}
+          pricePerNight={calculatedTotal / Math.max(1, Math.ceil((search.checkOut.getTime() - search.checkIn.getTime()) / (1000 * 60 * 60 * 24)))}
+          numberOfNights={Math.max(1, Math.ceil((search.checkOut.getTime() - search.checkIn.getTime()) / (1000 * 60 * 60 * 24)))}
+          discountConfig={{
+            seniorCitizenEnabled: true,
+            seniorCitizenPercentage: 20,
+            pwdEnabled: true,
+            pwdPercentage: 20,
+            customDiscounts: []
+          }}
+          onDiscountChange={handleDiscountChange}
+        />
+
         {/* Price Summary */}
         <Card>
           <CardHeader>
@@ -341,16 +409,50 @@ MM/YY: 12/35 CVC: 123`;
           </CardHeader>
           <CardContent>
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-700 font-medium">Total Cost</span>
+              {finalPricing.hasDiscount && (
+                <div className="mb-3 pb-3 border-b border-blue-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-700 font-medium">Original Cost</span>
+                    <span className="line-through text-gray-400">
+                      ₱{finalPricing.originalTotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-green-600 font-medium">Discount Applied</span>
+                    <span className="text-green-600 font-bold">
+                      -₱{finalPricing.discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex justify-between items-center mb-3">
+                <span className="text-gray-700 font-medium">
+                  {finalPricing.hasDiscount ? "Discounted Total" : "Total Estimated Cost"}
+                </span>
                 <span className="text-2xl font-bold text-blue-600">
-                  ₱{calculatedTotal.toFixed(2)}
+                  ₱{finalPricing.discountedTotal.toFixed(2)}
                 </span>
               </div>
               
-              <div className="flex items-center gap-2 text-xs text-gray-500">
+              <div className="border-t border-blue-200 pt-3 space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Down Payment (50%)</span>
+                  <span className="text-xl font-bold text-green-600">
+                    ₱{finalDownPayment.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Remaining Balance</span>
+                  <span className="text-lg font-semibold text-orange-600">
+                    ₱{finalRemaining.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 text-xs text-gray-500 mt-3">
                 <CheckCircle className="h-3 w-3 text-green-500" />
-                Includes all selected accommodations and amenities
+                Only 50% down payment required to book
               </div>
               {(selectedRooms.length > 0 || selectedCottages.length > 0 || selectedAmenities.length > 0) && (
                 <div className="mt-3 pt-3 border-t border-blue-200">
@@ -462,7 +564,9 @@ MM/YY: 12/35 CVC: 123`;
               {/* GCash Payment Form */}
               {paymentMethod === "gcash" && (
                 <GCashPaymentForm
-                  totalCost={paymentIntent.totalCost}
+                  totalCost={finalPricing.discountedTotal}
+                  downPaymentAmount={finalDownPayment}
+                  remainingAmount={finalRemaining}
                   onPaymentSubmit={onGCashSubmit}
                   isLoading={isGCashLoading}
                 />

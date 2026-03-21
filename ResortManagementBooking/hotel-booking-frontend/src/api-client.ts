@@ -243,11 +243,12 @@ export const fetchHotelById = async (hotelId: string): Promise<HotelType> => {
 
 export const createPaymentIntent = async (
   hotelId: string,
+  downPaymentAmount: string,
   numberOfNights: string
 ): Promise<PaymentIntentResponse> => {
   const response = await axiosInstance.post(
     `/api/hotels/${hotelId}/bookings/payment-intent`,
-    { numberOfNights }
+    { downPaymentAmount, numberOfNights }
   );
   return response.data;
 };

@@ -192,7 +192,10 @@ router.post(
         paymentMethod: paymentMethod || "card",
         specialRequests: specialRequests || "",
         status: "pending",
-        paymentStatus: "pending"
+        paymentStatus: "pending",
+        // Set 8-hour change window
+        changeWindowDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
+        canModify: true
       });
       
       await booking.save();

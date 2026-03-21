@@ -58,6 +58,8 @@ const Booking = () => {
 
   const { 
     totalCost, 
+    downPaymentAmount,
+    remainingAmount,
     selectedRooms, 
     selectedCottages, 
     selectedAmenities,
@@ -92,10 +94,11 @@ const Booking = () => {
     () =>
       apiClient.createPaymentIntent(
         hotelId as string,
+        downPaymentAmount.toString(),
         numberOfNights.toString()
       ),
     {
-      enabled: !!hotelId && numberOfNights >= 0,
+      enabled: !!hotelId && numberOfNights >= 0 && downPaymentAmount > 0,
       retry: 1,
       onError: (error) => {
         console.error("Payment intent creation failed:", error);
@@ -119,9 +122,11 @@ const Booking = () => {
   // Update base price when hotel is loaded
   useEffect(() => {
     if (hotel && numberOfNights > 0) {
-      const basePrice = hotel.pricePerNight * numberOfNights;
+      // Use nightRate as default pricing, fallback to dayRate if nightRate not available
+      const ratePerNight = hotel.hasNightRate ? hotel.nightRate : hotel.dayRate;
+      const basePrice = ratePerNight * numberOfNights;
       setBasePrice(basePrice);
-      console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "nights:", numberOfNights);
+      console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "nights:", numberOfNights, "rate used:", hotel.hasNightRate ? 'nightRate' : 'dayRate');
     }
   }, [hotel, numberOfNights, setBasePrice]);
 
@@ -285,14 +290,29 @@ const Booking = () => {
 
                   {/* Total Cost */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
-                    <div className="flex justify-between items-center">
-                      <span className="text-lg font-semibold text-gray-900">Total Price</span>
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-lg font-semibold text-gray-900">Total Estimated Cost</span>
                       <span className="text-2xl font-bold text-blue-600">
                         ₱{totalCost.toFixed(2)}
                       </span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-2">
-                      Includes all selected accommodations and amenities
+                    <div className="border-t border-blue-200 pt-3 space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Down Payment (50%)</span>
+                        <span className="text-lg font-semibold text-green-600">
+                          ₱{downPaymentAmount.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Remaining Balance</span>
+                        <span className="text-lg font-semibold text-orange-600">
+                          ₱{remainingAmount.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-3">
+                      <div className="mb-1">• Only 50% down payment required to book</div>
+                      <div>• Remaining balance to be paid on-site</div>
                     </div>
                   </div>
                 </div>
@@ -320,7 +340,7 @@ const Booking = () => {
                       {hotel.starRating} Stars
                     </Badge>
                     <Badge variant="outline" className="text-xs">
-                      ₱{hotel.pricePerNight}/night
+                      ₱{hotel.hasNightRate ? hotel.nightRate : hotel.dayRate}/night
                     </Badge>
                   </div>
                   {hotel.type && hotel.type.length > 0 && (
@@ -366,6 +386,8 @@ const Booking = () => {
                       currentUser={currentUser}
                       paymentIntent={paymentIntentData}
                       calculatedTotal={totalCost}
+                      downPaymentAmount={downPaymentAmount}
+                      remainingAmount={remainingAmount}
                       selectedRooms={selectedRooms}
                       selectedCottages={selectedCottages}
                       selectedAmenities={selectedAmenities}

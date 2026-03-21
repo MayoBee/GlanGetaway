@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, Upload, X, CheckCircle, AlertCircle, Smartphone } from "lucide-react";
+import { Camera, Upload, X, Smartphone } from "lucide-react";
 
 type Props = {
   totalCost: number;
+  downPaymentAmount: number;
+  remainingAmount: number;
   onPaymentSubmit: (paymentData: GCashPaymentData) => void;
   isLoading?: boolean;
 };
@@ -15,10 +17,10 @@ export type GCashPaymentData = {
   paymentTime: Date;
 };
 
-const GCashPaymentForm = ({ totalCost, onPaymentSubmit, isLoading }: Props) => {
+const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPaymentSubmit, isLoading }: Props) => {
   const [gcashNumber, setGcashNumber] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
-  const [amountPaid, setAmountPaid] = useState(totalCost);
+  const [amountPaid, setAmountPaid] = useState(downPaymentAmount);
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileReaderRef = useRef<FileReader | null>(null);
@@ -66,8 +68,8 @@ const GCashPaymentForm = ({ totalCost, onPaymentSubmit, isLoading }: Props) => {
       return;
     }
 
-    if (amountPaid < totalCost) {
-      alert(`Amount paid (₱${amountPaid}) is less than the required amount (₱${totalCost})`);
+    if (amountPaid < downPaymentAmount) {
+      alert(`Amount paid (₱${amountPaid}) is less than required down payment (₱${downPaymentAmount})`);
       return;
     }
 
@@ -139,14 +141,14 @@ const GCashPaymentForm = ({ totalCost, onPaymentSubmit, isLoading }: Props) => {
             type="number"
             value={amountPaid}
             onChange={(e) => setAmountPaid(Number(e.target.value))}
-            min={totalCost}
+            min={downPaymentAmount}
             step="0.01"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
-          {amountPaid < totalCost && (
+          {amountPaid < downPaymentAmount && (
             <p className="text-red-500 text-sm mt-1">
-              Amount must be at least ₱{totalCost}
+              Amount must be at least ₱{downPaymentAmount} (50% down payment)
             </p>
           )}
         </div>
@@ -199,18 +201,26 @@ const GCashPaymentForm = ({ totalCost, onPaymentSubmit, isLoading }: Props) => {
         {/* Payment Instructions */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h4 className="font-medium text-blue-900 mb-2">Payment Instructions:</h4>
-          <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-            <li>Send ₱{totalCost} to the resort's GCash number</li>
-            <li>Take a screenshot of the successful transaction</li>
-            <li>Upload the screenshot with your GCash details above</li>
-            <li>Wait for resort owner to verify your payment</li>
-          </ol>
+          <div className="text-sm text-blue-800 space-y-2">
+            <div className="bg-white p-3 rounded border border-blue-200">
+              <div className="font-semibold mb-1">Amount to Send:</div>
+              <div className="text-xl font-bold text-green-600">₱{downPaymentAmount.toFixed(2)}</div>
+              <div className="text-xs text-gray-500">This is 50% down payment of total cost (₱{totalCost.toFixed(2)})</div>
+            </div>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Send <strong>₱{downPaymentAmount.toFixed(2)}</strong> to the resort's GCash number</li>
+              <li>Take a screenshot of the successful transaction</li>
+              <li>Upload the screenshot with your GCash details above</li>
+              <li>Wait for the resort owner to verify your payment</li>
+              <li>Remaining balance (₱{remainingAmount.toFixed(2)}) will be paid on-site</li>
+            </ol>
+          </div>
         </div>
 
         {/* Submit Button */}
         <button
           type="submit"
-          disabled={isLoading || !screenshotFile || amountPaid < totalCost}
+          disabled={isLoading || !screenshotFile || amountPaid < downPaymentAmount}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
         >
           {isLoading ? (

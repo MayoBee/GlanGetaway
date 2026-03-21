@@ -163,7 +163,7 @@ const ImagesSection = () => {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-700 mb-2">
-                Upload Hotel Images
+                Upload Resort Images
               </h3>
               <p className="text-gray-500 mb-4">
                 Select multiple images to upload. You can upload up to 6 images

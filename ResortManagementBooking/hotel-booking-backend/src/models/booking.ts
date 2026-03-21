@@ -44,6 +44,9 @@ export interface IBooking extends Document {
   specialRequests: string;
   cancellationReason: string;
   refundAmount: number;
+  // 8-hour change window
+  changeWindowDeadline?: Date;
+  canModify?: boolean;
   // Resort owner verification
   verifiedByOwner?: boolean;
   ownerVerificationNote?: string;
@@ -126,6 +129,9 @@ const bookingSchema = new mongoose.Schema(
     specialRequests: { type: String },
     cancellationReason: { type: String },
     refundAmount: { type: Number, default: 0 },
+    // 8-hour change window
+    changeWindowDeadline: { type: Date },
+    canModify: { type: Boolean, default: true },
     // Resort owner verification
     verifiedByOwner: { type: Boolean, default: false },
     ownerVerificationNote: { type: String },

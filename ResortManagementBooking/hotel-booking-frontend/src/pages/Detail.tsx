@@ -155,9 +155,12 @@ const Detail = () => {
           <div className="flex items-center gap-6">
             <div className="text-center">
               <p className="text-2xl font-bold text-gray-900">
-                ₱{hotel.pricePerNight}
+                {(hotel.hasDayRate && hotel.hasNightRate) ? `₱${hotel.dayRate || 0}/₱${hotel.nightRate || 0}` :
+                 hotel.hasDayRate ? `₱${hotel.dayRate || 0}` :
+                 hotel.hasNightRate ? `₱${hotel.nightRate || 0}` :
+                 `₱0`}
               </p>
-              <p className="text-sm text-gray-600">per night</p>
+              <p className="text-sm text-gray-600">Day rate Price / Night rate Price</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="text-center">
@@ -456,7 +459,7 @@ const Detail = () => {
       <div className="grid grid-cols-1 lg:grid-cols-[1fr]">
         <div className="h-fit">
           <GuestInfoForm
-            pricePerNight={hotel.pricePerNight}
+            pricePerNight={hotel.hasDayRate ? hotel.dayRate || 0 : hotel.nightRate || 0}
             hotelId={hotel._id}
           />
         </div>

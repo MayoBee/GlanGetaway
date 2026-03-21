@@ -265,6 +265,15 @@ router.patch(
         return res.status(400).json({ message: "Cannot reschedule a cancelled or completed booking" });
       }
       
+      // Check if within 8-hour change window
+      if (!booking.canModify || (booking.changeWindowDeadline && new Date() > booking.changeWindowDeadline)) {
+        return res.status(400).json({ 
+          message: "Cannot modify booking after 8-hour window. The change window has expired.",
+          changeWindowDeadline: booking.changeWindowDeadline,
+          currentTime: new Date()
+        });
+      }
+      
       // Store old dates for history
       const oldCheckIn = booking.checkIn;
       const oldCheckOut = booking.checkOut;
@@ -319,6 +328,15 @@ router.patch(
       // Check if booking can be modified (not cancelled or completed)
       if (booking.status === "cancelled" || booking.status === "completed") {
         return res.status(400).json({ message: "Cannot modify a cancelled or completed booking" });
+      }
+      
+      // Check if within 8-hour change window
+      if (!booking.canModify || (booking.changeWindowDeadline && new Date() > booking.changeWindowDeadline)) {
+        return res.status(400).json({ 
+          message: "Cannot modify booking after 8-hour window. The change window has expired.",
+          changeWindowDeadline: booking.changeWindowDeadline,
+          currentTime: new Date()
+        });
       }
       
       // Add new rooms if provided
@@ -397,6 +415,15 @@ router.patch(
       // Check if booking can be modified (not cancelled or completed)
       if (booking.status === "cancelled" || booking.status === "completed") {
         return res.status(400).json({ message: "Cannot modify a cancelled or completed booking" });
+      }
+      
+      // Check if within 8-hour change window
+      if (!booking.canModify || (booking.changeWindowDeadline && new Date() > booking.changeWindowDeadline)) {
+        return res.status(400).json({ 
+          message: "Cannot modify booking after 8-hour window. The change window has expired.",
+          changeWindowDeadline: booking.changeWindowDeadline,
+          currentTime: new Date()
+        });
       }
       
       // Remove rooms

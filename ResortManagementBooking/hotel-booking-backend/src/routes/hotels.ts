@@ -14,11 +14,8 @@ const router = express.Router();
 
 router.get("/search", async (req: Request, res: Response) => {
   try {
-    const query = constructSearchQuery(req.query);
-
-    // Show all resorts that are not explicitly rejected (isApproved !== false)
-    // New resorts default to isApproved: true, so they appear immediately
-    query.isApproved = { $ne: false };
+    let query = constructSearchQuery(req.query);
+    console.log("🔍 Search query:", JSON.stringify(query, null, 2));
 
     let sortOptions = {};
     switch (req.query.sortOption) {
@@ -64,7 +61,7 @@ router.get("/search", async (req: Request, res: Response) => {
 
 router.get("/", async (req: Request, res: Response) => {
   try {
-    const hotels = await Hotel.find().sort("-lastUpdated");
+    const hotels = await Hotel.find({ isApproved: { $ne: false } }).sort("-lastUpdated");
     res.json(hotels);
   } catch (error) {
     console.log("error", error);
@@ -229,6 +226,10 @@ router.post(
 
 const constructSearchQuery = (queryParams: any) => {
   let constructedQuery: any = {};
+
+  // Show all resorts that are not explicitly rejected (isApproved !== false)
+  // This includes resorts with isApproved: true, undefined, or null
+  constructedQuery.isApproved = { $ne: false };
 
   // If no destination is provided, don't add destination filter
   // This will return all approved resorts

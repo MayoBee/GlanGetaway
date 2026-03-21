@@ -16,6 +16,9 @@ import {
   UserCircle,
   CreditCard,
   TreePalm,
+  Trash2,
+  Clock,
+  CheckCircle,
 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
@@ -28,14 +31,32 @@ import {
 import BookingLogModal from "../components/BookingLogModal";
 import { useState } from "react";
 import useAppContext from "../hooks/useAppContext";
+import { useMutation, useQueryClient } from "react-query";
 
 const MyHotels = () => {
   const { isLoggedIn } = useAppContext();
+  const queryClient = useQueryClient();
   const [selectedHotel, setSelectedHotel] = useState<{
     id: string;
     name: string;
   } | null>(null);
   const [isBookingLogOpen, setIsBookingLogOpen] = useState(false);
+
+  const deleteHotelMutation = useMutation(apiClient.deleteMyHotelById, {
+    onSuccess: () => {
+      queryClient.invalidateQueries("fetchMyHotels");
+      alert("Resort deleted successfully!");
+    },
+    onError: (error: any) => {
+      alert(error.response?.data?.message || "Failed to delete resort");
+    },
+  });
+
+  const handleDeleteHotel = (hotelId: string, hotelName: string) => {
+    if (window.confirm(`Are you sure you want to delete "${hotelName}"? This action cannot be undone.`)) {
+      deleteHotelMutation.mutate(hotelId);
+    }
+  };
 
   const { data: hotelData } = useQueryWithLoading(
     "fetchMyHotels",
@@ -237,11 +258,25 @@ const MyHotels = () => {
               {/* Badges */}
               <div className="absolute top-4 left-4 flex flex-col space-y-2">
                 <Badge className="bg-primary-600 text-white">
-                  ₱{hotel.pricePerNight}/night
+                  ₱{hotel.nightRate}/night
                 </Badge>
                 {hotel.isFeatured && (
                   <Badge className="bg-yellow-500 text-white">Featured</Badge>
                 )}
+                {/* Approval Status Badge */}
+                <Badge className={`${hotel.isApproved ? 'bg-green-500' : 'bg-orange-500'} text-white`}>
+                  {hotel.isApproved ? (
+                    <>
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Approved
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="w-3 h-3 mr-1" />
+                      Pending Approval
+                    </>
+                  )}
+                </Badge>
               </div>
 
               <div className="absolute top-4 right-4">
@@ -295,7 +330,7 @@ const MyHotels = () => {
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <BiMoney className="w-4 h-4 text-primary-600" />
-                  <span>₱{hotel.pricePerNight} per night</span>
+                  <span>₱{hotel.nightRate} per night</span>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <BiHotel className="w-4 h-4 text-primary-600" />
@@ -349,6 +384,13 @@ const MyHotels = () => {
                 >
                   <Calendar className="w-4 h-4 mr-2" />
                   Booking Log
+                </button>
+                <button
+                  onClick={() => handleDeleteHotel(hotel._id, hotel.name)}
+                  className="bg-red-600 text-white py-3 px-4 rounded-xl font-semibold hover:bg-red-700 transition-colors text-center flex items-center justify-center"
+                  disabled={deleteHotelMutation.isLoading}
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             </div>

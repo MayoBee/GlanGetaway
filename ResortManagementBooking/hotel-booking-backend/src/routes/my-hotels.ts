@@ -3,6 +3,7 @@ import multer from "multer";
 import imageService from "../services/imageService";
 import { v2 as cloudinary } from "cloudinary";
 import Hotel from "../models/hotel";
+import Booking from "../models/booking";
 import verifyToken from "../middleware/auth";
 import { body } from "express-validator";
 import { HotelType } from "../../../shared/types";
@@ -133,6 +134,10 @@ router.post(
       newHotel.policies = {
         checkInTime: req.body["policies.checkInTime"] || "",
         checkOutTime: req.body["policies.checkOutTime"] || "",
+        dayCheckInTime: req.body["policies.dayCheckInTime"] || "",
+        dayCheckOutTime: req.body["policies.dayCheckOutTime"] || "",
+        nightCheckInTime: req.body["policies.nightCheckInTime"] || "",
+        nightCheckOutTime: req.body["policies.nightCheckOutTime"] || "",
         cancellationPolicy: req.body["policies.cancellationPolicy"] || "",
         petPolicy: req.body["policies.petPolicy"] || "",
         smokingPolicy: req.body["policies.smokingPolicy"] || "",
@@ -332,6 +337,10 @@ router.put(
       updateData.policies = {
         checkInTime: req.body["policies.checkInTime"] || "",
         checkOutTime: req.body["policies.checkOutTime"] || "",
+        dayCheckInTime: req.body["policies.dayCheckInTime"] || "",
+        dayCheckOutTime: req.body["policies.dayCheckOutTime"] || "",
+        nightCheckInTime: req.body["policies.nightCheckInTime"] || "",
+        nightCheckOutTime: req.body["policies.nightCheckOutTime"] || "",
         cancellationPolicy: req.body["policies.cancellationPolicy"] || "",
         petPolicy: req.body["policies.petPolicy"] || "",
         smokingPolicy: req.body["policies.smokingPolicy"] || "",
@@ -445,6 +454,51 @@ router.put(
       console.error("Hotel ID:", req.params.hotelId);
       console.error("User ID:", req.userId);
       res.status(500).json({
+        message: "Something went wrong",
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+);
+
+router.delete(
+  "/:hotelId",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const hotelId = req.params.hotelId;
+
+      // First check if the hotel exists and belongs to the user
+      const hotel = await Hotel.findOne({
+        _id: hotelId,
+        userId: req.userId,
+      });
+
+      if (!hotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      // Check if there are any active bookings for this hotel
+      const activeBookings = await Booking.countDocuments({
+        hotelId: hotelId,
+        status: { $in: ["pending", "confirmed"] },
+      });
+
+      if (activeBookings > 0) {
+        return res.status(400).json({ 
+          message: "Cannot delete resort with active bookings. Please cancel all bookings first." 
+        });
+      }
+
+      // Delete the hotel
+      await Hotel.findByIdAndDelete(hotelId);
+
+      res.status(200).json({ 
+        message: "Resort deleted successfully" 
+      });
+    } catch (error) {
+      console.error("Error deleting hotel:", error);
+      res.status(500).json({ 
         message: "Something went wrong",
         error: error instanceof Error ? error.message : "Unknown error",
       });

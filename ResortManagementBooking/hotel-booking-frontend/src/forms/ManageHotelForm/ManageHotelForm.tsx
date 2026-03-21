@@ -22,6 +22,10 @@ export type HotelFormData = {
   nightRate: number;
   hasDayRate: boolean;
   hasNightRate: boolean;
+  dayRateCheckInTime: string;
+  dayRateCheckOutTime: string;
+  nightRateCheckInTime: string;
+  nightRateCheckOutTime: string;
   starRating: number;
   facilities: string[];
   imageFiles?: FileList;
@@ -64,6 +68,10 @@ export type HotelFormData = {
   policies?: {
     checkInTime: string;
     checkOutTime: string;
+    dayCheckInTime: string;
+    dayCheckOutTime: string;
+    nightCheckInTime: string;
+    nightCheckOutTime: string;
     cancellationPolicy: string;
     petPolicy: string;
     smokingPolicy: string;
@@ -108,6 +116,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       nightRate: 0,
       hasDayRate: true,
       hasNightRate: true,
+      dayRateCheckInTime: "08:00 AM",
+      dayRateCheckOutTime: "05:00 PM",
+      nightRateCheckInTime: "02:00 PM",
+      nightRateCheckOutTime: "02:00 PM",
       starRating: 3,
       adultCount: 1,
       childCount: 0,
@@ -152,6 +164,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         nightRate: hotel.nightRate || 0,
         hasDayRate: hotel.hasDayRate !== undefined ? hotel.hasDayRate : true,
         hasNightRate: hotel.hasNightRate !== undefined ? hotel.hasNightRate : true,
+        dayRateCheckInTime: (hotel as any).dayRateCheckInTime || "08:00 AM",
+        dayRateCheckOutTime: (hotel as any).dayRateCheckOutTime || "05:00 PM",
+        nightRateCheckInTime: (hotel as any).nightRateCheckInTime || "02:00 PM",
+        nightRateCheckOutTime: (hotel as any).nightRateCheckOutTime || "02:00 PM",
         contact: hotel.contact || {
           phone: "",
           email: "",
@@ -200,6 +216,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     formData.append("nightRate", formDataJson.nightRate.toString());
     formData.append("hasDayRate", formDataJson.hasDayRate.toString());
     formData.append("hasNightRate", formDataJson.hasNightRate.toString());
+    formData.append("dayRateCheckInTime", formDataJson.dayRateCheckInTime || "");
+    formData.append("dayRateCheckOutTime", formDataJson.dayRateCheckOutTime || "");
+    formData.append("nightRateCheckInTime", formDataJson.nightRateCheckInTime || "");
+    formData.append("nightRateCheckOutTime", formDataJson.nightRateCheckOutTime || "");
     formData.append("starRating", formDataJson.starRating.toString());
     formData.append("adultCount", formDataJson.adultCount.toString());
     formData.append("childCount", formDataJson.childCount.toString());

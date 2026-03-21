@@ -178,6 +178,11 @@ export const updateMyHotelById = async (hotelFormData: FormData) => {
   return response.data;
 };
 
+export const deleteMyHotelById = async (hotelId: string) => {
+  const response = await axiosInstance.delete(`/api/my-hotels/${hotelId}`);
+  return response.data;
+};
+
 export type SearchParams = {
   destination?: string;
   checkIn?: string;

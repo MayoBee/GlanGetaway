@@ -11,6 +11,7 @@ const DetailsSection = () => {
     formState: { errors },
   } = useFormContext<HotelFormData>();
 
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-3xl font-bold mb-3">
@@ -106,6 +107,49 @@ const DetailsSection = () => {
             )}
           </div>
           
+          <div className="grid grid-cols-2 gap-4 mt-3">
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Minimum Check-in Time
+              </label>
+              <input
+                type="text"
+                placeholder="08:00 AM"
+                className="w-full border rounded px-3 py-2 font-normal"
+                {...register("dayRateCheckInTime", { 
+                  required: "Check-in time is required",
+                  pattern: {
+                    value: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s*(AM|PM)$/i,
+                    message: "Please use format like 08:00 AM"
+                  }
+                })}
+              />
+              {errors.dayRateCheckInTime && (
+                <span className="text-red-500 text-sm">{errors.dayRateCheckInTime.message}</span>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                Maximum Check-out Time
+              </label>
+              <input
+                type="text"
+                placeholder="05:00 PM"
+                className="w-full border rounded px-3 py-2 font-normal"
+                {...register("dayRateCheckOutTime", { 
+                  required: "Check-out time is required",
+                  pattern: {
+                    value: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s*(AM|PM)$/i,
+                    message: "Please use format like 05:00 PM"
+                  }
+                })}
+              />
+              {errors.dayRateCheckOutTime && (
+                <span className="text-red-500 text-sm">{errors.dayRateCheckOutTime.message}</span>
+              )}
+            </div>
+          </div>
+          
           <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
             <input
               type="checkbox"
@@ -140,6 +184,10 @@ const DetailsSection = () => {
             {errors.nightRate && (
               <span className="text-red-500 text-sm">{errors.nightRate.message}</span>
             )}
+          </div>
+          
+          <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
+            💡 Night rate duration will be automatically calculated based on guest check-in and check-out dates
           </div>
         </div>
       </div>

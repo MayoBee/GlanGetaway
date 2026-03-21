@@ -45,6 +45,10 @@ const hotelSchema = new mongoose.Schema<HotelType>(
     policies: {
       checkInTime: String,
       checkOutTime: String,
+      dayCheckInTime: String,
+      dayCheckOutTime: String,
+      nightCheckInTime: String,
+      nightCheckOutTime: String,
       cancellationPolicy: String,
       petPolicy: String,
       smokingPolicy: String,

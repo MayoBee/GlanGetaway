@@ -117,6 +117,10 @@ export type HotelType = {
   policies?: {
     checkInTime: string;
     checkOutTime: string;
+    dayCheckInTime: string;
+    dayCheckOutTime: string;
+    nightCheckInTime: string;
+    nightCheckOutTime: string;
     cancellationPolicy: string;
     petPolicy: string;
     smokingPolicy: string;

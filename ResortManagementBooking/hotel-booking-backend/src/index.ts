@@ -2,6 +2,8 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import "dotenv/config";
 import mongoose from "mongoose";
+import fs from "fs";
+import imageService from "./services/imageService";
 import userRoutes from "./routes/users";
 import authRoutes from "./routes/auth";
 import cookieParser from "cookie-parser";
@@ -273,6 +275,14 @@ app.use(
     customSiteTitle: "Hotel Booking API Documentation",
   })
 );
+
+// Serve uploaded files using the new image service
+app.get('/uploads/:filename', (req, res) => {
+  imageService.serveImage(req, res);
+});
+
+// Also handle the old static route for backwards compatibility
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 // Dynamic Port Configuration (for Coolify/VPS and local development)
 const PORT = process.env.PORT || 5000;

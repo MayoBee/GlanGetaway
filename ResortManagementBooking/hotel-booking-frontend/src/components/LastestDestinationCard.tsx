@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { HotelType } from "../../../shared/types";
 import { MapPin, Star, Users } from "lucide-react";
 import { Badge } from "./ui/badge";
+import SmartImage from "./SmartImage";
 
 type Props = {
   hotel: HotelType;
@@ -15,10 +16,12 @@ const LatestDestinationCard = ({ hotel }: Props) => {
       style={{ minWidth: 320, maxWidth: 500 }}
     >
       <div className="w-full h-full relative">
-        <img
-          src={hotel.imageUrls[0]}
+        <SmartImage
+          src={hotel.imageUrls}
+          alt={`${hotel.name} - Hotel preview`}
           className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
-          style={{ minHeight: 350, maxHeight: 350 }}
+          fallbackText={hotel.name}
+          showLoading={true}
         />
 
         {/* Overlay Gradient */}
@@ -37,7 +40,7 @@ const LatestDestinationCard = ({ hotel }: Props) => {
         {/* Price Badge */}
         <div className="absolute top-4 left-4">
           <div className="bg-primary-600 text-white rounded-full px-3 py-1">
-            <span className="text-sm font-bold">₱{hotel.pricePerNight}</span>
+            <span className="text-sm font-bold">₱{hotel.pricePerNight || 0}</span>
           </div>
         </div>
       </div>

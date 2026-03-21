@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
 import multer from "multer";
-import cloudinary from "cloudinary";
+import imageService from "../services/imageService";
+import { v2 as cloudinary } from "cloudinary";
 import Hotel from "../models/hotel";
 import verifyToken from "../middleware/auth";
 import { body } from "express-validator";
@@ -188,7 +189,7 @@ router.post(
       let imageUrls: string[] = [];
       if (imageFiles && imageFiles.length > 0) {
         try {
-          imageUrls = await uploadImages(imageFiles);
+          imageUrls = await imageService.saveImages(imageFiles);
         } catch (uploadError) {
           console.error("Image upload failed:", uploadError);
           // Continue without images if upload fails
@@ -382,8 +383,8 @@ router.put(
       let finalImageUrls: string[] = [];
       
       if (files && files.length > 0) {
-        // Upload new images
-        const newImageUrls = await uploadImages(files);
+        // Upload new images using the new image service
+        const newImageUrls = await imageService.saveImages(files);
         
         // Get existing image URLs from request body
         const existingImageUrls = req.body.imageUrls
@@ -429,47 +430,5 @@ router.put(
     }
   }
 );
-
-async function uploadImages(imageFiles: any[]) {
-  // Check if Cloudinary is configured
-  if (!isCloudinaryConfigured()) {
-    console.log("⚠️ Cloudinary not configured, using local storage fallback");
-    
-    // Use local storage fallback - save files locally and return local URLs
-    const imageUrls: string[] = [];
-    const backendUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
-    
-    for (const image of imageFiles) {
-      const uniqueName = `${crypto.randomUUID()}${path.extname(image.originalname)}`;
-      const filePath = path.join(localUploadDir, uniqueName);
-      
-      // Write file to disk
-      fs.writeFileSync(filePath, image.buffer);
-      
-      // Return local URL
-      const imageUrl = `${backendUrl}/uploads/${uniqueName}`;
-      imageUrls.push(imageUrl);
-    }
-    
-    return imageUrls;
-  }
-  
-  // Use Cloudinary if configured
-  const uploadPromises = imageFiles.map(async (image) => {
-    const b64 = Buffer.from(image.buffer as Uint8Array).toString("base64");
-    let dataURI = "data:" + image.mimetype + ";base64," + b64;
-    const res = await cloudinary.v2.uploader.upload(dataURI, {
-      secure: true, // Force HTTPS URLs
-      transformation: [
-        { width: 800, height: 600, crop: "fill" },
-        { quality: "auto" },
-      ],
-    });
-    return res.url;
-  });
-
-  const imageUrls = await Promise.all(uploadPromises);
-  return imageUrls;
-}
 
 export default router;

@@ -240,7 +240,7 @@ const App = () => {
             <Route
               path="/resort/reports"
               element={
-                <ProtectedRoute requireAdmin>
+                <ProtectedRoute requiredPermission="canManageOwnResorts">
                   <Layout>
                     <ResortReports />
                   </Layout>

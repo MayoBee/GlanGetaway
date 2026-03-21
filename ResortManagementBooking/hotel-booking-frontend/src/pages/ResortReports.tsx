@@ -461,16 +461,16 @@ const TABS = [
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 const ResortReports: React.FC = () => {
-  const { isAdmin, isSuperAdmin } = useRoleBasedAccess();
+  const { isAdmin, isSuperAdmin, permissions } = useRoleBasedAccess();
   const [activeTab, setActiveTab] = useState("reservation");
 
-  if (!isAdmin && !isSuperAdmin) {
+  if (!isAdmin && !isSuperAdmin && !permissions.canManageOwnResorts) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">
           <ShieldOff className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h2>
-          <p className="text-gray-600">Only administrators can access the reports module.</p>
+          <p className="text-gray-600">Only administrators and resort owners can access the reports module.</p>
         </div>
       </div>
     );

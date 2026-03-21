@@ -50,14 +50,14 @@ async function checkAndUpdateAdminRoles() {
           firstName: 'Admin',
           lastName: 'User',
           password: 'admin123456', // You should change this
-          role: 'super_admin',
+          role: 'superAdmin',
           emailVerified: true,
           isActive: true
         });
       } else {
         // Update existing user to admin
         console.log(`Updating existing user to admin: ${targetEmail}`);
-        adminUser.role = 'super_admin';
+        adminUser.role = 'superAdmin';
       }
       
       await adminUser.save();
@@ -66,7 +66,7 @@ async function checkAndUpdateAdminRoles() {
     }
 
     // List admin users after update
-    const updatedAdminUsers = await User.find({ role: { $in: ['admin', 'super_admin'] } });
+    const updatedAdminUsers = await User.find({ role: { $in: ['admin', 'superAdmin'] } });
     console.log(`\n=== Admin Users After Update: ${updatedAdminUsers.length} ===`);
     updatedAdminUsers.forEach(user => {
       console.log(`Email: ${user.email}, Name: ${user.firstName} ${user.lastName}, Role: ${user.role}`);

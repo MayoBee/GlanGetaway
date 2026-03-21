@@ -84,7 +84,10 @@ export type HotelType = {
   adultCount: number;
   childCount: number;
   facilities: string[];
-  pricePerNight: number;
+  dayRate: number;
+  nightRate: number;
+  hasDayRate: boolean;
+  hasNightRate: boolean;
   starRating: number;
   imageUrls: string[];
   lastUpdated: Date;

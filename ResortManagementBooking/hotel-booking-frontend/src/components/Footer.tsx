@@ -7,8 +7,13 @@ import {
   Instagram,
   Linkedin,
 } from "lucide-react";
+import { useState } from "react";
+import TermsOfServiceModal from "./TermsOfServiceModal";
+import PrivacyPolicyModal from "./PrivacyPolicyModal";
 
 const Footer = () => {
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   return (
     <footer className="bg-white text-gray-800">
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -128,20 +133,20 @@ const Footer = () => {
                 </a>
               </li>
               <li>
-                <a
-                  href="#"
+                <button
+                  onClick={() => setIsPrivacyModalOpen(true)}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Privacy Policy
-                </a>
+                </button>
               </li>
               <li>
-                <a
-                  href="#"
+                <button
+                  onClick={() => setIsTermsModalOpen(true)}
                   className="text-gray-300 hover:text-white transition-colors"
                 >
                   Terms of Service
-                </a>
+                </button>
               </li>
             </ul>
           </div>
@@ -175,14 +180,14 @@ const Footer = () => {
           </p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a
-              href="#"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
+              onClick={() => setIsPrivacyModalOpen(true)}
+              className="text-gray-300 hover:text-white text-sm transition-colors cursor-pointer"
             >
               Privacy Policy
             </a>
             <a
-              href="#"
-              className="text-gray-300 hover:text-white text-sm transition-colors"
+              onClick={() => setIsTermsModalOpen(true)}
+              className="text-gray-300 hover:text-white text-sm transition-colors cursor-pointer"
             >
               Terms of Service
             </a>
@@ -195,6 +200,18 @@ const Footer = () => {
           </div>
         </div>
       </div>
+      
+      {/* Terms of Service Modal */}
+      <TermsOfServiceModal 
+        open={isTermsModalOpen} 
+        onOpenChange={setIsTermsModalOpen} 
+      />
+      
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicyModal 
+        open={isPrivacyModalOpen} 
+        onOpenChange={setIsPrivacyModalOpen} 
+      />
     </footer>
   );
 };

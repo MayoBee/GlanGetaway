@@ -33,7 +33,7 @@ async function testAdminManagement() {
     const totalUsers = users.length;
     const adminUsers = users.filter(u => u.role === 'admin').length;
     const regularUsers = users.filter(u => u.role === 'user' || !u.role).length;
-    const superAdmins = users.filter(u => u.role === 'super_admin').length;
+    const superAdmins = users.filter(u => u.role === 'superAdmin').length;
 
     console.log(`   Total Users: ${totalUsers}`);
     console.log(`   Super Admins: ${superAdmins}`);
@@ -42,7 +42,7 @@ async function testAdminManagement() {
 
     // Test 3: Display users that can be promoted
     console.log("\n👥 Test 3: Users Available for Promotion");
-    const promotableUsers = users.filter(u => u.role !== 'super_admin');
+    const promotableUsers = users.filter(u => u.role !== 'superAdmin');
     console.log(`   Users that can be promoted/demoted: ${promotableUsers.length}`);
     
     if (promotableUsers.length > 0) {

@@ -26,10 +26,10 @@ router.get("/search", async (req: Request, res: Response) => {
         sortOptions = { starRating: -1 };
         break;
       case "pricePerNightAsc":
-        sortOptions = { pricePerNight: 1 };
+        sortOptions = { nightRate: 1 };
         break;
       case "pricePerNightDesc":
-        sortOptions = { pricePerNight: -1 };
+        sortOptions = { nightRate: -1 };
         break;
     }
 
@@ -101,12 +101,12 @@ router.post(
     const hotelId = req.params.hotelId;
 
     // Use lean() for faster query - only fetch needed fields
-    const hotel = await Hotel.findById(hotelId).select('pricePerNight name').lean();
+    const hotel = await Hotel.findById(hotelId).select('nightRate name').lean();
     if (!hotel) {
       return res.status(400).json({ message: "Hotel not found" });
     }
 
-    const totalCost = numberOfNights > 0 ? hotel.pricePerNight * numberOfNights : hotel.pricePerNight;
+    const totalCost = numberOfNights > 0 ? hotel.nightRate * numberOfNights : hotel.nightRate;
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: totalCost * 100,
@@ -277,7 +277,7 @@ const constructSearchQuery = (queryParams: any) => {
   }
 
   if (queryParams.maxPrice) {
-    constructedQuery.pricePerNight = {
+    constructedQuery.nightRate = {
       $lte: parseInt(queryParams.maxPrice).toString(),
     };
   }

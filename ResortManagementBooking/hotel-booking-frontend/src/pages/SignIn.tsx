@@ -25,6 +25,8 @@ import {
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
+import TermsOfServiceModal from "../components/TermsOfServiceModal";
+import PrivacyPolicyModal from "../components/PrivacyPolicyModal";
 
 export type SignInFormData = {
   email: string;
@@ -51,6 +53,8 @@ const SignIn = () => {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string>("");
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const location = useLocation();
 
@@ -380,16 +384,32 @@ const SignIn = () => {
         <div className="text-center">
           <p className="text-xs text-gray-500">
             By signing in, you agree to our{" "}
-            <a href="#" className="text-primary-600 hover:underline">
+            <button
+              onClick={() => setShowTermsModal(true)}
+              className="text-primary-600 hover:underline"
+            >
               Terms of Service
-            </a>{" "}
+            </button>{" "}
             and{" "}
-            <a href="#" className="text-primary-600 hover:underline">
+            <button
+              onClick={() => setShowPrivacyModal(true)}
+              className="text-primary-600 hover:underline"
+            >
               Privacy Policy
-            </a>
+            </button>
           </p>
         </div>
       </div>
+      
+      <TermsOfServiceModal 
+        open={showTermsModal} 
+        onOpenChange={setShowTermsModal} 
+      />
+      
+      <PrivacyPolicyModal 
+        open={showPrivacyModal} 
+        onOpenChange={setShowPrivacyModal} 
+      />
     </div>
   );
 };

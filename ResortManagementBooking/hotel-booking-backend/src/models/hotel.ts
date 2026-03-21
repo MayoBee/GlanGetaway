@@ -12,7 +12,10 @@ const hotelSchema = new mongoose.Schema<HotelType>(
     adultCount: { type: Number, required: true },
     childCount: { type: Number, required: true },
     facilities: [{ type: String, required: true }],
-    pricePerNight: { type: Number, required: true },
+    dayRate: { type: Number, required: true },
+    nightRate: { type: Number, required: true },
+    hasDayRate: { type: Boolean, default: true },
+    hasNightRate: { type: Boolean, default: true },
     starRating: { type: Number, required: true, min: 1, max: 5 },
     imageUrls: [{ type: String, required: true }],
     lastUpdated: { type: Date, required: true },
@@ -96,7 +99,7 @@ const hotelSchema = new mongoose.Schema<HotelType>(
 
 // Add compound indexes for better query performance
 hotelSchema.index({ city: 1, starRating: 1 });
-hotelSchema.index({ pricePerNight: 1, starRating: 1 });
+hotelSchema.index({ dayRate: 1, nightRate: 1, starRating: 1 });
 hotelSchema.index({ userId: 1, createdAt: -1 });
 
 const Hotel = mongoose.model<HotelType>("Hotel", hotelSchema);

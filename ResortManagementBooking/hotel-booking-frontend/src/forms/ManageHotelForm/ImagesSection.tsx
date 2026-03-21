@@ -1,9 +1,10 @@
 import { useFormContext } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { X, Upload, Image as ImageIcon } from "lucide-react";
+import { X, Upload } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
+import SmartImage from "../../components/SmartImage";
 
 interface ImagePreview {
   id: string;
@@ -29,11 +30,27 @@ const ImagesSection = () => {
   useEffect(() => {
     if (existingImageUrls && existingImageUrls.length > 0) {
       const existingPreviews: ImagePreview[] = existingImageUrls.map(
-        (url, index) => ({
-          id: `existing-${index}`,
-          url,
-          isExisting: true,
-        })
+        (url, index) => {
+          // Fix port in existing URLs
+          let fixedUrl = url;
+          try {
+            const urlObj = new URL(url);
+            if (urlObj.hostname === 'localhost') {
+              urlObj.port = '5000';
+              fixedUrl = urlObj.toString();
+            }
+          } catch (e) {
+            console.warn('Invalid existing URL:', url);
+          }
+          
+          return {
+            id: `existing-${index}`,
+            url: fixedUrl,
+            isExisting: true,
+            isLoading: true,
+            hasError: false,
+          };
+        }
       );
       setImagePreviews(existingPreviews);
     }
@@ -157,7 +174,7 @@ const ImagesSection = () => {
                 variant="outline"
                 className="bg-white hover:bg-gray-50"
               >
-                <ImageIcon className="w-4 h-4 mr-2" />
+                <Upload className="w-4 h-4 mr-2" />
                 Choose Images
               </Button>
             </div>
@@ -192,11 +209,16 @@ const ImagesSection = () => {
                   key={image.id}
                   className="relative group bg-gray-50 rounded-lg overflow-hidden border"
                 >
-                  <img
-                    src={image.url}
-                    alt="Hotel preview"
-                    className="w-full h-32 object-cover"
-                  />
+                  <div className="w-full h-32">
+                    <SmartImage
+                      src={image.url}
+                      alt="Hotel preview"
+                      className="w-full h-32 object-cover"
+                      fallbackText="Preview"
+                      showLoading={true}
+                    />
+                  </div>
+                  
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
                     <Button
                       onClick={(e) => {

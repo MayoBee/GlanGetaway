@@ -28,6 +28,8 @@ import {
 import { Label } from "../components/ui/label";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
+import TermsOfServiceModal from "../components/TermsOfServiceModal";
+import PrivacyPolicyModal from "../components/PrivacyPolicyModal";
 
 export type RegisterFormData = {
   firstName: string;
@@ -36,6 +38,7 @@ export type RegisterFormData = {
   password: string;
   confirmPassword: string;
   birthdate: string;
+  agreeToTerms: boolean;
 };
 
 const Register = () => {
@@ -44,6 +47,8 @@ const Register = () => {
   const { showToast } = useAppContext();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+  const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
   const {
     register,
@@ -384,6 +389,49 @@ const Register = () => {
                   )}
               </div>
 
+              {/* Terms Agreement Checkbox */}
+              <div className="space-y-2">
+                <div className="flex items-start space-x-2">
+                  <input
+                    type="checkbox"
+                    id="agreeToTerms"
+                    className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    {...register("agreeToTerms", {
+                      required: "You must agree to the Terms of Service to create an account",
+                    })}
+                  />
+                  <Label htmlFor="agreeToTerms" className="text-sm text-gray-700 leading-relaxed">
+                    I have read and agree to the{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowTermsModal(true)}
+                      className="text-primary-600 hover:text-primary-700 underline font-medium"
+                    >
+                      Terms of Service
+                    </button>
+                    {" "}and{" "}
+                    <button
+                      type="button"
+                      onClick={() => setShowPrivacyModal(true)}
+                      className="text-primary-600 hover:text-primary-700 underline font-medium"
+                    >
+                      Privacy Policy
+                    </button>
+                  </Label>
+                </div>
+                {errors.agreeToTerms && (
+                  <div className="flex items-center mt-1">
+                    <Badge
+                      variant="outline"
+                      className="text-red-500 border-red-200 bg-red-50"
+                    >
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      {errors.agreeToTerms.message}
+                    </Badge>
+                  </div>
+                )}
+              </div>
+
               {/* Submit Button */}
               <Button
                 type="submit"
@@ -441,6 +489,16 @@ const Register = () => {
           </p>
         </div>
       </div>
+      
+      <TermsOfServiceModal 
+        open={showTermsModal} 
+        onOpenChange={setShowTermsModal} 
+      />
+      
+      <PrivacyPolicyModal 
+        open={showPrivacyModal} 
+        onOpenChange={setShowPrivacyModal} 
+      />
     </div>
   );
 };

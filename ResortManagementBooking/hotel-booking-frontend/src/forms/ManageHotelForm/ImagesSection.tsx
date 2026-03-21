@@ -5,12 +5,15 @@ import { X, Upload } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Badge } from "../../components/ui/badge";
 import SmartImage from "../../components/SmartImage";
+import { getApiBaseUrl } from "../../lib/api-client";
 
 interface ImagePreview {
   id: string;
   file?: File;
   url: string;
   isExisting: boolean;
+  isLoading?: boolean;
+  hasError?: boolean;
 }
 
 const ImagesSection = () => {
@@ -36,7 +39,11 @@ const ImagesSection = () => {
           try {
             const urlObj = new URL(url);
             if (urlObj.hostname === 'localhost') {
-              urlObj.port = '5000';
+              // Use the correct API base URL
+              const apiUrl = new URL(getApiBaseUrl());
+              urlObj.port = apiUrl.port;
+              urlObj.hostname = apiUrl.hostname;
+              urlObj.protocol = apiUrl.protocol;
               fixedUrl = urlObj.toString();
             }
           } catch (e) {

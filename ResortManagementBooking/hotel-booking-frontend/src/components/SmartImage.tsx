@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Image as ImageIcon, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react';
+import { getApiBaseUrl } from '../lib/api-client';
 
 interface SmartImageProps {
   src?: string | string[];
@@ -9,7 +10,12 @@ interface SmartImageProps {
   showLoading?: boolean;
   onError?: (error: Error) => void;
   onLoad?: () => void;
+  maxRetries?: number;
+  retryDelay?: number;
+  fallbackImageUrl?: string;
 }
+
+const DEFAULT_FALLBACK_IMAGE = '/placeholder-resort.jpg';
 
 const SmartImage: React.FC<SmartImageProps> = ({
   src,
@@ -18,79 +24,162 @@ const SmartImage: React.FC<SmartImageProps> = ({
   fallbackText = 'No Image Available',
   showLoading = true,
   onError,
-  onLoad
+  onLoad,
+  maxRetries = 3,
+  retryDelay = 1000,
+  fallbackImageUrl = DEFAULT_FALLBACK_IMAGE
 }) => {
   const [currentSrc, setCurrentSrc] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Process image sources
-  const processImageSources = (sources: string | string[] | undefined): string[] => {
-    if (!sources) return [];
+  // Enhanced logging function
+  const logImageEvent = useCallback((event: string, details: any) => {
+    console.log(`🖼️ SmartImage [${event}]:`, {
+      src: currentSrc,
+      originalSrc: src,
+      retryCount,
+      timestamp: new Date().toISOString(),
+      ...details
+    });
+  }, [currentSrc, src, retryCount]);
+
+  // Process image sources with enhanced validation
+  const processImageSources = useCallback((sources: string | string[] | undefined): string[] => {
+    let sourcesArray: string[] = [];
     
-    const sourcesArray = Array.isArray(sources) ? sources : [sources];
-    return sourcesArray.map(source => {
-      if (!source) return '';
+    if (sources) {
+      sourcesArray = Array.isArray(sources) ? sources : [sources];
+    }
+    
+    // Add fallback image as last resort if provided
+    if (fallbackImageUrl && !sourcesArray.includes(fallbackImageUrl)) {
+      sourcesArray.push(fallbackImageUrl);
+    }
+    
+    const apiBaseUrl = getApiBaseUrl();
+    
+    const processedSources = sourcesArray.map((source, index) => {
+      if (!source) {
+        logImageEvent('EMPTY_SOURCE', { index, message: 'Empty source encountered' });
+        return '';
+      }
       
       try {
         const url = new URL(source);
         
-        // Fix common port issues
+        // Fix port issues by using current API base URL
         if (url.hostname === 'localhost') {
-          // Ensure we're using port 5000 for backend
-          url.port = '5000';
-          return url.toString();
+          // Construct new URL with correct port from API base URL
+          const apiUrl = new URL(apiBaseUrl);
+          url.port = apiUrl.port;
+          url.hostname = apiUrl.hostname;
+          url.protocol = apiUrl.protocol;
+          const fixedUrl = url.toString();
+          logImageEvent('URL_FIXED', { 
+            original: source, 
+            fixed: fixedUrl,
+            apiBaseUrl 
+          });
+          return fixedUrl;
         }
         
         return source;
       } catch (e) {
-        console.warn('Invalid image URL:', source);
+        logImageEvent('INVALID_URL', { 
+          source, 
+          index, 
+          error: e instanceof Error ? e.message : 'Unknown error' 
+        });
         return '';
       }
     }).filter(Boolean);
-  };
+    
+    logImageEvent('SOURCES_PROCESSED', { 
+      originalCount: sourcesArray.length,
+      validCount: processedSources.length,
+      sources: processedSources 
+    });
+    
+    return processedSources;
+  }, [logImageEvent, fallbackImageUrl]);
 
   useEffect(() => {
     const sources = processImageSources(src);
     if (sources.length === 0) {
+      logImageEvent('NO_VALID_SOURCES', { message: 'No valid image sources found' });
       setIsLoading(false);
       setHasError(true);
       return;
     }
 
     // Try each source until one works
-    const tryNextSource = (index: number = 0) => {
-      if (index >= sources.length) {
+    const tryNextSource = (sourceIndex: number = 0, attemptCount: number = 0) => {
+      if (sourceIndex >= sources.length) {
+        logImageEvent('ALL_SOURCES_FAILED', { 
+          totalSources: sources.length,
+          message: 'All image sources failed to load' 
+        });
         setIsLoading(false);
         setHasError(true);
+        onError?.(new Error(`Failed to load all image sources after ${attemptCount} attempts`));
         return;
       }
 
-      const source = sources[index];
+      const source = sources[sourceIndex];
       setCurrentSrc(source);
       setIsLoading(true);
       setHasError(false);
+
+      logImageEvent('ATTEMPTING_LOAD', { 
+        source, 
+        sourceIndex, 
+        attemptCount,
+        totalSources: sources.length 
+      });
 
       // Create test image to verify it loads
       const testImg = new Image();
       
       testImg.onload = () => {
+        logImageEvent('LOAD_SUCCESS', { 
+          source, 
+          sourceIndex, 
+          attemptCount,
+          loadTime: Date.now() 
+        });
         setIsLoading(false);
         setHasError(false);
         onLoad?.();
       };
       
-      testImg.onerror = () => {
-        console.warn(`Failed to load image: ${source}`);
-        if (index < sources.length - 1) {
-          // Try next source
-          tryNextSource(index + 1);
+      testImg.onerror = (error) => {
+        logImageEvent('LOAD_ERROR', { 
+          source, 
+          sourceIndex, 
+          attemptCount,
+          error: error || 'Unknown image loading error' 
+        });
+        
+        // Retry logic for current source
+        if (attemptCount < maxRetries) {
+          setTimeout(() => {
+            tryNextSource(sourceIndex, attemptCount + 1);
+          }, retryDelay * (attemptCount + 1)); // Exponential backoff
+        } else if (sourceIndex < sources.length - 1) {
+          // Move to next source
+          tryNextSource(sourceIndex + 1, 0);
         } else {
-          // All sources failed
+          // All sources failed after all retries
+          logImageEvent('FINAL_FAILURE', { 
+            totalSources: sources.length,
+            maxRetries,
+            message: 'All sources failed after maximum retries' 
+          });
           setIsLoading(false);
           setHasError(true);
-          onError?.(new Error(`Failed to load all image sources`));
+          onError?.(new Error(`Failed to load all image sources after ${maxRetries} retries each`));
         }
       };
       
@@ -98,9 +187,13 @@ const SmartImage: React.FC<SmartImageProps> = ({
     };
 
     tryNextSource();
-  }, [src, retryCount]);
+  }, [src, retryCount, maxRetries, retryDelay, logImageEvent, processImageSources, onError, onLoad]);
 
   const handleRetry = () => {
+    logImageEvent('MANUAL_RETRY', { 
+      currentSrc, 
+      retryCount: retryCount + 1 
+    });
     setRetryCount(prev => prev + 1);
   };
 
@@ -112,8 +205,9 @@ const SmartImage: React.FC<SmartImageProps> = ({
           <p className="text-gray-500 text-sm font-medium">{fallbackText}</p>
           <button
             onClick={handleRetry}
-            className="mt-2 text-xs text-blue-500 hover:text-blue-700 underline"
+            className="mt-2 flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 underline mx-auto"
           >
+            <RefreshCw className="w-3 h-3" />
             Retry
           </button>
         </div>

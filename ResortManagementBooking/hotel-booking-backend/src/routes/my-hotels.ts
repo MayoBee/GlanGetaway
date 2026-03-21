@@ -69,10 +69,22 @@ router.post(
       .notEmpty()
       .isArray({ min: 1 })
       .withMessage("Select at least one hotel type"),
-    body("pricePerNight")
-      .notEmpty()
+    body("dayRate")
+      .optional()
       .isNumeric()
-      .withMessage("Price per night is required and must be a number"),
+      .withMessage("Day rate must be a number"),
+    body("nightRate")
+      .optional()
+      .isNumeric()
+      .withMessage("Night rate must be a number"),
+    body("hasDayRate")
+      .optional()
+      .isBoolean()
+      .withMessage("Has day rate must be a boolean"),
+    body("hasNightRate")
+      .optional()
+      .isBoolean()
+      .withMessage("Has night rate must be a boolean"),
     body("starRating")
       .notEmpty()
       .isNumeric()
@@ -201,6 +213,12 @@ router.post(
       newHotel.lastUpdated = new Date();
       newHotel.userId = req.userId;
       
+      // Set the new pricing fields
+      newHotel.dayRate = Number(req.body.dayRate) || 0;
+      newHotel.nightRate = Number(req.body.nightRate) || 0;
+      newHotel.hasDayRate = req.body.hasDayRate === "true" || req.body.hasDayRate === true;
+      newHotel.hasNightRate = req.body.hasNightRate === "true" || req.body.hasNightRate === true;
+      
       // Set approval status - resorts need admin approval
       newHotel.isApproved = false;
 
@@ -287,7 +305,10 @@ router.put(
         country: req.body.country,
         description: req.body.description,
         type: Array.isArray(req.body.type) ? req.body.type : [req.body.type],
-        pricePerNight: Number(req.body.pricePerNight),
+        dayRate: Number(req.body.dayRate) || 0,
+        nightRate: Number(req.body.nightRate) || 0,
+        hasDayRate: req.body.hasDayRate === "true" || req.body.hasDayRate === true,
+        hasNightRate: req.body.hasNightRate === "true" || req.body.hasNightRate === true,
         starRating: Number(req.body.starRating),
         adultCount: Number(req.body.adultCount),
         childCount: Number(req.body.childCount),

@@ -113,16 +113,32 @@ class ImageService {
     
     const contentType = contentTypes[ext] || 'application/octet-stream';
     
-    // Set headers
+    // Set enhanced headers for optimal caching and performance
     res.setHeader('Content-Type', contentType);
     res.setHeader('Content-Length', stats.size.toString());
-    res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year cache
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     
-    console.log('✅ Serving image with content type:', contentType);
+    // Enhanced caching strategy
+    const oneYear = 365 * 24 * 60 * 60;
+    res.setHeader('Cache-Control', `public, max-age=${oneYear}, immutable`);
+    res.setHeader('ETag', `"${stats.size}-${stats.mtime.getTime()}"`);
+    
+    // CORS and security headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    
+    // Accept-Ranges for partial content support
+    res.setHeader('Accept-Ranges', 'bytes');
+    
+    console.log('✅ Serving image:', {
+      filename,
+      contentType,
+      size: stats.size,
+      lastModified: stats.mtime,
+      cacheControl: `public, max-age=${oneYear}, immutable`
+    });
     
     // Send file
     res.sendFile(filePath, (err) => {

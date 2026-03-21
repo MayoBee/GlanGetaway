@@ -16,19 +16,15 @@ import {
 import { 
   Users,
   Percent,
-  Ticket,
   AlertCircle,
-  Check,
   Calculator,
   Info
 } from "lucide-react";
 import { 
   calculateDiscountSimple, 
   DiscountConfig,
-  GuestDiscountInput as GuestDiscountInputType,
   DiscountCalculationResult,
-  validateDiscountInput,
-  validatePromoCode
+  validateDiscountInput
 } from "../lib/discountCalculation";
 
 interface GuestDiscountInputProps {
@@ -57,82 +53,39 @@ const GuestDiscountInputComponent = ({
   const [hasDiscount, setHasDiscount] = useState(false);
   const [seniorCitizens, setSeniorCitizens] = useState(0);
   const [pwdGuests, setPwdGuests] = useState(0);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoError, setPromoError] = useState<string | null>(null);
-  const [promoSuccess, setPromoSuccess] = useState(false);
   const [agreedToDisclaimer, setAgreedToDisclaimer] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
 
-  // Calculate discount whenever inputs change
+    // Calculate discount whenever inputs change
   useEffect(() => {
-    if (!hasDiscount && !promoCode) {
-      // No discount applied
-      const result = calculateDiscountSimple({
-        pricePerNight,
-        numberOfNights,
-        totalGuests,
-        guestDiscountInput: {
-          totalGuests,
-          seniorCitizens: 0,
-          pwdGuests: 0,
-          promoCode: "",
-          hasDiscount: false
-        },
-        discountConfig
-      });
-      setDiscountResult(result);
-      onDiscountChange(result);
-      return;
-    }
-
-    // Validate inputs
-    const guestInput: GuestDiscountInput = {
+    const guestInput = {
       totalGuests,
       seniorCitizens,
       pwdGuests,
-      promoCode,
+      promoCode: "",
       hasDiscount
     };
 
-    const validation = validateDiscountInput(guestInput, totalGuests);
-    if (!validation.isValid) {
-      setValidationError(validation.error || "Invalid discount configuration");
-      return;
-    }
-
-    // Validate promo code if provided
-    if (promoCode) {
-      const promoValidation = validatePromoCode(promoCode, discountConfig);
-      if (!promoValidation.isValid) {
-        setPromoError(promoValidation.error || "Invalid promo code");
-        setPromoSuccess(false);
-      } else {
-        setPromoError(null);
-        setPromoSuccess(true);
-      }
-    } else {
-      setPromoError(null);
-      setPromoSuccess(false);
-    }
-
-    setValidationError(null);
-
-    // Calculate discount
-    const result = calculateDiscountSimple({
+    const pricingInput = {
       pricePerNight,
       numberOfNights,
       totalGuests,
-      guestDiscountInput: {
-        ...guestInput,
-        hasDiscount: true
-      },
+      guestDiscountInput: guestInput,
       discountConfig
-    });
+    };
 
+    const result = calculateDiscountSimple(pricingInput);
+    
+    if (!result.isValid) {
+      setValidationError(result.validationError || "Invalid discount configuration");
+      return;
+    }
+
+    setValidationError(null);
     setDiscountResult(result);
     onDiscountChange(result);
-  }, [hasDiscount, seniorCitizens, pwdGuests, promoCode, totalGuests, pricePerNight, numberOfNights, discountConfig, onDiscountChange]);
+  }, [hasDiscount, seniorCitizens, pwdGuests, totalGuests, pricePerNight, numberOfNights, discountConfig, onDiscountChange]);
 
   const handleSeniorCitizensChange = (value: string) => {
     const count = parseInt(value) || 0;
@@ -144,17 +97,6 @@ const GuestDiscountInputComponent = ({
     setPwdGuests(Math.min(count, totalGuests));
   };
 
-  const handlePromoCodeChange = (value: string) => {
-    setPromoCode(value.toUpperCase());
-    setPromoError(null);
-    setPromoSuccess(false);
-  };
-
-  const getPromoValidation = () => {
-    if (!promoCode) return null;
-    return validatePromoCode(promoCode, discountConfig);
-  };
-
   const discountedGuests = seniorCitizens + pwdGuests;
   const remainingGuests = totalGuests - discountedGuests;
 
@@ -163,10 +105,10 @@ const GuestDiscountInputComponent = ({
       <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50">
         <CardTitle className="flex items-center gap-2">
           <Percent className="h-5 w-5 text-green-600" />
-          Discount & Promo Codes
+          Guest Discounts
         </CardTitle>
         <CardDescription>
-          Apply eligible discounts or promo codes to your booking
+          Apply eligible guest discounts to your booking
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6 pt-6">
@@ -266,49 +208,8 @@ const GuestDiscountInputComponent = ({
 
         <hr className="my-4" />
 
-        {/* Promo Code Section */}
-        <div className="space-y-4">
-          <Label htmlFor="promoCode" className="flex items-center gap-2">
-            <Ticket className="h-4 w-4 text-orange-500" />
-            Promo Code
-          </Label>
-          <div className="flex gap-2">
-            <Input
-              id="promoCode"
-              type="text"
-              value={promoCode}
-              onChange={(e) => handlePromoCodeChange(e.target.value)}
-              placeholder="Enter promo code"
-              className="uppercase font-mono"
-            />
-            {promoCode && (
-              <div className="flex items-center">
-                {promoSuccess ? (
-                  <span className="flex items-center gap-1 text-green-600 text-sm">
-                    <Check className="h-4 w-4" /> Valid
-                  </span>
-                ) : promoError ? (
-                  <span className="flex items-center gap-1 text-red-600 text-sm">
-                    <AlertCircle className="h-4 w-4" /> Invalid
-                  </span>
-                ) : null}
-              </div>
-            )}
-          </div>
-          {promoError && (
-            <p className="text-sm text-red-600">{promoError}</p>
-          )}
-          {promoSuccess && (
-            <p className="text-sm text-green-600">
-              Promo code applied! {getPromoValidation()?.discount?.name} - {getPromoValidation()?.discount?.percentage}% off
-            </p>
-          )}
-        </div>
-
-        <hr className="my-4" />
-
         {/* Discount Calculation Display */}
-        {discountResult && (discountResult.totalSavings > 0 || promoSuccess) && (
+        {discountResult && discountResult.totalSavings > 0 && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Calculator className="h-5 w-5 text-green-600" />

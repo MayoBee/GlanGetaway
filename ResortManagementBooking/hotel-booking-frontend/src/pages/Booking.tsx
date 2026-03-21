@@ -249,26 +249,6 @@ const Booking = () => {
                         ))}
                       </div>
                     )}
-                    {(search.seniorCount > 0 || search.pwdCount > 0) && (
-                      <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
-                        <div className="text-sm font-medium text-green-700">
-                          ✓ Discount Eligible Guests:
-                        </div>
-                        {search.seniorCount > 0 && (
-                          <div className="text-sm text-amber-700">
-                            • {search.seniorCount} Senior Citizen{search.seniorCount > 1 ? 's' : ''} (20% off)
-                          </div>
-                        )}
-                        {search.pwdCount > 0 && (
-                          <div className="text-sm text-purple-700">
-                            • {search.pwdCount} PWD{search.pwdCount > 1 ? 's' : ''} (20% off)
-                          </div>
-                        )}
-                        <div className="text-xs text-gray-500 mt-1">
-                          Bring valid ID upon check-in
-                        </div>
-                      </div>
-                    )}
                   </div>
 
                   {/* Selected Accommodations */}

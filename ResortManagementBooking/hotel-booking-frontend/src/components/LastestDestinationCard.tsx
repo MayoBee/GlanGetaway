@@ -40,7 +40,12 @@ const LatestDestinationCard = ({ hotel }: Props) => {
         {/* Price Badge */}
         <div className="absolute top-4 left-4">
           <div className="bg-primary-600 text-white rounded-full px-3 py-1">
-            <span className="text-sm font-bold">₱{hotel.pricePerNight || 0}</span>
+            <span className="text-sm font-bold">
+              {(hotel.hasDayRate && hotel.hasNightRate) ? `₱${hotel.dayRate || 0}/₱${hotel.nightRate || 0}` :
+               hotel.hasDayRate ? `₱${hotel.dayRate || 0}` :
+               hotel.hasNightRate ? `₱${hotel.nightRate || 0}` :
+               `₱0`}
+            </span>
           </div>
         </div>
       </div>

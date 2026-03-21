@@ -19,7 +19,10 @@ export type HotelFormData = {
   country: string;
   description: string;
   type: string[];
-  pricePerNight: number;
+  dayRate: number;
+  nightRate: number;
+  hasDayRate: boolean;
+  hasNightRate: boolean;
   starRating: number;
   facilities: string[];
   imageFiles?: FileList;
@@ -111,7 +114,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       country: "",
       description: "",
       type: [],
-      pricePerNight: 0,
+      dayRate: 0,
+      nightRate: 0,
+      hasDayRate: true,
+      hasNightRate: true,
       starRating: 3,
       adultCount: 1,
       childCount: 0,
@@ -152,6 +158,11 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       // Ensure contact and policies are properly initialized
       const formData = {
         ...hotel,
+        // Handle the new day/night rate fields with fallbacks
+        dayRate: hotel.dayRate || 0,
+        nightRate: hotel.nightRate || 0,
+        hasDayRate: hotel.hasDayRate !== undefined ? hotel.hasDayRate : true,
+        hasNightRate: hotel.hasNightRate !== undefined ? hotel.hasNightRate : true,
         contact: hotel.contact || {
           phone: "",
           email: "",
@@ -197,7 +208,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     formDataJson.type.forEach((t, idx) => {
       formData.append(`type[${idx}]`, t);
     });
-    formData.append("pricePerNight", formDataJson.pricePerNight.toString());
+    formData.append("dayRate", formDataJson.dayRate.toString());
+    formData.append("nightRate", formDataJson.nightRate.toString());
+    formData.append("hasDayRate", formDataJson.hasDayRate.toString());
+    formData.append("hasNightRate", formDataJson.hasNightRate.toString());
     formData.append("starRating", formDataJson.starRating.toString());
     formData.append("adultCount", formDataJson.adultCount.toString());
     formData.append("childCount", formDataJson.childCount.toString());

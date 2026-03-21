@@ -12,21 +12,7 @@ import { Card } from "../../components/ui/card";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import GuestVerificationLayer from "../../components/GuestVerificationLayer";
-import { GuestVerification } from "../../lib/mockOCR";
-import {
-  User,
-  Phone,
-  MessageSquare,
-  CreditCard,
-  Shield,
-  CheckCircle,
-  Copy,
-  Smartphone,
-  Percent,
-  Users,
-} from "lucide-react";
+import { User, Phone, MessageSquare, CreditCard, Shield, CheckCircle, Copy, Smartphone } from "lucide-react";
 import { useState } from "react";
 import GCashPaymentForm, { GCashPaymentData } from "../../components/GCashPaymentForm";
 import { SelectedRoom, SelectedCottage, SelectedAmenity } from "../../contexts/BookingSelectionContext";
@@ -89,13 +75,6 @@ const EnhancedBookingForm = ({
   const [specialRequests, setSpecialRequests] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">("card");
-  
-  // Guest verification state
-  const [seniorCount, setSeniorCount] = useState<number>(search.seniorCount || 0);
-  const [pwdCount, setPwdCount] = useState<number>(search.pwdCount || 0);
-  const [verifiedGuests, setVerifiedGuests] = useState<GuestVerification[]>([]);
-  const [verificationDiscount, setVerificationDiscount] = useState<number>(0);
-  const [hasDiscount, setHasDiscount] = useState<boolean>(search.seniorCount > 0 || search.pwdCount > 0);
 
   const { mutate: bookRoom, isLoading: isCardLoading } = useMutation(
     apiClient.createRoomBooking,
@@ -194,22 +173,18 @@ MM/YY: 12/35 CVC: 123`;
       return;
     }
 
-    // Add local state values and booking selections to form data
-    const finalTotal = calculatedTotal - verificationDiscount;
     const completeFormData = {
       ...formData,
       phone,
       specialRequests,
       paymentMethod: "card",
-      totalCost: finalTotal, // Use calculated total minus verification discount
-      basePrice: paymentIntent.totalCost, // Use paymentIntent total as base price
+      totalCost: calculatedTotal,
+      basePrice: paymentIntent.totalCost,
       checkInTime: "12:00 PM",
       checkOutTime: "11:00 AM",
       selectedRooms,
       selectedCottages,
       selectedAmenities,
-      guestVerifications: verifiedGuests,
-      discountAmount: verificationDiscount,
     };
 
     const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
@@ -231,7 +206,6 @@ MM/YY: 12/35 CVC: 123`;
   };
 
   const onGCashSubmit = (paymentData: GCashPaymentData) => {
-    const finalTotal = calculatedTotal - verificationDiscount;
     const formData = {
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
@@ -244,16 +218,14 @@ MM/YY: 12/35 CVC: 123`;
       checkInTime: "12:00 PM",
       checkOutTime: "11:00 AM",
       hotelId: hotelId || "",
-      totalCost: finalTotal, // Use calculated total minus verification discount
-      basePrice: paymentIntent.totalCost, // Use paymentIntent total as base price
+      totalCost: calculatedTotal,
+      basePrice: paymentIntent.totalCost,
       paymentIntentId: paymentIntent.paymentIntentId,
       specialRequests,
       paymentMethod: "gcash" as const,
       selectedRooms,
       selectedCottages,
       selectedAmenities,
-      guestVerifications: verifiedGuests,
-      discountAmount: verificationDiscount,
       gcashPayment: {
         gcashNumber: paymentData.gcashNumber,
         referenceNumber: paymentData.referenceNumber,
@@ -372,32 +344,13 @@ MM/YY: 12/35 CVC: 123`;
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-700 font-medium">Total Cost</span>
                 <span className="text-2xl font-bold text-blue-600">
-                  ₱{(calculatedTotal - verificationDiscount).toFixed(2)}
+                  ₱{calculatedTotal.toFixed(2)}
                 </span>
               </div>
               
-              {/* Show verification discount if applied */}
-              {verificationDiscount > 0 && (
-                <div className="flex justify-between items-center mb-2 text-sm text-green-600">
-                  <span>ID Verification Discount:</span>
-                  <span>-₱{verificationDiscount.toFixed(2)}</span>
-                </div>
-              )}
-              
-              {/* Show original price if discount applied */}
-              {verificationDiscount > 0 && (
-                <div className="flex justify-between items-center mb-2 text-sm text-gray-400">
-                  <span>Original Price:</span>
-                  <span className="line-through">₱{calculatedTotal.toFixed(2)}</span>
-                </div>
-              )}
-              
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <CheckCircle className="h-3 w-3 text-green-500" />
-                {verificationDiscount > 0 
-                  ? "Includes verified guest discounts"
-                  : "Includes all selected accommodations and amenities"
-                }
+                Includes all selected accommodations and amenities
               </div>
               {(selectedRooms.length > 0 || selectedCottages.length > 0 || selectedAmenities.length > 0) && (
                 <div className="mt-3 pt-3 border-t border-blue-200">
@@ -411,97 +364,6 @@ MM/YY: 12/35 CVC: 123`;
             </div>
           </CardContent>
         </Card>
-
-        {/* Senior/PWD Count Input - Must be before verification layer */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Percent className="h-5 w-5 text-blue-600" />
-              Discount Eligibility
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg">
-              <input
-                type="checkbox"
-                id="hasDiscount"
-                checked={hasDiscount}
-                onChange={(e) => setHasDiscount(e.target.checked)}
-                className="h-4 w-4"
-              />
-              <label htmlFor="hasDiscount" className="font-medium cursor-pointer">
-                I have eligible discounts (Senior Citizen / PWD)
-              </label>
-            </div>
-            
-            {hasDiscount && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="seniorCount" className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-blue-500" />
-                    Senior Citizens
-                    <Badge variant="secondary" className="text-xs">20% off</Badge>
-                  </Label>
-                  <Input
-                    id="seniorCount"
-                    type="number"
-                    min="0"
-                    max={search.adultCount + search.childCount}
-                    value={seniorCount}
-                    onChange={(e) => {
-                      const count = parseInt(e.target.value) || 0;
-                      setSeniorCount(Math.min(count, search.adultCount + search.childCount - pwdCount));
-                    }}
-                    placeholder="Number of senior citizens"
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="pwdCount" className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-purple-500" />
-                    PWD (Persons with Disabilities)
-                    <Badge variant="secondary" className="text-xs">20% off</Badge>
-                  </Label>
-                  <Input
-                    id="pwdCount"
-                    type="number"
-                    min="0"
-                    max={search.adultCount + search.childCount}
-                    value={pwdCount}
-                    onChange={(e) => {
-                      const count = parseInt(e.target.value) || 0;
-                      setPwdCount(Math.min(count, search.adultCount + search.childCount - seniorCount));
-                    }}
-                    placeholder="Number of PWD guests"
-                  />
-                </div>
-              </div>
-            )}
-            
-            {hasDiscount && (seniorCount + pwdCount > 0) && (
-              <div className="bg-blue-50 p-3 rounded-lg text-sm text-blue-700">
-                <p><strong>{seniorCount + pwdCount} guest(s)</strong> eligible for discount verification.</p>
-                <p className="text-blue-600 mt-1">Please complete ID verification below to avail the discount.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Guest Verification Layer */}
-        {hasDiscount && (
-          <GuestVerificationLayer
-            totalGuests={search.adultCount + search.childCount}
-            pricePerPerson={calculatedTotal / (search.adultCount + search.childCount || 1)}
-            numberOfNights={Math.ceil((search.checkOut.getTime() - search.checkIn.getTime()) / (1000 * 60 * 60 * 24)) || 1}
-            seniorCount={seniorCount}
-            pwdCount={pwdCount}
-            onVerificationComplete={(verified, discount) => {
-              setVerifiedGuests(verified);
-              setVerificationDiscount(discount);
-              console.log("Verification complete:", { verified, discount });
-            }}
-          />
-        )}
 
         {/* Payment Method Selection */}
         <Card>

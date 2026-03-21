@@ -51,7 +51,12 @@ const SearchResultsCard = ({ hotel }: Props) => {
           {/* Overlay Badges */}
           <div className="absolute top-4 left-4 flex flex-col space-y-2">
             <div className="bg-primary-600 text-white rounded-full px-3 py-1">
-              <span className="text-sm font-bold">₱{hotel.pricePerNight}</span>
+              <span className="text-sm font-bold">
+                {(hotel.hasDayRate && hotel.hasNightRate) ? `₱${hotel.dayRate || 0}/₱${hotel.nightRate || 0}` :
+                 hotel.hasDayRate ? `₱${hotel.dayRate || 0}` :
+                 hotel.hasNightRate ? `₱${hotel.nightRate || 0}` :
+                 `₱0`}
+              </span>
             </div>
             {hotel.isFeatured && (
               <div className="bg-yellow-500 text-white rounded-full px-3 py-1">

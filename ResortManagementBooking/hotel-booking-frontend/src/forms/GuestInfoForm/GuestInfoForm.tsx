@@ -14,7 +14,7 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
-import { Calendar, Users, User, Baby, CreditCard, Ticket, Check, X } from "lucide-react";
+import { Calendar, Users, User, Baby, CreditCard, Upload, AlertCircle, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";
 import BookingSummary from "../../components/BookingSummary";
@@ -60,12 +60,16 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
   const [seniorCount, setSeniorCount] = useState<number>(search.seniorCount);
   const [pwdCount, setPwdCount] = useState<number>(search.pwdCount);
   
-  // Voucher/Promo code state
-  const [promoCode, setPromoCode] = useState<string>("");
-  const [promoCodeLoading, setPromoCodeLoading] = useState<boolean>(false);
-  const [promoCodeError, setPromoCodeError] = useState<string | null>(null);
-  const [promoCodeSuccess, setPromoCodeSuccess] = useState<boolean>(false);
-  const [appliedPromoCode, setAppliedPromoCode] = useState<{ code: string; discountAmount: number; name: string } | null>(null);
+  // Verification files state
+  const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
+
+  // Rate type state
+  const [rateType, setRateType] = useState<'day' | 'night'>('night');
+  const [selectedNights, setSelectedNights] = useState<number>(1);
+
+  // Determine available rate types (for now, assume both are available)
+  const hasDayRate = true;
+  const hasNightRate = true;
 
   const {
     watch,
@@ -159,45 +163,6 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
     navigate(`/hotel/${hotelId}/booking`);
   };
 
-  // Handle promo code validation
-  const handlePromoCodeApply = async () => {
-    if (!promoCode.trim()) {
-      setPromoCodeError("Please enter a promo code");
-      return;
-    }
-    
-    setPromoCodeLoading(true);
-    setPromoCodeError(null);
-    setPromoCodeSuccess(false);
-    
-    try {
-      const response = await apiClient.validateDiscountCode(hotelId, promoCode.toUpperCase(), pricePerNight * numberOfNights);
-      if (response.success && response.data) {
-        setAppliedPromoCode({
-          code: response.data.code,
-          discountAmount: response.data.discountAmount,
-          name: response.data.name
-        });
-        setPromoCodeSuccess(true);
-      } else {
-        setPromoCodeError(response.message || "Invalid promo code");
-        setAppliedPromoCode(null);
-      }
-    } catch (error: any) {
-      setPromoCodeError(error.response?.data?.message || "Failed to validate promo code. Please try again.");
-      setAppliedPromoCode(null);
-    } finally {
-      setPromoCodeLoading(false);
-    }
-  };
-
-  // Handle promo code removal
-  const handleRemovePromoCode = () => {
-    setPromoCode("");
-    setAppliedPromoCode(null);
-    setPromoCodeError(null);
-    setPromoCodeSuccess(false);
-  };
 
   return (
     <>
@@ -303,59 +268,207 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
             <div className="space-y-3">
               <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Calendar className="h-4 w-4" />
-                Select Dates
+                {rateType === 'day' ? 'Select Check-in Date' : 'Select Dates'}
               </Label>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="relative">
-                  <DatePicker
-                    required
-                    selected={checkIn}
-                    onChange={(date) => setValue("checkIn", date as Date)}
-                    selectsStart
-                    startDate={checkIn}
-                    endDate={checkOut}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                    placeholderText="Check-in Date"
-                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    wrapperClassName="w-full"
-                  />
-                  <div className="mt-2">
-                    <input
-                      type="time"
-                      value={checkInTime}
-                      onChange={(e) => setCheckInTime(e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              {rateType === 'day' ? (
+                // Day Rate: Check-in only, checkout fixed at 5PM
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="relative">
+                    <DatePicker
+                      required
+                      selected={checkIn}
+                      onChange={(date) => {
+                        setValue("checkIn", date as Date);
+                        // For day rate, set checkout to same date at 5PM
+                        const checkoutDate = new Date(date as Date);
+                        checkoutDate.setHours(17, 0, 0, 0); // 5:00 PM
+                        setValue("checkOut", checkoutDate);
+                        setCheckOutTime("17:00");
+                      }}
+                      minDate={minDate}
+                      maxDate={maxDate}
+                      placeholderText="Check-in Date"
+                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      wrapperClassName="w-full"
                     />
+                    <div className="mt-2">
+                      <input
+                        type="time"
+                        value={checkInTime}
+                        onChange={(e) => setCheckInTime(e.target.value)}
+                        className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-700">
+                      <strong>Day Rate:</strong> Check-out is automatically set to 5:00 PM
+                    </p>
                   </div>
                 </div>
+              ) : (
+                // Night Rate: Check-in/Check-out with quantity adjustment
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="relative">
+                      <DatePicker
+                        required
+                        selected={checkIn}
+                        onChange={(date) => {
+                          setValue("checkIn", date as Date);
+                          // Auto-calculate checkout based on number of nights
+                          const checkoutDate = new Date(date as Date);
+                          checkoutDate.setDate(checkoutDate.getDate() + selectedNights);
+                          setValue("checkOut", checkoutDate);
+                        }}
+                        minDate={minDate}
+                        maxDate={maxDate}
+                        placeholderText="Check-in Date"
+                        className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        wrapperClassName="w-full"
+                      />
+                      <div className="mt-2">
+                        <input
+                          type="time"
+                          value={checkInTime}
+                          onChange={(e) => setCheckInTime(e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        />
+                      </div>
+                    </div>
 
-                <div className="relative">
-                  <DatePicker
-                    required
-                    selected={checkOut}
-                    onChange={(date) => setValue("checkOut", date as Date)}
-                    selectsStart
-                    startDate={checkIn}
-                    endDate={checkOut}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                    placeholderText="Check-out Date"
-                    className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    wrapperClassName="w-full"
-                  />
-                  <div className="mt-2">
-                    <input
-                      type="time"
-                      value={checkOutTime}
-                      onChange={(e) => setCheckOutTime(e.target.value)}
-                      className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    />
+                    <div className="relative">
+                      <DatePicker
+                        required
+                        selected={checkOut}
+                        onChange={(date) => {
+                          setValue("checkOut", date as Date);
+                          // Recalculate number of nights
+                          if (checkIn && date) {
+                            const nights = Math.max(1, Math.ceil((date.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)));
+                            setSelectedNights(nights);
+                          }
+                        }}
+                        minDate={checkIn || minDate}
+                        placeholderText="Check-out Date"
+                        className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        wrapperClassName="w-full"
+                      />
+                      <div className="mt-2">
+                        <input
+                          type="time"
+                          value={checkOutTime}
+                          onChange={(e) => setCheckOutTime(e.target.value)}
+                          className="w-full bg-white border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                        />
+                      </div>
+                    </div>
                   </div>
+
+                  {/* Night Quantity Adjustment */}
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <Label className="text-sm font-medium text-green-700 mb-3 block">
+                      Number of Nights
+                    </Label>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newNights = Math.max(1, selectedNights - 1);
+                          setSelectedNights(newNights);
+                          if (checkIn) {
+                            const checkoutDate = new Date(checkIn);
+                            checkoutDate.setDate(checkoutDate.getDate() + newNights);
+                            setValue("checkOut", checkoutDate);
+                          }
+                        }}
+                        className="w-10 h-10 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center font-bold"
+                      >
+                        -
+                      </button>
+                      <span className="text-xl font-bold text-green-700 min-w-[60px] text-center">
+                        {selectedNights} {selectedNights === 1 ? 'night' : 'nights'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newNights = selectedNights + 1;
+                          setSelectedNights(newNights);
+                          if (checkIn) {
+                            const checkoutDate = new Date(checkIn);
+                            checkoutDate.setDate(checkoutDate.getDate() + newNights);
+                            setValue("checkOut", checkoutDate);
+                          }
+                        }}
+                        className="w-10 h-10 rounded-full bg-green-600 text-white hover:bg-green-700 transition-colors flex items-center justify-center font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                    <p className="text-xs text-green-600 mt-2">
+                      Each night = 24 hours. Total: ₱{pricePerNight * selectedNights}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Rate Type Selection */}
+            {(hasDayRate || hasNightRate) && (
+              <div className="space-y-3 pt-4 border-t border-gray-200">
+                <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <CreditCard className="h-4 w-4" />
+                  Rate Type Selection
+                </Label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {hasDayRate && (
+                    <div className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      rateType === 'day' 
+                        ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300'
+                    }`}
+                      onClick={() => setRateType('day')}
+                    >
+                      <input
+                        type="radio"
+                        name="rateType"
+                        checked={rateType === 'day'}
+                        onChange={() => setRateType('day')}
+                        className="sr-only"
+                      />
+                      <div>
+                        <div className="font-medium">Day Rate (Customer/User)</div>
+                        <div className="text-xs text-gray-500">Flexible check-in time, check-out at 5PM</div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {hasNightRate && (
+                    <div className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                      rateType === 'night' 
+                        ? 'bg-green-50 border-green-200 text-green-700' 
+                        : 'bg-white border-gray-200 text-gray-700 hover:border-green-300'
+                    }`}
+                      onClick={() => setRateType('night')}
+                    >
+                      <input
+                        type="radio"
+                        name="rateType"
+                        checked={rateType === 'night'}
+                        onChange={() => setRateType('night')}
+                        className="sr-only"
+                      />
+                      <div>
+                        <div className="font-medium">Night Rate (Customer/User)</div>
+                        <div className="text-xs text-gray-500">Overnight stay (24 hours per night)</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Guest Count */}
             <div className="space-y-3">
@@ -563,94 +676,74 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                 )}
               </div>
 
-              {/* Summary of discount eligible guests */}
+              {/* Verification Layer */}
               {(seniorCount > 0 || pwdCount > 0) && (
-                <div className="bg-green-50 p-3 rounded-lg border border-green-200 text-sm text-green-800">
-                  <p className="font-medium">
-                    ✓ {seniorCount + pwdCount} guest(s) eligible for discount
-                  </p>
-                  <p className="text-xs text-green-600 mt-1">
-                    Please bring valid Senior Citizen ID or PWD ID upon check-in to avail the discount.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Voucher/Promo Code Section */}
-            <div className="space-y-4 pt-4 border-t border-gray-200">
-              <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                <Ticket className="h-4 w-4" />
-                Have a Voucher or Promo Code?
-              </Label>
-              
-              {!appliedPromoCode ? (
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      type="text"
-                      value={promoCode}
-                      onChange={(e) => {
-                        setPromoCode(e.target.value.toUpperCase());
-                        setPromoCodeError(null);
-                        setPromoCodeSuccess(false);
-                      }}
-                      placeholder="Enter voucher code"
-                      className="uppercase font-mono flex-1"
-                      disabled={promoCodeLoading}
-                    />
-                    <Button
-                      type="button"
-                      onClick={handlePromoCodeApply}
-                      disabled={promoCodeLoading || !promoCode.trim()}
-                      variant="outline"
-                      className="bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100"
-                    >
-                      {promoCodeLoading ? (
-                        <span className="flex items-center gap-1">
-                          <span className="animate-spin h-3 w-3 border-2 border-orange-600 border-t-transparent rounded-full"></span>
-                          Checking...
-                        </span>
-                      ) : (
-                        "Apply"
-                      )}
-                    </Button>
-                  </div>
-                  
-                  {promoCodeError && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
-                      <X className="h-3 w-3" />
-                      {promoCodeError}
-                    </p>
-                  )}
-                  
-                  <p className="text-xs text-gray-500">
-                    Enter your voucher code to get exclusive discounts
-                  </p>
-                </div>
-              ) : (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
-                        <Check className="h-5 w-5 text-green-600" />
-                      </div>
+                <div className="mt-4 space-y-4">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
                       <div>
-                        <p className="font-medium text-green-800">
-                          Voucher Applied: {appliedPromoCode.code}
+                        <h4 className="font-semibold text-amber-800 mb-2">Verification Instructions</h4>
+                        <p className="text-sm text-amber-700 mb-3">
+                          Send a PDF or DOCX file containing the following:
                         </p>
-                        <p className="text-sm text-green-600">
-                          {appliedPromoCode.name} - ₱{appliedPromoCode.discountAmount.toFixed(2)} off
+                        <ol className="list-decimal list-inside space-y-2 text-sm text-amber-700">
+                          <li><strong>Full names</strong> of Senior Citizens/PWDs (organized by person based on the quantity you specified above)</li>
+                          <li><strong>Clear pictures</strong> of each person holding their National ID or PWD ID</li>
+                        </ol>
+                        <p className="text-sm text-amber-600 mt-3 font-medium">
+                          ⚠️ Final downpayment confirmation will be pending until the resort owner verifies the legitimacy of your submitted document.
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={handleRemovePromoCode}
-                      className="text-red-500 hover:text-red-700 text-sm"
-                    >
-                      Remove
-                    </button>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="verificationFiles" className="flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      Upload Verification Document
+                    </Label>
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                      <input
+                        id="verificationFiles"
+                        type="file"
+                        accept=".pdf,.doc,.docx"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          setVerificationFiles(files);
+                        }}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="verificationFiles"
+                        className="cursor-pointer flex flex-col items-center gap-2"
+                      >
+                        <Upload className="h-8 w-8 text-gray-400" />
+                        <span className="text-sm text-gray-600">
+                          {verificationFiles.length > 0 
+                            ? `${verificationFiles.length} file(s) selected`
+                            : "Click to upload PDF or DOCX files"
+                          }
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          Maximum file size: 10MB per file
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  {verificationFiles.length > 0 && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2 text-green-700">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="text-sm font-medium">Documents uploaded successfully</span>
+                      </div>
+                      <p className="text-xs text-green-600 mt-1">
+                        Discount amount: ₱{((pricePerNight * numberOfNights * (seniorCount + pwdCount)) * 0.2).toFixed(2)} ({seniorCount + pwdCount} guests × 20%)
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

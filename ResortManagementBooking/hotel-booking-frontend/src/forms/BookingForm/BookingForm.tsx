@@ -66,6 +66,34 @@ export type BookingFormData = {
     price: number;
     description?: string;
   }>;
+  selectedPackages?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    includedCottages: Array<{
+      id: string;
+      name: string;
+      type: string;
+      pricePerNight: number;
+      maxOccupancy: number;
+      description?: string;
+    }>;
+    includedRooms: Array<{
+      id: string;
+      name: string;
+      type: string;
+      pricePerNight: number;
+      maxOccupancy: number;
+      description?: string;
+    }>;
+    includedAmenities: Array<{
+      id: string;
+      name: string;
+      price: number;
+      description?: string;
+    }>;
+  }>;
   specialRequests?: string;
 };
 
@@ -79,7 +107,8 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const { 
     selectedRooms, 
     selectedCottages, 
-    selectedAmenities, 
+    selectedAmenities,
+    selectedPackages,
     basePrice, 
     totalCost 
   } = useBookingSelection();
@@ -134,6 +163,7 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
       selectedRooms: selectedRooms,
       selectedCottages: selectedCottages,
       selectedAmenities: selectedAmenities,
+      selectedPackages: selectedPackages,
       paymentIntentId: paymentIntent.paymentIntentId,
     },
     mode: "onChange",

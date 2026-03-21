@@ -9,11 +9,11 @@ export interface IPaymentTransaction extends Document {
   currency: string;
   type: "deposit" | "full" | "incidentals";
   status: "pending" | "processing" | "succeeded" | "failed" | "refunded" | "cancelled";
-  paymentMethod: "gcash" | "bank_transfer" | "paymongo" | "card" | "cash";
-  // PayMongo specific fields
-  paymongoPaymentIntentId?: string;
-  paymongoPaymentMethodId?: string;
-  paymongoCustomerId?: string;
+  paymentMethod: "gcash" | "bank_transfer" | "stripe" | "card" | "cash";
+  // Stripe specific fields
+  stripePaymentIntentId?: string;
+  stripePaymentMethodId?: string;
+  stripeCustomerId?: string;
   // Manual payment verification fields
   referenceNumber?: string;
   screenshotUrl?: string;
@@ -57,13 +57,13 @@ const paymentTransactionSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["gcash", "bank_transfer", "paymongo", "card", "cash"],
+      enum: ["gcash", "bank_transfer", "stripe", "card", "cash"],
       default: "gcash",
     },
-    // PayMongo specific fields
-    paymongoPaymentIntentId: { type: String },
-    paymongoPaymentMethodId: { type: String },
-    paymongoCustomerId: { type: String },
+    // Stripe specific fields
+    stripePaymentIntentId: { type: String },
+    stripePaymentMethodId: { type: String },
+    stripeCustomerId: { type: String },
     // Manual payment verification fields
     referenceNumber: { type: String },
     screenshotUrl: { type: String },
@@ -92,7 +92,7 @@ const paymentTransactionSchema = new mongoose.Schema(
 // Compound indexes
 paymentTransactionSchema.index({ bookingId: 1, status: 1 });
 paymentTransactionSchema.index({ hotelId: 1, createdAt: -1 });
-paymentTransactionSchema.index({ paymongoPaymentIntentId: 1 });
+paymentTransactionSchema.index({ stripePaymentIntentId: 1 });
 
 export default mongoose.model<IPaymentTransaction>(
   "PaymentTransaction",

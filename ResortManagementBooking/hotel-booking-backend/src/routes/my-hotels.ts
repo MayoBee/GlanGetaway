@@ -113,13 +113,20 @@ router.post(
       const imageFiles = (req as any).files as any[];
       console.log("Image files count:", imageFiles?.length);
       
-      const newHotel: HotelType = req.body;
+      const newHotel: any = req.body;
       console.log("newHotel before parse:", newHotel);
 
       // Ensure type is always an array
       if (typeof newHotel.type === "string") {
         newHotel.type = [newHotel.type];
       }
+
+      // Clear problematic array fields that might be serialized as strings
+      // These will be properly parsed below
+      delete newHotel.rooms;
+      delete newHotel.cottages;
+      delete newHotel.amenities;
+      delete newHotel.packages;
 
       // Handle nested objects from FormData
       newHotel.contact = {
@@ -202,6 +209,126 @@ router.post(
         newHotel.discounts!.customDiscounts = customDiscounts;
       }
 
+      // Parse packages from FormData
+      const packages: Array<{
+        id: string;
+        name: string;
+        description: string;
+        price: number;
+        includedCottages: string[];
+        includedRooms: string[];
+        includedAmenities: string[];
+      }> = [];
+      let packageIndex = 0;
+      while (req.body[`packages[${packageIndex}][id]`]) {
+        const includedCottages: string[] = [];
+        const includedRooms: string[] = [];
+        const includedAmenities: string[] = [];
+        
+        // Parse included cottages
+        let cottageIndex = 0;
+        while (req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]) {
+          includedCottages.push(req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]);
+          cottageIndex++;
+        }
+        
+        // Parse included rooms
+        let roomIndex = 0;
+        while (req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]) {
+          includedRooms.push(req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]);
+          roomIndex++;
+        }
+        
+        // Parse included amenities
+        let amenityIndex = 0;
+        while (req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]) {
+          includedAmenities.push(req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]);
+          amenityIndex++;
+        }
+        
+        packages.push({
+          id: req.body[`packages[${packageIndex}][id]`],
+          name: req.body[`packages[${packageIndex}][name]`],
+          description: req.body[`packages[${packageIndex}][description]`],
+          price: parseFloat(req.body[`packages[${packageIndex}][price]`]) || 0,
+          includedCottages,
+          includedRooms,
+          includedAmenities,
+        });
+        packageIndex++;
+      }
+      if (packages.length > 0) {
+        newHotel.packages = packages;
+      }
+
+      // Parse rooms from FormData
+      const rooms: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        maxOccupancy: number;
+        description?: string;
+        amenities?: string[];
+      }> = [];
+      let roomIndex = 0;
+      while (req.body[`rooms[${roomIndex}][id]`]) {
+        const roomAmenities: string[] = [];
+        let roomAmenityIndex = 0;
+        while (req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]) {
+          roomAmenities.push(req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]);
+          roomAmenityIndex++;
+        }
+        
+        rooms.push({
+          id: req.body[`rooms[${roomIndex}][id]`],
+          name: req.body[`rooms[${roomIndex}][name]`],
+          type: req.body[`rooms[${roomIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`rooms[${roomIndex}][pricePerNight]`]) || 0,
+          maxOccupancy: parseInt(req.body[`rooms[${roomIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`rooms[${roomIndex}][description]`] || "",
+          amenities: roomAmenities,
+        });
+        roomIndex++;
+      }
+      if (rooms.length > 0) {
+        newHotel.rooms = rooms;
+      }
+
+      // Parse cottages from FormData
+      const cottages: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        maxOccupancy: number;
+        description?: string;
+        amenities?: string[];
+      }> = [];
+      let cottageIndex = 0;
+      while (req.body[`cottages[${cottageIndex}][id]`]) {
+        const cottageAmenities: string[] = [];
+        let cottageAmenityIndex = 0;
+        while (req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]) {
+          cottageAmenities.push(req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]);
+          cottageAmenityIndex++;
+        }
+        
+        cottages.push({
+          id: req.body[`cottages[${cottageIndex}][id]`],
+          name: req.body[`cottages[${cottageIndex}][name]`],
+          type: req.body[`cottages[${cottageIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`cottages[${cottageIndex}][pricePerNight]`]) || 0,
+          maxOccupancy: parseInt(req.body[`cottages[${cottageIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`cottages[${cottageIndex}][description]`] || "",
+          amenities: cottageAmenities,
+        });
+        cottageIndex++;
+      }
+      if (cottages.length > 0) {
+        newHotel.cottages = cottages;
+      }
+
       // Handle image uploads only if files are provided
       let imageUrls: string[] = [];
       if (imageFiles && imageFiles.length > 0) {
@@ -223,11 +350,46 @@ router.post(
       newHotel.nightRate = Number(req.body.nightRate) || 0;
       newHotel.hasDayRate = req.body.hasDayRate === "true" || req.body.hasDayRate === true;
       newHotel.hasNightRate = req.body.hasNightRate === "true" || req.body.hasNightRate === true;
-      
+
+      // Parse entrance fees from FormData
+      newHotel.adultEntranceFee = {
+        dayRate: Number(req.body["adultEntranceFee.dayRate"]) || 0,
+        nightRate: Number(req.body["adultEntranceFee.nightRate"]) || 0,
+        pricingModel: req.body["adultEntranceFee.pricingModel"] || "per_head",
+        groupQuantity: Number(req.body["adultEntranceFee.groupQuantity"]) || 1,
+      };
+
+      // Parse child entrance fees
+      const childEntranceFees: Array<{
+        id: string;
+        minAge: number;
+        maxAge: number;
+        dayRate: number;
+        nightRate: number;
+        pricingModel: "per_head" | "per_group";
+        groupQuantity?: number;
+      }> = [];
+      let childFeeIndex = 0;
+      while (req.body[`childEntranceFee[${childFeeIndex}][id]`]) {
+        childEntranceFees.push({
+          id: req.body[`childEntranceFee[${childFeeIndex}][id]`],
+          minAge: Number(req.body[`childEntranceFee[${childFeeIndex}][minAge]`]) || 0,
+          maxAge: Number(req.body[`childEntranceFee[${childFeeIndex}][maxAge]`]) || 0,
+          dayRate: Number(req.body[`childEntranceFee[${childFeeIndex}][dayRate]`]) || 0,
+          nightRate: Number(req.body[`childEntranceFee[${childFeeIndex}][nightRate]`]) || 0,
+          pricingModel: req.body[`childEntranceFee[${childFeeIndex}][pricingModel]`] || "per_head",
+          groupQuantity: req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`] ? Number(req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`]) : undefined,
+        });
+        childFeeIndex++;
+      }
+      if (childEntranceFees.length > 0) {
+        newHotel.childEntranceFee = childEntranceFees;
+      }
+
       // Set approval status - resorts need admin approval
       newHotel.isApproved = false;
 
-      const hotel = new Hotel(newHotel);
+      const hotel = new Hotel(newHotel as HotelType);
       await hotel.save();
 
       res.status(201).json({
@@ -403,6 +565,126 @@ router.put(
       }
       if (customDiscounts.length > 0) {
         updateData.discounts!.customDiscounts = customDiscounts;
+      }
+
+      // Parse packages from FormData
+      const packages: Array<{
+        id: string;
+        name: string;
+        description: string;
+        price: number;
+        includedCottages: string[];
+        includedRooms: string[];
+        includedAmenities: string[];
+      }> = [];
+      let packageIndex = 0;
+      while (req.body[`packages[${packageIndex}][id]`]) {
+        const includedCottages: string[] = [];
+        const includedRooms: string[] = [];
+        const includedAmenities: string[] = [];
+        
+        // Parse included cottages
+        let cottageIndex = 0;
+        while (req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]) {
+          includedCottages.push(req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]);
+          cottageIndex++;
+        }
+        
+        // Parse included rooms
+        let roomIndex = 0;
+        while (req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]) {
+          includedRooms.push(req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]);
+          roomIndex++;
+        }
+        
+        // Parse included amenities
+        let amenityIndex = 0;
+        while (req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]) {
+          includedAmenities.push(req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]);
+          amenityIndex++;
+        }
+        
+        packages.push({
+          id: req.body[`packages[${packageIndex}][id]`],
+          name: req.body[`packages[${packageIndex}][name]`],
+          description: req.body[`packages[${packageIndex}][description]`],
+          price: parseFloat(req.body[`packages[${packageIndex}][price]`]) || 0,
+          includedCottages,
+          includedRooms,
+          includedAmenities,
+        });
+        packageIndex++;
+      }
+      if (packages.length > 0) {
+        updateData.packages = packages;
+      }
+
+      // Parse rooms from FormData
+      const rooms: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        maxOccupancy: number;
+        description?: string;
+        amenities?: string[];
+      }> = [];
+      let roomIndex = 0;
+      while (req.body[`rooms[${roomIndex}][id]`]) {
+        const roomAmenities: string[] = [];
+        let roomAmenityIndex = 0;
+        while (req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]) {
+          roomAmenities.push(req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]);
+          roomAmenityIndex++;
+        }
+        
+        rooms.push({
+          id: req.body[`rooms[${roomIndex}][id]`],
+          name: req.body[`rooms[${roomIndex}][name]`],
+          type: req.body[`rooms[${roomIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`rooms[${roomIndex}][pricePerNight]`]) || 0,
+          maxOccupancy: parseInt(req.body[`rooms[${roomIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`rooms[${roomIndex}][description]`] || "",
+          amenities: roomAmenities,
+        });
+        roomIndex++;
+      }
+      if (rooms.length > 0) {
+        updateData.rooms = rooms;
+      }
+
+      // Parse cottages from FormData
+      const cottages: Array<{
+        id: string;
+        name: string;
+        type: string;
+        pricePerNight: number;
+        maxOccupancy: number;
+        description?: string;
+        amenities?: string[];
+      }> = [];
+      let cottageIndex = 0;
+      while (req.body[`cottages[${cottageIndex}][id]`]) {
+        const cottageAmenities: string[] = [];
+        let cottageAmenityIndex = 0;
+        while (req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]) {
+          cottageAmenities.push(req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]);
+          cottageAmenityIndex++;
+        }
+        
+        cottages.push({
+          id: req.body[`cottages[${cottageIndex}][id]`],
+          name: req.body[`cottages[${cottageIndex}][name]`],
+          type: req.body[`cottages[${cottageIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`cottages[${cottageIndex}][pricePerNight]`]) || 0,
+          maxOccupancy: parseInt(req.body[`cottages[${cottageIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`cottages[${cottageIndex}][description]`] || "",
+          amenities: cottageAmenities,
+        });
+        cottageIndex++;
+      }
+      if (cottages.length > 0) {
+        updateData.cottages = cottages;
       }
 
       console.log("Update data:", updateData);

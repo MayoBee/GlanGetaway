@@ -24,6 +24,7 @@ import {
   Music,
   Check,
   Plus,
+  Package,
 } from "lucide-react";
 
 // URL validation helper - only allows http/https protocols
@@ -39,7 +40,14 @@ const isValidExternalUrl = (url: string | undefined): boolean => {
 
 const Detail = () => {
   const { id } = useParams();
-  const { isAmenitySelected, addAmenity, removeAmenity } = useBookingSelection();
+  const { isAmenitySelected, addAmenity, removeAmenity, isPackageSelected, addPackage, removePackage, selectedPackages } = useBookingSelection();
+
+  // Check if any amenity is included in a selected package
+  const isAmenityInPackage = (amenityId: string) => {
+    return selectedPackages.some(pkg => 
+      pkg.includedAmenities && pkg.includedAmenities.some(amenity => amenity.id === amenityId)
+    );
+  };
 
   const { data: hotel } = useQueryWithLoading(
     "fetchHotelById",
@@ -185,7 +193,76 @@ const Detail = () => {
           </div>
         </div>
 
-        {/* Resort Description */}
+        {/* Entrance Fees */}
+      {((hotel.adultEntranceFee && (hotel.adultEntranceFee.dayRate > 0 || hotel.adultEntranceFee.nightRate > 0)) ||
+        (hotel.childEntranceFee && hotel.childEntranceFee.length > 0)) && (
+        <div className="border border-slate-300 rounded-lg p-4">
+          <h3 className="text-xl font-semibold mb-3">Entrance Fees</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Adult Entrance Fee */}
+            {hotel.adultEntranceFee && (hotel.adultEntranceFee.dayRate > 0 || hotel.adultEntranceFee.nightRate > 0) && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">Adult Entrance Fee</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Day Rate:</span>
+                    <span className="font-bold text-gray-900">
+                      ₱{hotel.adultEntranceFee.dayRate.toLocaleString()}
+                      {hotel.adultEntranceFee.pricingModel === 'per_group' && ` (${hotel.adultEntranceFee.groupQuantity} people)`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Night Rate:</span>
+                    <span className="font-bold text-gray-900">
+                      ₱{hotel.adultEntranceFee.nightRate.toLocaleString()}
+                      {hotel.adultEntranceFee.pricingModel === 'per_group' && ` (${hotel.adultEntranceFee.groupQuantity} people)`}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    Pricing Model: {hotel.adultEntranceFee.pricingModel === 'per_group' ? `Per Group (${hotel.adultEntranceFee.groupQuantity} people)` : 'Per Head'}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Child Entrance Fees */}
+            {hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">Child Entrance Fees</h4>
+                <div className="space-y-3">
+                  {hotel.childEntranceFee.map((childFee, index) => (
+                    <div key={index} className="border border-gray-200 rounded-lg p-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <h5 className="font-medium text-gray-900">
+                          Ages {childFee.minAge}-{childFee.maxAge} years
+                        </h5>
+                        <div className="text-right">
+                          <span className="text-sm text-gray-600">Pricing Model: </span>
+                          <span className="text-sm font-medium text-blue-600">
+                            {childFee.pricingModel === 'per_group' ? `Per Group (${childFee.groupQuantity} people)` : 'Per Head'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <span className="text-gray-600">Day Rate:</span>
+                          <span className="font-bold text-gray-900">₱{childFee.dayRate.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Night Rate:</span>
+                          <span className="font-bold text-gray-900">₱{childFee.nightRate.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Resort Description */}
         {hotel.description && (
           <div className="mt-6">
             <h3 className="text-xl font-semibold mb-3">About This Resort</h3>
@@ -378,6 +455,134 @@ const Detail = () => {
         </div>
       </div>
 
+      {/* Package Offers */}
+      {hotel.packages && hotel.packages.length > 0 && (
+        <div className="border border-slate-300 rounded-lg p-4">
+          <h3 className="text-xl font-semibold mb-3">Package Offers</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {hotel.packages.map((pkg) => {
+              const isSelected = isPackageSelected(pkg.id);
+              return (
+                <div
+                  key={pkg.id}
+                  className={`border rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer ${
+                    isSelected 
+                      ? 'border-purple-500 bg-purple-50 shadow-md' 
+                      : 'border-gray-200 hover:border-purple-300'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-gray-900">{pkg.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-purple-600">
+                        ₱{pkg.price}
+                      </span>
+                      {isSelected && (
+                        <div className="bg-purple-600 text-white p-1 rounded-full">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {pkg.description && (
+                    <p className="text-sm text-gray-600 mb-3">{pkg.description}</p>
+                  )}
+                  
+                  {/* Show included items */}
+                  <div className="space-y-2 mb-3">
+                    {pkg.includedCottages && pkg.includedCottages.length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        <strong>Cottages:</strong> {pkg.includedCottages.join(", ")}
+                      </div>
+                    )}
+                    {pkg.includedRooms && pkg.includedRooms.length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        <strong>Rooms:</strong> {pkg.includedRooms.join(", ")}
+                      </div>
+                    )}
+                    {pkg.includedAmenities && pkg.includedAmenities.length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        <strong>Amenities:</strong> {pkg.includedAmenities.join(", ")}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <button
+                    className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 font-medium text-sm ${
+                      isSelected
+                        ? 'bg-red-600 hover:bg-red-700 text-white'
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    }`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSelected) {
+                        removePackage(pkg.id);
+                      } else {
+                        // Add package with all included items
+                        addPackage({
+                          id: pkg.id,
+                          name: pkg.name,
+                          description: pkg.description,
+                          price: pkg.price,
+                          includedCottages: pkg.includedCottages.map(cottageId => {
+                            const cottage = hotel.cottages?.find(c => c.id === cottageId);
+                            return cottage || {
+                              id: cottageId,
+                              name: cottageId,
+                              type: "",
+                              pricePerNight: 0,
+                              dayRate: 0,
+                              nightRate: 0,
+                              hasDayRate: false,
+                              hasNightRate: false,
+                              maxOccupancy: 1
+                            };
+                          }),
+                          includedRooms: pkg.includedRooms.map(roomId => {
+                            const room = hotel.rooms?.find(r => r.id === roomId);
+                            return room || {
+                              id: roomId,
+                              name: roomId,
+                              type: "",
+                              pricePerNight: 0,
+                              maxOccupancy: 1
+                            };
+                          }),
+                          includedAmenities: pkg.includedAmenities.map(amenityId => {
+                            const amenity = hotel.amenities?.find(a => a.id === amenityId);
+                            return amenity || {
+                              id: amenityId,
+                              name: amenityId,
+                              price: 0
+                            };
+                          }),
+                        });
+                      }
+                    }}
+                  >
+                    {isSelected ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <span>Remove Package</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <Package className="w-4 h-4" />
+                        <span>Select Package</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {hotel.packages.length === 0 && (
+            <div className="text-center text-gray-500 py-8">
+              No packages available for this resort.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Amenities & Activities */}
       {hotel.amenities && hotel.amenities.length > 0 && (
         <div className="border border-slate-300 rounded-lg p-4">
@@ -385,13 +590,18 @@ const Detail = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {hotel.amenities.map((amenity) => {
               const isSelected = isAmenitySelected(amenity.id);
+              const isInPackage = isAmenityInPackage(amenity.id);
+              const isDisabled = isInPackage && !isSelected;
+              
               return (
                 <div
                   key={amenity.id}
-                  className={`border rounded-lg p-4 hover:shadow-md transition-all duration-200 cursor-pointer ${
+                  className={`border rounded-lg p-4 hover:shadow-md transition-all duration-200 ${
                     isSelected 
                       ? 'border-blue-500 bg-blue-50 shadow-md' 
-                      : 'border-gray-200 hover:border-blue-300'
+                      : isDisabled
+                        ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        : 'border-gray-200 hover:border-blue-300 cursor-pointer'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-2">
@@ -405,6 +615,11 @@ const Detail = () => {
                           <Check className="w-3 h-3" />
                         </div>
                       )}
+                      {isInPackage && !isSelected && (
+                        <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
+                          In Package
+                        </div>
+                      )}
                     </div>
                   </div>
                   {amenity.description && (
@@ -412,21 +627,26 @@ const Detail = () => {
                   )}
                   <button
                     className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 font-medium text-sm ${
-                      isSelected
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      isDisabled
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
+                    disabled={isDisabled}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (isSelected) {
-                        removeAmenity(amenity.id);
-                      } else {
-                        addAmenity({
-                          id: amenity.id,
-                          name: amenity.name,
-                          price: amenity.price,
-                          description: amenity.description
-                        });
+                      if (!isDisabled) {
+                        if (isSelected) {
+                          removeAmenity(amenity.id);
+                        } else {
+                          addAmenity({
+                            id: amenity.id,
+                            name: amenity.name,
+                            price: amenity.price,
+                            description: amenity.description
+                          });
+                        }
                       }
                     }}
                   >

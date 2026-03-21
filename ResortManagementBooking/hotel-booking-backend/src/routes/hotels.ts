@@ -94,37 +94,55 @@ router.post(
   "/:hotelId/bookings/payment-intent",
   verifyToken,
   async (req: Request, res: Response) => {
-    const { numberOfNights } = req.body;
+    const { numberOfNights, downPaymentAmount } = req.body;
     const hotelId = req.params.hotelId;
 
-    // Use lean() for faster query - only fetch needed fields
-    const hotel = await Hotel.findById(hotelId).select('nightRate name').lean();
-    if (!hotel) {
-      return res.status(400).json({ message: "Hotel not found" });
+    try {
+      // Check if Stripe is configured
+      if (!process.env.STRIPE_API_KEY) {
+        console.error("Stripe API key not configured");
+        return res.status(500).json({ message: "Payment system not properly configured" });
+      }
+
+      // Use lean() for faster query - only fetch needed fields
+      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name').lean();
+      if (!hotel) {
+        return res.status(400).json({ message: "Hotel not found" });
+      }
+
+      // Use downPaymentAmount from frontend instead of calculating totalCost
+      const paymentAmount = downPaymentAmount || (hotel.hasNightRate ? hotel.nightRate : hotel.dayRate);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(paymentAmount * 100), // Convert to cents
+        currency: "php", // Use PHP instead of USD
+        metadata: {
+          hotelId,
+          userId: req.userId,
+          numberOfNights: numberOfNights?.toString() || "1",
+        },
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+
+      if (!paymentIntent.client_secret) {
+        return res.status(500).json({ message: "Error creating payment intent" });
+      }
+
+      const response = {
+        paymentIntentId: paymentIntent.id,
+        clientSecret: paymentIntent.client_secret.toString(),
+        totalCost: paymentAmount,
+      };
+
+      res.send(response);
+    } catch (error: any) {
+      console.error("Payment intent creation error:", error);
+      res.status(500).json({ 
+        message: error.message || "Failed to create payment intent" 
+      });
     }
-
-    const totalCost = numberOfNights > 0 ? hotel.nightRate * numberOfNights : hotel.nightRate;
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: totalCost * 100,
-      currency: "usd",
-      metadata: {
-        hotelId,
-        userId: req.userId,
-      },
-    });
-
-    if (!paymentIntent.client_secret) {
-      return res.status(500).json({ message: "Error creating payment intent" });
-    }
-
-    const response = {
-      paymentIntentId: paymentIntent.id,
-      clientSecret: paymentIntent.client_secret.toString(),
-      totalCost,
-    };
-
-    res.send(response);
   }
 );
 

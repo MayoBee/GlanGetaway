@@ -7,6 +7,7 @@ export interface IRoom extends Document {
   floor: number;
   roomType: "standard" | "deluxe" | "suite" | "family" | "cottage";
   description: string;
+  minOccupancy: number;
   maxOccupancy: number;
   basePrice: number;
   currentPrice: number;
@@ -47,6 +48,7 @@ const roomSchema = new mongoose.Schema(
       required: true,
     },
     description: { type: String, required: true },
+    minOccupancy: { type: Number, required: true, default: 1 },
     maxOccupancy: { type: Number, required: true, default: 2 },
     basePrice: { type: Number, required: true },
     currentPrice: { type: Number, required: true },

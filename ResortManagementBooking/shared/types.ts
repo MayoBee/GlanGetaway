@@ -136,6 +136,7 @@ export type HotelType = {
     name: string;
     type: string;
     pricePerNight: number;
+    minOccupancy: number;
     maxOccupancy: number;
     description?: string;
     amenities?: string[];
@@ -145,6 +146,11 @@ export type HotelType = {
     name: string;
     type: string;
     pricePerNight: number;
+    dayRate: number;
+    nightRate: number;
+    hasDayRate: boolean;
+    hasNightRate: boolean;
+    minOccupancy: number;
     maxOccupancy: number;
     description?: string;
     amenities?: string[];
@@ -172,11 +178,37 @@ export type HotelType = {
       validUntil?: string;
     }>;
   };
+  // Package offers
+  packages?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    includedCottages: string[];
+    includedRooms: string[];
+    includedAmenities: string[];
+  }>;
   // Approval system fields
   isApproved?: boolean;
   approvedBy?: string;
   approvedAt?: Date;
   rejectionReason?: string;
+  // Entrance fee fields
+  adultEntranceFee?: {
+    dayRate: number;
+    nightRate: number;
+    pricingModel: "per_head" | "per_group";
+    groupQuantity?: number; // Only required if pricingModel is "per_group"
+  };
+  childEntranceFee?: Array<{
+    id: string;
+    minAge: number;
+    maxAge: number;
+    dayRate: number;
+    nightRate: number;
+    pricingModel: "per_head" | "per_group";
+    groupQuantity?: number; // Only required if pricingModel is "per_group"
+  }>;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -202,6 +234,7 @@ export type BookingType = {
     name: string;
     type: string;
     pricePerNight: number;
+    minOccupancy: number;
     maxOccupancy: number;
     description?: string;
   }>;
@@ -210,6 +243,7 @@ export type BookingType = {
     name: string;
     type: string;
     pricePerNight: number;
+    minOccupancy: number;
     maxOccupancy: number;
     description?: string;
   }>;
@@ -218,6 +252,36 @@ export type BookingType = {
     name: string;
     price: number;
     description?: string;
+  }>;
+  selectedPackages?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    includedCottages: Array<{
+      id: string;
+      name: string;
+      type: string;
+      pricePerNight: number;
+      minOccupancy: number;
+      maxOccupancy: number;
+      description?: string;
+    }>;
+    includedRooms: Array<{
+      id: string;
+      name: string;
+      type: string;
+      pricePerNight: number;
+      minOccupancy: number;
+      maxOccupancy: number;
+      description?: string;
+    }>;
+    includedAmenities: Array<{
+      id: string;
+      name: string;
+      price: number;
+      description?: string;
+    }>;
   }>;
   paymentIntentId?: string;
   paymentMethod?: "card" | "gcash";

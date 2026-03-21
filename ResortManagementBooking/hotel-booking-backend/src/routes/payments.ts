@@ -3,6 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import PaymentTransaction from "../models/payment";
 import Booking from "../models/booking";
 import Hotel from "../models/hotel";
+import Stripe from "stripe";
 
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -29,9 +30,10 @@ const verifyToken = (req: Request, res: Response, next: NextFunction) => {
 
 const router = express.Router();
 
-// PayMongo API base URL
-const PAYMONGO_BASE_URL = process.env.PAYMONGO_BASE_URL || "https://api.paymongo.com/v1";
-const PAYMONGO_SECRET_KEY = process.env.PAYMONGO_SECRET_KEY || "";
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_API_KEY!, {
+  apiVersion: '2023-10-16',
+});
 
 /**
  * GET /api/payments/hotel/:hotelId/deposit-settings
@@ -52,7 +54,7 @@ router.get("/hotel/:hotelId/deposit-settings", verifyToken, async (req: Request,
       minimumDeposit: 1000, // PHP 1000 minimum
       allowFullPayment: true,
       allowInstallment: false,
-      paymentMethods: ["gcash", "bank_transfer", "paymongo"],
+      paymentMethods: ["gcash", "bank_transfer", "stripe"],
       // Resort-specific overrides
       mcJornDepositPercentage: 50,
       instaglanDepositPercentage: 30,
@@ -85,46 +87,27 @@ router.post("/create-payment-intent", verifyToken, async (req: Request, res: Res
     // Calculate deposit amount
     const depositAmount = Math.round(amount * (depositPercentage || 50) / 100);
 
-    // Create payment intent via PayMongo (if API key is configured)
-    let paymongoPaymentIntentId = null;
+    // Create payment intent via Stripe
+    let stripePaymentIntentId = null;
+    let clientSecret = null;
     
-    if (PAYMONGO_SECRET_KEY) {
-      try {
-        const response = await fetch(`${PAYMONGO_BASE_URL}/payment_intents`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ":").toString("base64")}`,
-          },
-          body: JSON.stringify({
-            data: {
-              attributes: {
-                amount: depositAmount * 100, // PayMongo uses cents
-                currency: "PHP",
-                payment_method_allowed: ["card", "gcash", "paymaya"],
-                payment_method_options: {
-                  card: {
-                    request_three_d_secure: "automatic",
-                  },
-                },
-                description: `Deposit for Booking ${bookingId}`,
-                metadata: {
-                  bookingId,
-                  type: "deposit",
-                },
-              },
-            },
-          }),
-        });
-
-        const intentData = await response.json();
-        if (intentData.data) {
-          paymongoPaymentIntentId = intentData.data.id;
-        }
-      } catch (paymongoError) {
-        console.error("PayMongo API error:", paymongoError);
-        // Continue with manual payment flow if PayMongo fails
-      }
+    try {
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: depositAmount * 100, // Stripe uses cents
+        currency: 'php',
+        payment_method_types: ['card'],
+        description: `Deposit for Booking ${bookingId}`,
+        metadata: {
+          bookingId,
+          type: 'deposit',
+        },
+      });
+      
+      stripePaymentIntentId = paymentIntent.id;
+      clientSecret = paymentIntent.client_secret;
+    } catch (stripeError) {
+      console.error('Stripe API error:', stripeError);
+      // Continue with manual payment flow if Stripe fails
     }
 
     // Create payment transaction record
@@ -134,9 +117,9 @@ router.post("/create-payment-intent", verifyToken, async (req: Request, res: Res
       guestId: booking.userId,
       amount: depositAmount,
       type: "deposit",
-      status: paymongoPaymentIntentId ? "pending" : "pending",
-      paymentMethod: "paymongo",
-      paymongoPaymentIntentId,
+      status: stripePaymentIntentId ? "pending" : "pending",
+      paymentMethod: "stripe",
+      stripePaymentIntentId,
       depositPercentage: depositPercentage || 50,
       depositAmount,
       remainingAmount: amount - depositAmount,
@@ -154,8 +137,8 @@ router.post("/create-payment-intent", verifyToken, async (req: Request, res: Res
       remainingAmount: amount - depositAmount,
       totalAmount: amount,
       depositPercentage: depositPercentage || 50,
-      paymongoPaymentIntentId,
-      clientKey: paymongoPaymentIntentId ? `pi_${paymongoPaymentIntentId}_client_${Date.now()}` : null,
+      stripePaymentIntentId,
+      clientSecret: clientSecret,
     });
   } catch (error) {
     console.error("Error creating payment intent:", error);
@@ -211,19 +194,98 @@ router.post("/verify-manual-payment", verifyToken, async (req: Request, res: Res
 });
 
 /**
+ * POST /api/payments/confirm-stripe-payment
+ * Confirm Stripe payment
+ */
+router.post("/confirm-stripe-payment", verifyToken, async (req: Request, res: Response) => {
+  try {
+    const { paymentId, paymentMethodId } = req.body;
+
+    if (!paymentId || !paymentMethodId) {
+      return res.status(400).json({ message: "Payment ID and payment method ID are required" });
+    }
+
+    const payment = await PaymentTransaction.findById(paymentId);
+    if (!payment) {
+      return res.status(404).json({ message: "Payment not found" });
+    }
+
+    if (!payment.stripePaymentIntentId) {
+      return res.status(400).json({ message: "No Stripe payment intent found" });
+    }
+
+    // Confirm the payment with Stripe
+    try {
+      const paymentIntent = await stripe.paymentIntents.confirm(
+        payment.stripePaymentIntentId,
+        { payment_method: paymentMethodId }
+      );
+
+      if (paymentIntent.status === 'succeeded') {
+        payment.status = "succeeded";
+        payment.stripePaymentMethodId = paymentMethodId;
+        await payment.save();
+
+        // Update booking
+        await Booking.findByIdAndUpdate(payment.bookingId, {
+          paymentStatus: "paid",
+          status: "confirmed",
+        });
+
+        res.json({
+          message: "Payment confirmed successfully",
+          payment: {
+            id: payment._id,
+            status: payment.status,
+          },
+        });
+      } else {
+        res.json({
+          message: "Payment processing",
+          payment: {
+            id: payment._id,
+            status: paymentIntent.status,
+          },
+        });
+      }
+    } catch (stripeError: any) {
+      console.error("Stripe confirmation error:", stripeError);
+      payment.status = "failed";
+      await payment.save();
+      res.status(400).json({ 
+        message: stripeError.message || "Payment confirmation failed" 
+      });
+    }
+  } catch (error) {
+    console.error("Error confirming payment:", error);
+    res.status(500).json({ message: "Failed to confirm payment" });
+  }
+});
+
+/**
  * POST /api/payments/webhook
- * PayMongo webhook handler
+ * Stripe webhook handler
  */
 router.post("/webhook", async (req: Request, res: Response) => {
   try {
     const event = req.body;
+    const sig = req.headers['stripe-signature'] as string;
+
+    // Verify webhook signature (optional in test)
+    // let event: Stripe.Event;
+    // try {
+    //   event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+    // } catch (err) {
+    //   console.log(`Webhook signature verification failed.`, err.message);
+    //   return res.status(400).send(`Webhook signature verification failed.`);
+    // }
 
     // Handle payment success
-    if (event.data?.attributes?.type === "payment_intent.succeeded") {
-      const paymentIntentId = event.data.attributes.data?.id;
+    if (event.type === 'payment_intent.succeeded') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
       
       const payment = await PaymentTransaction.findOne({
-        paymongoPaymentIntentId: paymentIntentId,
+        stripePaymentIntentId: paymentIntent.id,
       });
 
       if (payment) {
@@ -241,11 +303,11 @@ router.post("/webhook", async (req: Request, res: Response) => {
     }
 
     // Handle payment failed
-    if (event.data?.attributes?.type === "payment_intent.payment_failed") {
-      const paymentIntentId = event.data.attributes.data?.id;
+    if (event.type === 'payment_intent.payment_failed') {
+      const paymentIntent = event.data.object as Stripe.PaymentIntent;
       
       const payment = await PaymentTransaction.findOne({
-        paymongoPaymentIntentId: paymentIntentId,
+        stripePaymentIntentId: paymentIntent.id,
       });
 
       if (payment) {
@@ -301,27 +363,16 @@ router.post("/:paymentId/refund", verifyToken, async (req: Request, res: Respons
 
     const refundAmount = amount || payment.amount;
 
-    // Process refund via PayMongo if applicable
-    if (payment.paymongoPaymentIntentId && PAYMONGO_SECRET_KEY) {
+    // Process refund via Stripe if applicable
+    if (payment.stripePaymentIntentId) {
       try {
-        await fetch(`${PAYMONGO_BASE_URL}/refunds`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Basic ${Buffer.from(PAYMONGO_SECRET_KEY + ":").toString("base64")}`,
-          },
-          body: JSON.stringify({
-            data: {
-              attributes: {
-                amount: refundAmount * 100,
-                payment_intent: payment.paymongoPaymentIntentId,
-                reason: reason || "requested_by_customer",
-              },
-            },
-          }),
+        await stripe.refunds.create({
+          payment_intent: payment.stripePaymentIntentId as string,
+          amount: refundAmount * 100,
+          reason: 'requested_by_customer',
         });
-      } catch (paymongoError) {
-        console.error("PayMongo refund error:", paymongoError);
+      } catch (stripeError) {
+        console.error("Stripe refund error:", stripeError);
       }
     }
 

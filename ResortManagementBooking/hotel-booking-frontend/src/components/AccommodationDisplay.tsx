@@ -16,8 +16,22 @@ const AccommodationDisplay = ({ hotel }: Props) => {
     removeCottage, 
     isRoomSelected, 
     isCottageSelected,
+    selectedPackages,
     numberOfNights 
   } = useBookingSelection();
+
+  // Check if any room/cottage is included in a selected package
+  const isRoomInPackage = (roomId: string) => {
+    return selectedPackages.some(pkg => 
+      pkg.includedRooms && pkg.includedRooms.some(room => room.id === roomId)
+    );
+  };
+
+  const isCottageInPackage = (cottageId: string) => {
+    return selectedPackages.some(pkg => 
+      pkg.includedCottages && pkg.includedCottages.some(cottage => cottage.id === cottageId)
+    );
+  };
 
   if (!hasRooms && !hasCottages) {
     return (
@@ -44,13 +58,18 @@ const AccommodationDisplay = ({ hotel }: Props) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {hotel.rooms?.map((room) => {
               const isSelected = isRoomSelected(room.id);
+              const isInPackage = isRoomInPackage(room.id);
+              const isDisabled = isInPackage && !isSelected;
+              
               return (
                 <div
                   key={room.id}
                   className={`border rounded-lg p-4 hover:shadow-md transition-all duration-200 ${
                     isSelected 
                       ? 'border-blue-500 bg-blue-50 shadow-md' 
-                      : 'border-gray-200 hover:border-blue-300'
+                      : isDisabled
+                        ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        : 'border-gray-200 hover:border-blue-300 cursor-pointer'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-3">
@@ -59,13 +78,13 @@ const AccommodationDisplay = ({ hotel }: Props) => {
                       <span className="text-sm bg-blue-100 text-blue-700 px-2 py-1 rounded">
                         {room.type}
                       </span>
-                      {isSelected && (
-                        <div className="bg-blue-600 text-white p-1 rounded-full">
-                          <Check className="w-3 h-3" />
+                      {isInPackage && !isSelected && (
+                        <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
+                          In Package
                         </div>
                       )}
-                    </div>
                   </div>
+                </div>
                   
                   <div className="space-y-2 mb-3">
                     <div className="flex items-center justify-between">
@@ -100,22 +119,27 @@ const AccommodationDisplay = ({ hotel }: Props) => {
                   
                   <button
                     className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 font-medium text-sm ${
-                      isSelected
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                      isDisabled
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
                     }`}
+                    disabled={isDisabled}
                     onClick={() => {
-                      if (isSelected) {
-                        removeRoom(room.id);
-                      } else {
-                        addRoom({
-                          id: room.id,
-                          name: room.name,
-                          type: room.type,
-                          pricePerNight: room.pricePerNight,
-                          maxOccupancy: room.maxOccupancy,
-                          description: room.description
-                        });
+                      if (!isDisabled) {
+                        if (isSelected) {
+                          removeRoom(room.id);
+                        } else {
+                          addRoom({
+                            id: room.id,
+                            name: room.name,
+                            type: room.type,
+                            pricePerNight: room.pricePerNight,
+                            maxOccupancy: room.maxOccupancy,
+                            description: room.description
+                          });
+                        }
                       }
                     }}
                   >
@@ -148,13 +172,18 @@ const AccommodationDisplay = ({ hotel }: Props) => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {hotel.cottages?.map((cottage) => {
               const isSelected = isCottageSelected(cottage.id);
+              const isInPackage = isCottageInPackage(cottage.id);
+              const isDisabled = isInPackage && !isSelected;
+              
               return (
                 <div
                   key={cottage.id}
                   className={`border rounded-lg p-4 hover:shadow-md transition-all duration-200 ${
                     isSelected 
                       ? 'border-green-500 bg-green-50 shadow-md' 
-                      : 'border-gray-200 hover:border-green-300'
+                      : isDisabled
+                        ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        : 'border-gray-200 hover:border-green-300 cursor-pointer'
                   }`}
                 >
                   <div className="flex justify-between items-start mb-3">
@@ -163,23 +192,49 @@ const AccommodationDisplay = ({ hotel }: Props) => {
                       <span className="text-sm bg-green-100 text-green-700 px-2 py-1 rounded">
                         {cottage.type}
                       </span>
-                      {isSelected && (
-                        <div className="bg-green-600 text-white p-1 rounded-full">
-                          <Check className="w-3 h-3" />
+                      {isInPackage && !isSelected && (
+                        <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
+                          In Package
                         </div>
                       )}
-                    </div>
                   </div>
+                </div>
                   
                   <div className="space-y-2 mb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4 text-green-600" />
-                        <span className="text-lg font-bold text-green-600">
-                          ₱{cottage.pricePerNight}
-                        </span>
+                    {/* Day Rate */}
+                    {cottage.hasDayRate && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-4 h-4 text-green-600" />
+                          <span className="text-lg font-bold text-green-600">
+                            ₱{cottage.dayRate}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-500">day rate</span>
                       </div>
-                      <span className="text-sm text-gray-500">per night</span>
+                    )}
+                    
+                    {/* Night Rate */}
+                    {cottage.hasNightRate && (
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1">
+                          <DollarSign className="w-4 h-4 text-blue-600" />
+                          <span className="text-lg font-bold text-blue-600">
+                            ₱{cottage.nightRate}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-500">night rate</span>
+                      </div>
+                    )}
+
+                    {/* Pricing Model Info */}
+                    <div className="text-xs text-gray-500">
+                      {cottage.hasDayRate && cottage.hasNightRate 
+                        ? 'Day & Night rates available'
+                        : cottage.hasDayRate 
+                          ? 'Day rate only'
+                          : 'Night rate only'
+                      }
                     </div>
                     
                     <div className="flex items-center gap-1">
@@ -204,22 +259,31 @@ const AccommodationDisplay = ({ hotel }: Props) => {
                   
                   <button
                     className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 font-medium text-sm ${
-                      isSelected
-                        ? 'bg-red-600 hover:bg-red-700 text-white'
-                        : 'bg-green-600 hover:bg-green-700 text-white'
+                      isDisabled
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-green-600 hover:bg-green-700 text-white'
                     }`}
+                    disabled={isDisabled}
                     onClick={() => {
-                      if (isSelected) {
-                        removeCottage(cottage.id);
-                      } else {
-                        addCottage({
-                          id: cottage.id,
-                          name: cottage.name,
-                          type: cottage.type,
-                          pricePerNight: cottage.pricePerNight,
-                          maxOccupancy: cottage.maxOccupancy,
-                          description: cottage.description
-                        });
+                      if (!isDisabled) {
+                        if (isSelected) {
+                          removeCottage(cottage.id);
+                        } else {
+                          addCottage({
+                            id: cottage.id,
+                            name: cottage.name,
+                            type: cottage.type,
+                            pricePerNight: cottage.pricePerNight,
+                            dayRate: cottage.dayRate,
+                            nightRate: cottage.nightRate,
+                            hasDayRate: cottage.hasDayRate,
+                            hasNightRate: cottage.hasNightRate,
+                            maxOccupancy: cottage.maxOccupancy,
+                            description: cottage.description
+                          });
+                        }
                       }
                     }}
                   >

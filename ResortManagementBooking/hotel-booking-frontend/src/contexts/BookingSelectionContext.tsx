@@ -14,6 +14,10 @@ export interface SelectedCottage {
   name: string;
   type: string;
   pricePerNight: number;
+  dayRate: number;
+  nightRate: number;
+  hasDayRate: boolean;
+  hasNightRate: boolean;
   maxOccupancy: number;
   description?: string;
 }
@@ -25,13 +29,48 @@ export interface SelectedAmenity {
   description?: string;
 }
 
+export interface SelectedPackage {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  includedCottages: Array<{
+    id: string;
+    name: string;
+    type: string;
+    pricePerNight: number;
+    dayRate: number;
+    nightRate: number;
+    hasDayRate: boolean;
+    hasNightRate: boolean;
+    maxOccupancy: number;
+    description?: string;
+  }>;
+  includedRooms: Array<{
+    id: string;
+    name: string;
+    type: string;
+    pricePerNight: number;
+    maxOccupancy: number;
+    description?: string;
+  }>;
+  includedAmenities: Array<{
+    id: string;
+    name: string;
+    price: number;
+    description?: string;
+  }>;
+}
+
 interface BookingSelectionContextType {
   selectedRooms: SelectedRoom[];
   selectedCottages: SelectedCottage[];
   selectedAmenities: SelectedAmenity[];
+  selectedPackages: SelectedPackage[];
   basePrice: number;
   accommodationTotal: number;
   amenitiesTotal: number;
+  packagesTotal: number;
   totalCost: number;
   downPaymentAmount: number;
   remainingAmount: number;
@@ -43,6 +82,8 @@ interface BookingSelectionContextType {
   removeCottage: (cottageId: string) => void;
   addAmenity: (amenity: SelectedAmenity) => void;
   removeAmenity: (amenityId: string) => void;
+  addPackage: (pkg: SelectedPackage) => void;
+  removePackage: (packageId: string) => void;
   clearSelections: () => void;
   setBasePrice: (price: number) => void;
   setNumberOfNights: (nights: number) => void;
@@ -51,6 +92,7 @@ interface BookingSelectionContextType {
   isRoomSelected: (roomId: string) => boolean;
   isCottageSelected: (cottageId: string) => boolean;
   isAmenitySelected: (amenityId: string) => boolean;
+  isPackageSelected: (packageId: string) => boolean;
 }
 
 const BookingSelectionContext = createContext<BookingSelectionContextType | undefined>(undefined);
@@ -71,6 +113,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   const [selectedRooms, setSelectedRooms] = useState<SelectedRoom[]>([]);
   const [selectedCottages, setSelectedCottages] = useState<SelectedCottage[]>([]);
   const [selectedAmenities, setSelectedAmenities] = useState<SelectedAmenity[]>([]);
+  const [selectedPackages, setSelectedPackages] = useState<SelectedPackage[]>([]);
   const [basePrice, setBasePrice] = useState<number>(0);
   const [numberOfNights, setNumberOfNights] = useState<number>(1);
   const [depositPercentage, setDepositPercentage] = useState<number>(50); // Default 50% down payment
@@ -81,8 +124,9 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
       selectedCottages.reduce((sum, cottage) => sum + (cottage.pricePerNight * numberOfNights), 0);
     
     const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
+    const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
     
-    const total = basePrice + accommodationTotal + amenitiesTotal;
+    const total = basePrice + accommodationTotal + amenitiesTotal + packagesTotal;
     const downPayment = Math.round(total * (depositPercentage / 100));
     const remaining = total - downPayment;
     
@@ -98,6 +142,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     selectedCottages.reduce((sum, cottage) => sum + (cottage.pricePerNight * numberOfNights), 0);
 
   const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
+  const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
 
   const totalCalculation = calculateTotal();
   const totalCost = totalCalculation.total;
@@ -140,10 +185,23 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     setSelectedAmenities(prev => prev.filter(amenity => amenity.id !== amenityId));
   };
 
+  const addPackage = (pkg: SelectedPackage) => {
+    setSelectedPackages(prev => {
+      const exists = prev.some(p => p.id === pkg.id);
+      if (exists) return prev;
+      return [...prev, pkg];
+    });
+  };
+
+  const removePackage = (packageId: string) => {
+    setSelectedPackages(prev => prev.filter(pkg => pkg.id !== packageId));
+  };
+
   const clearSelections = () => {
     setSelectedRooms([]);
     setSelectedCottages([]);
     setSelectedAmenities([]);
+    setSelectedPackages([]);
   };
 
   const isRoomSelected = (roomId: string) => {
@@ -158,13 +216,19 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     return selectedAmenities.some(amenity => amenity.id === amenityId);
   };
 
+  const isPackageSelected = (packageId: string) => {
+    return selectedPackages.some(pkg => pkg.id === packageId);
+  };
+
   const value: BookingSelectionContextType = {
     selectedRooms,
     selectedCottages,
     selectedAmenities,
+    selectedPackages,
     basePrice,
     accommodationTotal,
     amenitiesTotal,
+    packagesTotal,
     totalCost,
     downPaymentAmount,
     remainingAmount,
@@ -176,6 +240,8 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     removeCottage,
     addAmenity,
     removeAmenity,
+    addPackage,
+    removePackage,
     clearSelections,
     setBasePrice,
     setNumberOfNights,
@@ -184,6 +250,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     isRoomSelected,
     isCottageSelected,
     isAmenitySelected,
+    isPackageSelected,
   };
 
   return (

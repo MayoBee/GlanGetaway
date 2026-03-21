@@ -3,7 +3,8 @@ import { HotelFormData } from "./ManageHotelForm";
 import { Plus, X, Bed, Users, DollarSign } from "lucide-react";
 
 const RoomsSection = () => {
-  const { control, register, formState: { errors } } = useFormContext<HotelFormData>();
+  const { control, register, formState: { errors }, watch } = useFormContext<HotelFormData>();
+  const roomFields = watch("rooms") || [];
   const { fields, append, remove } = useFieldArray({
     control,
     name: "rooms",
@@ -15,6 +16,7 @@ const RoomsSection = () => {
       name: "",
       type: "Standard",
       pricePerNight: 0,
+      minOccupancy: 1,
       maxOccupancy: 2,
       description: "",
       amenities: [],
@@ -117,28 +119,91 @@ const RoomsSection = () => {
                 )}
               </div>
 
-              {/* Max Occupancy */}
+              {/* Occupancy Range */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Max Occupancy
+                  Occupancy Range (Min-Max)
                 </label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="number"
-                    min="1"
-                    max="10"
-                    placeholder="2"
-                    className="w-full border rounded pl-10 pr-3 py-2 font-normal"
-                    {...register(`rooms.${index}.maxOccupancy`, {
-                      required: "Max occupancy is required",
-                      min: { value: 1, message: "At least 1 guest required" },
-                    })}
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      placeholder="1"
+                      className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      {...register(`rooms.${index}.minOccupancy`, {
+                        required: "Min occupancy is required",
+                        min: { value: 1, message: "At least 1 guest required" },
+                        validate: (value) => {
+                          // Get the current max value from the same field array item
+                          const currentRoom = roomFields[index];
+                          const maxOccupancy = currentRoom?.maxOccupancy;
+                          
+                          // No validation if max is not set or is 0
+                          if (!maxOccupancy || maxOccupancy === 0) {
+                            return true;
+                          }
+                          
+                          // Ensure value is a number and not negative
+                          const numValue = Number(value);
+                          if (isNaN(numValue) || numValue < 0) {
+                            return "Minimum occupancy cannot be negative";
+                          }
+                          
+                          // Check if min exceeds max
+                          if (numValue > maxOccupancy) {
+                            return "Minimum occupancy cannot exceed maximum occupancy";
+                          }
+                          
+                          return true;
+                        },
+                      })}
+                    />
+                  </div>
+                  <span className="text-gray-500 font-semibold">-</span>
+                  <div className="relative flex-1">
+                    <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      min="1"
+                      max="10"
+                      placeholder="2"
+                      className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      {...register(`rooms.${index}.maxOccupancy`, {
+                        required: "Max occupancy is required",
+                        min: { value: 1, message: "At least 1 guest required" },
+                        validate: (value) => {
+                          // Get the current min value from the same field array item
+                          const currentRoom = roomFields[index];
+                          const minOccupancy = currentRoom?.minOccupancy;
+                          
+                          // No validation if min is not set or is 0
+                          if (!minOccupancy || minOccupancy === 0) {
+                            return true;
+                          }
+                          
+                          // Ensure value is a number and not negative
+                          const numValue = Number(value);
+                          if (isNaN(numValue) || numValue < 0) {
+                            return "Maximum occupancy cannot be negative";
+                          }
+                          
+                          // Check if max is less than min
+                          if (numValue < minOccupancy) {
+                            return "Maximum occupancy cannot be less than minimum occupancy";
+                          }
+                          
+                          return true;
+                        },
+                      })}
+                    />
+                  </div>
                 </div>
-                {errors.rooms?.[index]?.maxOccupancy && (
+                {(errors.rooms?.[index]?.minOccupancy || errors.rooms?.[index]?.maxOccupancy) && (
                   <span className="text-red-500 text-sm">
-                    {errors.rooms[index]?.maxOccupancy?.message}
+                    {errors.rooms[index]?.minOccupancy?.message || errors.rooms[index]?.maxOccupancy?.message}
                   </span>
                 )}
               </div>

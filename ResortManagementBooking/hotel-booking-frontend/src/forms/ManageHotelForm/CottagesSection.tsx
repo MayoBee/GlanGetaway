@@ -3,7 +3,8 @@ import { HotelFormData } from "./ManageHotelForm";
 import { Plus, X, Home, Users, DollarSign } from "lucide-react";
 
 const CottagesSection = () => {
-  const { control, register, formState: { errors } } = useFormContext<HotelFormData>();
+  const { control, register, formState: { errors }, watch } = useFormContext<HotelFormData>();
+  const cottageFields = watch("cottages") || [];
   const { fields, append, remove } = useFieldArray({
     control,
     name: "cottages",
@@ -15,6 +16,11 @@ const CottagesSection = () => {
       name: "",
       type: "Beach Cottage",
       pricePerNight: 0,
+      dayRate: 0,
+      nightRate: 0,
+      hasDayRate: true,
+      hasNightRate: true,
+      minOccupancy: 1,
       maxOccupancy: 4,
       description: "",
       amenities: [],
@@ -91,54 +97,167 @@ const CottagesSection = () => {
                 </select>
               </div>
 
-              {/* Price Per Night */}
+              {/* Pricing Options */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Price Per Night (₱)
+                  Pricing Options
                 </label>
-                <div className="relative">
-                  <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="0.00"
-                    className="w-full border rounded pl-10 pr-3 py-2 font-normal"
-                    {...register(`cottages.${index}.pricePerNight`, {
-                      required: "Price is required",
-                      min: { value: 0, message: "Price must be positive" },
-                    })}
-                  />
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id={`dayRate-${index}`}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      {...register(`cottages.${index}.hasDayRate`)}
+                    />
+                    <label htmlFor={`dayRate-${index}`} className="text-sm font-medium text-gray-700">
+                      Day Rate Available
+                    </label>
+                    {watch(`cottages.${index}.hasDayRate`) && (
+                      <div className="relative flex-1">
+                        <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                          {...register(`cottages.${index}.dayRate`, {
+                            required: "Day rate is required when day pricing is enabled",
+                            min: { value: 0, message: "Rate must be positive" },
+                          })}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id={`nightRate-${index}`}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      {...register(`cottages.${index}.hasNightRate`)}
+                    />
+                    <label htmlFor={`nightRate-${index}`} className="text-sm font-medium text-gray-700">
+                      Night Rate Available
+                    </label>
+                    {watch(`cottages.${index}.hasNightRate`) && (
+                      <div className="relative flex-1">
+                        <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                          {...register(`cottages.${index}.nightRate`, {
+                            required: "Night rate is required when night pricing is enabled",
+                            min: { value: 0, message: "Rate must be positive" },
+                          })}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {errors.cottages?.[index]?.pricePerNight && (
+                
+                {(!watch(`cottages.${index}.hasDayRate`) && !watch(`cottages.${index}.hasNightRate`)) && (
                   <span className="text-red-500 text-sm">
-                    {errors.cottages[index]?.pricePerNight?.message}
+                    At least one pricing option must be selected
+                  </span>
+                )}
+                
+                {(errors.cottages?.[index]?.dayRate || errors.cottages?.[index]?.nightRate) && (
+                  <span className="text-red-500 text-sm">
+                    {errors.cottages[index]?.dayRate?.message || errors.cottages[index]?.nightRate?.message}
                   </span>
                 )}
               </div>
 
-              {/* Max Occupancy */}
+              {/* Occupancy Range */}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Max Occupancy
+                  Occupancy Range (Min-Max)
                 </label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
-                  <input
-                    type="number"
-                    min="1"
-                    max="20"
-                    placeholder="4"
-                    className="w-full border rounded pl-10 pr-3 py-2 font-normal"
-                    {...register(`cottages.${index}.maxOccupancy`, {
-                      required: "Max occupancy is required",
-                      min: { value: 1, message: "At least 1 guest required" },
-                    })}
-                  />
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      placeholder="1"
+                      className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      {...register(`cottages.${index}.minOccupancy`, {
+                        required: "Min occupancy is required",
+                        min: { value: 1, message: "At least 1 guest required" },
+                        validate: (value) => {
+                          // Get the current max value from the same field array item
+                          const currentCottage = cottageFields[index];
+                          const maxOccupancy = currentCottage?.maxOccupancy;
+                          
+                          // No validation if max is not set or is 0
+                          if (!maxOccupancy || maxOccupancy === 0) {
+                            return true;
+                          }
+                          
+                          // Ensure value is a number and not negative
+                          const numValue = Number(value);
+                          if (isNaN(numValue) || numValue < 0) {
+                            return "Minimum occupancy cannot be negative";
+                          }
+                          
+                          // Check if min exceeds max
+                          if (numValue > maxOccupancy) {
+                            return "Minimum occupancy cannot exceed maximum occupancy";
+                          }
+                          
+                          return true;
+                        },
+                      })}
+                    />
+                  </div>
+                  <span className="text-gray-500 font-semibold">-</span>
+                  <div className="relative flex-1">
+                    <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      placeholder="4"
+                      className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      {...register(`cottages.${index}.maxOccupancy`, {
+                        required: "Max occupancy is required",
+                        min: { value: 1, message: "At least 1 guest required" },
+                        validate: (value) => {
+                          // Get the current min value from the same field array item
+                          const currentCottage = cottageFields[index];
+                          const minOccupancy = currentCottage?.minOccupancy;
+                          
+                          // No validation if min is not set or is 0
+                          if (!minOccupancy || minOccupancy === 0) {
+                            return true;
+                          }
+                          
+                          // Ensure value is a number and not negative
+                          const numValue = Number(value);
+                          if (isNaN(numValue) || numValue < 0) {
+                            return "Maximum occupancy cannot be negative";
+                          }
+                          
+                          // Check if max is less than min
+                          if (numValue < minOccupancy) {
+                            return "Maximum occupancy cannot be less than minimum occupancy";
+                          }
+                          
+                          return true;
+                        },
+                      })}
+                    />
+                  </div>
                 </div>
-                {errors.cottages?.[index]?.maxOccupancy && (
+                {(errors.cottages?.[index]?.minOccupancy || errors.cottages?.[index]?.maxOccupancy) && (
                   <span className="text-red-500 text-sm">
-                    {errors.cottages[index]?.maxOccupancy?.message}
+                    {errors.cottages[index]?.minOccupancy?.message || errors.cottages[index]?.maxOccupancy?.message}
                   </span>
                 )}
               </div>

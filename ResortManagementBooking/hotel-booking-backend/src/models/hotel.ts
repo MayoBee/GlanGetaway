@@ -61,6 +61,45 @@ const hotelSchema = new mongoose.Schema<HotelType>(
         description: String,
       },
     ],
+    rooms: [
+      {
+        id: String,
+        name: String,
+        type: String,
+        pricePerNight: Number,
+        minOccupancy: Number,
+        maxOccupancy: Number,
+        description: String,
+        amenities: [String],
+      },
+    ],
+    cottages: [
+      {
+        id: String,
+        name: String,
+        type: String,
+        pricePerNight: Number,
+        dayRate: Number,
+        nightRate: Number,
+        hasDayRate: Boolean,
+        hasNightRate: Boolean,
+        minOccupancy: Number,
+        maxOccupancy: Number,
+        description: String,
+        amenities: [String],
+      },
+    ],
+    packages: [
+      {
+        id: String,
+        name: String,
+        description: String,
+        price: Number,
+        includedCottages: [String],
+        includedRooms: [String],
+        includedAmenities: [String],
+      },
+    ],
     // Analytics and performance fields
     totalBookings: { type: Number, default: 0 },
     totalRevenue: { type: Number, default: 0 },
@@ -92,6 +131,24 @@ const hotelSchema = new mongoose.Schema<HotelType>(
     approvedBy: { type: String },
     approvedAt: { type: Date },
     rejectionReason: { type: String },
+    // Entrance fee fields
+    adultEntranceFee: {
+      dayRate: { type: Number, default: 0 },
+      nightRate: { type: Number, default: 0 },
+      pricingModel: { type: String, enum: ["per_head", "per_group"], default: "per_head" },
+      groupQuantity: { type: Number, default: 1 },
+    },
+    childEntranceFee: [
+      {
+        id: { type: String, required: true },
+        minAge: { type: Number, required: true },
+        maxAge: { type: Number, required: true },
+        dayRate: { type: Number, required: true },
+        nightRate: { type: Number, required: true },
+        pricingModel: { type: String, enum: ["per_head", "per_group"], default: "per_head" },
+        groupQuantity: { type: Number, default: 1 },
+      },
+    ],
     // Audit fields
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

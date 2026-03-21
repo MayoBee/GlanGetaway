@@ -9,6 +9,7 @@ import PoliciesSection from "./PoliciesSection";
 import AmenitiesSection from "./AmenitiesSection";
 import RoomsSection from "./RoomsSection";
 import CottagesSection from "./CottagesSection";
+import PackagesSection from "./PackagesSection";
 import { HotelType } from "../../../../shared/types";
 import { useEffect } from "react";
 
@@ -43,6 +44,7 @@ export type HotelFormData = {
     name: string;
     type: string;
     pricePerNight: number;
+    minOccupancy: number;
     maxOccupancy: number;
     description?: string;
     amenities?: string[];
@@ -52,6 +54,11 @@ export type HotelFormData = {
     name: string;
     type: string;
     pricePerNight: number;
+    dayRate: number;
+    nightRate: number;
+    hasDayRate: boolean;
+    hasNightRate: boolean;
+    minOccupancy: number;
     maxOccupancy: number;
     description?: string;
     amenities?: string[];
@@ -94,6 +101,31 @@ export type HotelFormData = {
     pwdEnabled: boolean;
     pwdPercentage: number;
   };
+  // Entrance fee fields
+  adultEntranceFee?: {
+    dayRate: number;
+    nightRate: number;
+    pricingModel: "per_head" | "per_group";
+    groupQuantity?: number;
+  };
+  childEntranceFee?: Array<{
+    id: string;
+    minAge: number;
+    maxAge: number;
+    dayRate: number;
+    nightRate: number;
+    pricingModel: "per_head" | "per_group";
+    groupQuantity?: number;
+  }>;
+  packages?: Array<{
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    includedCottages: string[];
+    includedRooms: string[];
+    includedAmenities: string[];
+  }>;
 };
 
 type Props = {
@@ -149,7 +181,15 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         pwdEnabled: true,
         pwdPercentage: 20,
       },
+      packages: [],
       isFeatured: false,
+      adultEntranceFee: {
+        dayRate: 0,
+        nightRate: 0,
+        pricingModel: "per_head",
+        groupQuantity: 1,
+      },
+      childEntranceFee: [],
     },
   });
   const { handleSubmit, reset } = formMethods;
@@ -191,6 +231,14 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           pwdEnabled: true,
           pwdPercentage: 20
         },
+        packages: hotel.packages || [],
+        adultEntranceFee: hotel.adultEntranceFee || {
+          dayRate: 0,
+          nightRate: 0,
+          pricingModel: "per_head",
+          groupQuantity: 1,
+        },
+        childEntranceFee: hotel.childEntranceFee || [],
       };
       reset(formData);
     }
@@ -279,6 +327,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         formData.append(`rooms[${index}][name]`, room.name);
         formData.append(`rooms[${index}][type]`, room.type);
         formData.append(`rooms[${index}][pricePerNight]`, room.pricePerNight.toString());
+        formData.append(`rooms[${index}][minOccupancy]`, room.minOccupancy.toString());
         formData.append(`rooms[${index}][maxOccupancy]`, room.maxOccupancy.toString());
         formData.append(`rooms[${index}][description]`, room.description || "");
         if (room.amenities && room.amenities.length > 0) {
@@ -296,6 +345,11 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         formData.append(`cottages[${index}][name]`, cottage.name);
         formData.append(`cottages[${index}][type]`, cottage.type);
         formData.append(`cottages[${index}][pricePerNight]`, cottage.pricePerNight.toString());
+        formData.append(`cottages[${index}][dayRate]`, cottage.dayRate.toString());
+        formData.append(`cottages[${index}][nightRate]`, cottage.nightRate.toString());
+        formData.append(`cottages[${index}][hasDayRate]`, cottage.hasDayRate.toString());
+        formData.append(`cottages[${index}][hasNightRate]`, cottage.hasNightRate.toString());
+        formData.append(`cottages[${index}][minOccupancy]`, cottage.minOccupancy.toString());
         formData.append(`cottages[${index}][maxOccupancy]`, cottage.maxOccupancy.toString());
         formData.append(`cottages[${index}][description]`, cottage.description || "");
         if (cottage.amenities && cottage.amenities.length > 0) {
@@ -312,6 +366,49 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       formData.append("discounts.seniorCitizenPercentage", formDataJson.discounts.seniorCitizenPercentage.toString());
       formData.append("discounts.pwdEnabled", formDataJson.discounts.pwdEnabled.toString());
       formData.append("discounts.pwdPercentage", formDataJson.discounts.pwdPercentage.toString());
+    }
+
+    // Add packages
+    if (formDataJson.packages && formDataJson.packages.length > 0) {
+      formDataJson.packages.forEach((pkg, index) => {
+        formData.append(`packages[${index}][id]`, pkg.id);
+        formData.append(`packages[${index}][name]`, pkg.name);
+        formData.append(`packages[${index}][description]`, pkg.description);
+        formData.append(`packages[${index}][price]`, pkg.price.toString());
+        pkg.includedCottages.forEach((cottageId, cottageIndex) => {
+          formData.append(`packages[${index}][includedCottages][${cottageIndex}]`, cottageId);
+        });
+        pkg.includedRooms.forEach((roomId, roomIndex) => {
+          formData.append(`packages[${index}][includedRooms][${roomIndex}]`, roomId);
+        });
+        pkg.includedAmenities.forEach((amenityId, amenityIndex) => {
+          formData.append(`packages[${index}][includedAmenities][${amenityIndex}]`, amenityId);
+        });
+      });
+    }
+
+    // Add entrance fees
+    if (formDataJson.adultEntranceFee) {
+      formData.append("adultEntranceFee.dayRate", formDataJson.adultEntranceFee.dayRate.toString());
+      formData.append("adultEntranceFee.nightRate", formDataJson.adultEntranceFee.nightRate.toString());
+      formData.append("adultEntranceFee.pricingModel", formDataJson.adultEntranceFee.pricingModel);
+      if (formDataJson.adultEntranceFee.groupQuantity) {
+        formData.append("adultEntranceFee.groupQuantity", formDataJson.adultEntranceFee.groupQuantity.toString());
+      }
+    }
+
+    if (formDataJson.childEntranceFee && formDataJson.childEntranceFee.length > 0) {
+      formDataJson.childEntranceFee.forEach((childFee, index) => {
+        formData.append(`childEntranceFee[${index}][id]`, childFee.id);
+        formData.append(`childEntranceFee[${index}][minAge]`, childFee.minAge.toString());
+        formData.append(`childEntranceFee[${index}][maxAge]`, childFee.maxAge.toString());
+        formData.append(`childEntranceFee[${index}][dayRate]`, childFee.dayRate.toString());
+        formData.append(`childEntranceFee[${index}][nightRate]`, childFee.nightRate.toString());
+        formData.append(`childEntranceFee[${index}][pricingModel]`, childFee.pricingModel);
+        if (childFee.groupQuantity) {
+          formData.append(`childEntranceFee[${index}][groupQuantity]`, childFee.groupQuantity.toString());
+        }
+      });
     }
 
     if (formDataJson.imageUrls) {
@@ -346,6 +443,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         <RoomsSection />
         <CottagesSection />
         <AmenitiesSection />
+        <PackagesSection />
         <ContactSection />
         <PoliciesSection />
         <ImagesSection />

@@ -69,15 +69,22 @@ axiosInstance.interceptors.response.use(
       // Don't redirect automatically - let components handle it
     }
 
+    // Don't retry on connection refused or network errors
+    if (error.code === 'ECONNREFUSED' || 
+        error.message?.includes('ERR_CONNECTION_REFUSED') ||
+        error.code === 'NETWORK_ERROR') {
+      return Promise.reject(error);
+    }
+
     // Handle rate limiting (429) with retry logic
     if (error.response?.status === 429 && config) {
       const customConfig = config as CustomAxiosRequestConfig;
-      if (customConfig.metadata && customConfig.metadata.retryCount < 3) {
+      if (customConfig.metadata && customConfig.metadata.retryCount < 2) { // Reduced from 3 to 2
         const customConfig = config as CustomAxiosRequestConfig;
         if (customConfig.metadata) {
           customConfig.metadata.retryCount += 1;
 
-          // Exponential backoff: wait 1s, 2s, 4s
+          // Exponential backoff: wait 1s, 2s
           const delay =
             Math.pow(2, customConfig.metadata.retryCount - 1) * 1000;
 
@@ -88,10 +95,10 @@ axiosInstance.interceptors.response.use(
       }
     }
 
-    // Handle network errors with retry
+    // Handle other network errors with retry (but not connection refused)
     if (!error.response && config) {
       const customConfig = config as CustomAxiosRequestConfig;
-      if (customConfig.metadata && customConfig.metadata.retryCount < 2) {
+      if (customConfig.metadata && customConfig.metadata.retryCount < 1) { // Reduced from 2 to 1
         const customConfig = config as CustomAxiosRequestConfig;
         if (customConfig.metadata) {
           customConfig.metadata.retryCount += 1;

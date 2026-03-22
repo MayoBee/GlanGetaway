@@ -1,0 +1,209 @@
+import { useFieldArray, useFormContext } from "react-hook-form";
+import { HotelFormData } from "./ManageHotelForm";
+import { Plus, Minus, Users, DollarSign, Home } from "lucide-react";
+
+const FreshCottagesSection = () => {
+  const { control } = useFormContext<HotelFormData>();
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "cottages",
+  });
+
+  const addCottage = () => {
+    append({
+      id: `cottage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: "",
+      type: "",
+      pricePerNight: 0,
+      dayRate: 0,
+      nightRate: 0,
+      hasDayRate: false,
+      hasNightRate: false,
+      minOccupancy: 1,
+      maxOccupancy: 1,
+      description: "",
+      amenities: [],
+    });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="text-lg font-semibold text-gray-800">Cottages</h3>
+        <button
+          type="button"
+          onClick={addCottage}
+          className="flex items-center gap-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          Add Cottage
+        </button>
+      </div>
+
+      {fields.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <Home className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p className="text-gray-500 mb-2">No cottages added yet</p>
+          <button
+            type="button"
+            onClick={addCottage}
+            className="text-green-500 hover:text-green-600 font-medium"
+          >
+            Add your first cottage
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {fields.map((field, index) => (
+            <div key={field.id} className="border rounded-lg p-4 bg-gray-50">
+              <div className="flex justify-between items-start mb-4">
+                <h4 className="font-medium text-gray-800">Cottage {index + 1}</h4>
+                <button
+                  type="button"
+                  onClick={() => remove(index)}
+                  className="text-red-500 hover:text-red-600"
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Cottage Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Cottage Name
+                  </label>
+                  <input
+                    {...control.register(`cottages.${index}.name` as const)}
+                    type="text"
+                    placeholder="e.g., Beach Villa, Garden Cottage"
+                    className="w-full border rounded px-3 py-2 font-normal"
+                  />
+                </div>
+
+                {/* Cottage Type */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Cottage Type
+                  </label>
+                  <select
+                    {...control.register(`cottages.${index}.type` as const)}
+                    className="w-full border rounded px-3 py-2 font-normal"
+                  >
+                    <option value="">Select cottage type</option>
+                    <option value="Beach Villa">Beach Villa</option>
+                    <option value="Garden Cottage">Garden Cottage</option>
+                    <option value="Pool Villa">Pool Villa</option>
+                    <option value="Family Cottage">Family Cottage</option>
+                    <option value="Romantic Cottage">Romantic Cottage</option>
+                    <option value="Luxury Villa">Luxury Villa</option>
+                  </select>
+                </div>
+
+                {/* Day Rate */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Day Rate
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      {...control.register(`cottages.${index}.hasDayRate` as const)}
+                      type="checkbox"
+                      className="w-4 h-4 text-green-600 border-green-300 rounded"
+                    />
+                    <div className="relative flex-1">
+                      <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                      <input
+                        {...control.register(`cottages.${index}.dayRate` as const)}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Check to enable day rate pricing</p>
+                </div>
+
+                {/* Night Rate */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Night Rate
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      {...control.register(`cottages.${index}.hasNightRate` as const)}
+                      type="checkbox"
+                      className="w-4 h-4 text-blue-600 border-blue-300 rounded"
+                    />
+                    <div className="relative flex-1">
+                      <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                      <input
+                        {...control.register(`cottages.${index}.nightRate` as const)}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                        className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Check to enable night rate pricing</p>
+                </div>
+
+                {/* Occupancy Range */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Occupancy Range
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                      <input
+                        {...control.register(`cottages.${index}.minOccupancy` as const)}
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="1"
+                        className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      />
+                    </div>
+                    <span className="text-gray-500 font-semibold">-</span>
+                    <div className="relative flex-1">
+                      <Users className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                      <input
+                        {...control.register(`cottages.${index}.maxOccupancy` as const)}
+                        type="number"
+                        min="1"
+                        max="100"
+                        placeholder="1"
+                        className="w-full border rounded pl-10 pr-3 py-2 font-normal"
+                      />
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">Minimum people - Maximum people</p>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="mt-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Description (Optional)
+                </label>
+                <textarea
+                  {...control.register(`cottages.${index}.description` as const)}
+                  rows={3}
+                  placeholder="Describe the cottage features, view, amenities..."
+                  className="w-full border rounded px-3 py-2 font-normal resize-none"
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default FreshCottagesSection;

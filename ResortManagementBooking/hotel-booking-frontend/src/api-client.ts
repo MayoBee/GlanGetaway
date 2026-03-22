@@ -1,3 +1,4 @@
+import axios from "axios";
 import axiosInstance, { getApiBaseUrl } from "./lib/api-client";
 import { RegisterFormData } from "./pages/Register";
 import { SignInFormData } from "./pages/SignIn";
@@ -120,13 +121,23 @@ export const signOut = async () => {
   clearAuthStorage();
 
   try {
-    const response = await axiosInstance.post("/api/auth/logout");
+    // Create a one-time axios instance without retry logic for logout
+    const axiosNoRetry = axios.create({
+      baseURL: getApiBaseUrl(),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      withCredentials: true,
+      timeout: 5000, // Short timeout for logout
+    });
+
+    const response = await axiosNoRetry.post("/api/auth/logout");
     return response.data;
   } catch (error) {
     // API call failed (e.g., backend down), but we've already cleared localStorage
-    // This is fine - the user is logged out locally
+    // This is fine - user is logged out locally
     console.log("Logout API call failed, but local storage cleared. User logged out locally.");
-    // Don't throw - we want the logout to succeed even if API fails
+    // Don't throw - we want logout to succeed even if API fails
     return { success: true, local: true };
   }
 };

@@ -267,6 +267,7 @@ router.post(
         name: string;
         type: string;
         pricePerNight: number;
+        minOccupancy: number;
         maxOccupancy: number;
         description?: string;
         amenities?: string[];
@@ -285,6 +286,7 @@ router.post(
           name: req.body[`rooms[${roomIndex}][name]`],
           type: req.body[`rooms[${roomIndex}][type]`],
           pricePerNight: parseFloat(req.body[`rooms[${roomIndex}][pricePerNight]`]) || 0,
+          minOccupancy: parseInt(req.body[`rooms[${roomIndex}][minOccupancy]`]) || 1,
           maxOccupancy: parseInt(req.body[`rooms[${roomIndex}][maxOccupancy]`]) || 1,
           description: req.body[`rooms[${roomIndex}][description]`] || "",
           amenities: roomAmenities,
@@ -301,6 +303,11 @@ router.post(
         name: string;
         type: string;
         pricePerNight: number;
+        dayRate: number;
+        nightRate: number;
+        hasDayRate: boolean;
+        hasNightRate: boolean;
+        minOccupancy: number;
         maxOccupancy: number;
         description?: string;
         amenities?: string[];
@@ -319,6 +326,11 @@ router.post(
           name: req.body[`cottages[${cottageIndex}][name]`],
           type: req.body[`cottages[${cottageIndex}][type]`],
           pricePerNight: parseFloat(req.body[`cottages[${cottageIndex}][pricePerNight]`]) || 0,
+          dayRate: parseFloat(req.body[`cottages[${cottageIndex}][dayRate]`]) || 0,
+          nightRate: parseFloat(req.body[`cottages[${cottageIndex}][nightRate]`]) || 0,
+          hasDayRate: req.body[`cottages[${cottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasDayRate]`] === true,
+          hasNightRate: req.body[`cottages[${cottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasNightRate]`] === true,
+          minOccupancy: parseInt(req.body[`cottages[${cottageIndex}][minOccupancy]`]) || 1,
           maxOccupancy: parseInt(req.body[`cottages[${cottageIndex}][maxOccupancy]`]) || 1,
           description: req.body[`cottages[${cottageIndex}][description]`] || "",
           amenities: cottageAmenities,
@@ -442,6 +454,7 @@ router.get("/:id", verifyToken, async (req: Request, res: Response) => {
   }
 });
 
+// Fixed TypeScript types for rooms and cottages parsing
 router.put(
   "/:hotelId",
   verifyToken,
@@ -449,6 +462,8 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       console.log("=== PUT /api/my-hotels/:hotelId called ===");
+      console.log("Request body:", req.body);
+      console.log("=== BACKEND UPDATE DEBUG ===");
       console.log("Request body:", req.body);
       console.log("Hotel ID:", req.params.hotelId);
       console.log("User ID:", req.userId);
@@ -625,6 +640,7 @@ router.put(
         name: string;
         type: string;
         pricePerNight: number;
+        minOccupancy: number;
         maxOccupancy: number;
         description?: string;
         amenities?: string[];
@@ -643,6 +659,7 @@ router.put(
           name: req.body[`rooms[${roomIndex}][name]`],
           type: req.body[`rooms[${roomIndex}][type]`],
           pricePerNight: parseFloat(req.body[`rooms[${roomIndex}][pricePerNight]`]) || 0,
+          minOccupancy: parseInt(req.body[`rooms[${roomIndex}][minOccupancy]`]) || 1,
           maxOccupancy: parseInt(req.body[`rooms[${roomIndex}][maxOccupancy]`]) || 1,
           description: req.body[`rooms[${roomIndex}][description]`] || "",
           amenities: roomAmenities,
@@ -659,6 +676,11 @@ router.put(
         name: string;
         type: string;
         pricePerNight: number;
+        dayRate: number;
+        nightRate: number;
+        hasDayRate: boolean;
+        hasNightRate: boolean;
+        minOccupancy: number;
         maxOccupancy: number;
         description?: string;
         amenities?: string[];
@@ -677,6 +699,11 @@ router.put(
           name: req.body[`cottages[${cottageIndex}][name]`],
           type: req.body[`cottages[${cottageIndex}][type]`],
           pricePerNight: parseFloat(req.body[`cottages[${cottageIndex}][pricePerNight]`]) || 0,
+          dayRate: parseFloat(req.body[`cottages[${cottageIndex}][dayRate]`]) || 0,
+          nightRate: parseFloat(req.body[`cottages[${cottageIndex}][nightRate]`]) || 0,
+          hasDayRate: req.body[`cottages[${cottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasDayRate]`] === true,
+          hasNightRate: req.body[`cottages[${cottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasNightRate]`] === true,
+          minOccupancy: parseInt(req.body[`cottages[${cottageIndex}][minOccupancy]`]) || 1,
           maxOccupancy: parseInt(req.body[`cottages[${cottageIndex}][maxOccupancy]`]) || 1,
           description: req.body[`cottages[${cottageIndex}][description]`] || "",
           amenities: cottageAmenities,
@@ -686,8 +713,6 @@ router.put(
       if (cottages.length > 0) {
         updateData.cottages = cottages;
       }
-
-      console.log("Update data:", updateData);
 
       // Update the hotel
       // Handle image uploads if any

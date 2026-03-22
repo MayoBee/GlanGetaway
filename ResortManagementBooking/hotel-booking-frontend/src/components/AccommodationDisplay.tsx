@@ -1,14 +1,20 @@
 import { HotelType } from "../../../shared/types";
-import { Bed, Home, Users, DollarSign, Check, Plus } from "lucide-react";
+import { Bed, Home, Users, DollarSign, Plus } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 
 type Props = {
   hotel: HotelType;
+  selectedRateType?: 'day' | 'night';
 };
 
-const AccommodationDisplay = ({ hotel }: Props) => {
-  const hasRooms = hotel.rooms && hotel.rooms.length > 0;
-  const hasCottages = hotel.cottages && hotel.cottages.length > 0;
+const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
+  // Handle different possible data structures
+  const rooms = hotel.rooms || [];
+  const cottages = hotel.cottages || [];
+  
+  const hasRooms = rooms.length > 0;
+  const hasCottages = cottages.length > 0;
+  
   const { 
     addRoom, 
     removeRoom, 
@@ -100,7 +106,7 @@ const AccommodationDisplay = ({ hotel }: Props) => {
                     <div className="flex items-center gap-1">
                       <Users className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-600">
-                        Up to {room.maxOccupancy} guests
+                        {room.minOccupancy} - {room.maxOccupancy} people
                       </span>
                     </div>
 
@@ -201,52 +207,60 @@ const AccommodationDisplay = ({ hotel }: Props) => {
                 </div>
                   
                   <div className="space-y-2 mb-3">
-                    {/* Day Rate */}
-                    {cottage.hasDayRate && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4 text-green-600" />
-                          <span className="text-lg font-bold text-green-600">
-                            ₱{cottage.dayRate}
-                          </span>
+                    {/* Day Rate - Only show if selectedRateType is 'day' and cottage has day rate */}
+                    {selectedRateType === 'day' && cottage.hasDayRate && (
+                      <div className="flex items-center justify-between p-2 border border-green-200 rounded bg-green-50">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={true}
+                            readOnly
+                            className="w-4 h-4 text-green-600 border-green-300 rounded"
+                          />
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-green-600" />
+                            <span className="text-lg font-bold text-green-600">
+                              ₱{cottage.dayRate}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-sm text-gray-500">day rate</span>
+                        <span className="text-sm text-green-600 font-medium">day rate</span>
                       </div>
                     )}
                     
-                    {/* Night Rate */}
-                    {cottage.hasNightRate && (
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <DollarSign className="w-4 h-4 text-blue-600" />
-                          <span className="text-lg font-bold text-blue-600">
-                            ₱{cottage.nightRate}
-                          </span>
+                    {/* Night Rate - Only show if selectedRateType is 'night' and cottage has night rate */}
+                    {selectedRateType === 'night' && cottage.hasNightRate && (
+                      <div className="flex items-center justify-between p-2 border border-blue-200 rounded bg-blue-50">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={true}
+                            readOnly
+                            className="w-4 h-4 text-blue-600 border-blue-300 rounded"
+                          />
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="w-4 h-4 text-blue-600" />
+                            <span className="text-lg font-bold text-blue-600">
+                              ₱{cottage.nightRate}
+                            </span>
+                          </div>
                         </div>
-                        <span className="text-sm text-gray-500">night rate</span>
+                        <span className="text-sm text-blue-600 font-medium">night rate</span>
                       </div>
                     )}
 
-                    {/* Pricing Model Info */}
-                    <div className="text-xs text-gray-500">
-                      {cottage.hasDayRate && cottage.hasNightRate 
-                        ? 'Day & Night rates available'
-                        : cottage.hasDayRate 
-                          ? 'Day rate only'
-                          : 'Night rate only'
-                      }
-                    </div>
-                    
+                    {/* Occupancy Range */}
                     <div className="flex items-center gap-1">
                       <Users className="w-4 h-4 text-gray-400" />
                       <span className="text-sm text-gray-600">
-                        Up to {cottage.maxOccupancy} guests
+                        {cottage.minOccupancy} - {cottage.maxOccupancy} people
                       </span>
                     </div>
 
+                    {/* Total calculation based on selected rate */}
                     {numberOfNights > 1 && (
                       <div className="text-sm text-green-600 font-medium">
-                        Total: ₱{cottage.pricePerNight * numberOfNights} ({numberOfNights} nights)
+                        Total: ₱{(selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate) * numberOfNights} ({numberOfNights} nights)
                       </div>
                     )}
                   </div>
@@ -275,7 +289,7 @@ const AccommodationDisplay = ({ hotel }: Props) => {
                             id: cottage.id,
                             name: cottage.name,
                             type: cottage.type,
-                            pricePerNight: cottage.pricePerNight,
+                            pricePerNight: selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate,
                             dayRate: cottage.dayRate,
                             nightRate: cottage.nightRate,
                             hasDayRate: cottage.hasDayRate,

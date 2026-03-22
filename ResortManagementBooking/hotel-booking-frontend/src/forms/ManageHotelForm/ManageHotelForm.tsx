@@ -2,14 +2,15 @@ import { FormProvider, useForm } from "react-hook-form";
 import DetailsSection from "./DetailsSection";
 import TypeSection from "./TypeSection";
 import FacilitiesSection from "./FacilitiesSection";
+import FreshRoomsSection from "./FreshRoomsSection";
+import FreshCottagesSection from "./FreshCottagesSection";
+import FreshPackagesSection from "./FreshPackagesSection";
+import AmenitiesSection from "./AmenitiesSection";
 import GuestsSection from "./GuestsSection";
+import PoliciesSection from "./PoliciesSection";
+import DiscountsSection from "./DiscountsSection";
 import ImagesSection from "./ImagesSection";
 import ContactSection from "./ContactSection";
-import PoliciesSection from "./PoliciesSection";
-import AmenitiesSection from "./AmenitiesSection";
-import RoomsSection from "./RoomsSection";
-import CottagesSection from "./CottagesSection";
-import PackagesSection from "./PackagesSection";
 import { HotelType } from "../../../../shared/types";
 import { useEffect } from "react";
 
@@ -320,6 +321,12 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       });
     }
 
+    console.log('=== FORM SUBMISSION DEBUG ===');
+    console.log('Form data JSON:', formDataJson);
+    console.log('Rooms being sent:', formDataJson.rooms);
+    console.log('Cottages being sent:', formDataJson.cottages);
+    console.log('Packages being sent:', formDataJson.packages);
+
     // Add rooms
     if (formDataJson.rooms && formDataJson.rooms.length > 0) {
       formDataJson.rooms.forEach((room, index) => {
@@ -440,10 +447,10 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         <TypeSection />
         <FacilitiesSection />
         <GuestsSection />
-        <RoomsSection />
-        <CottagesSection />
+        <FreshRoomsSection />
+        <FreshCottagesSection />
         <AmenitiesSection />
-        <PackagesSection />
+        <FreshPackagesSection />
         <ContactSection />
         <PoliciesSection />
         <ImagesSection />

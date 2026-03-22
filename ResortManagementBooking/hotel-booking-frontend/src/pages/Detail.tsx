@@ -3,11 +3,13 @@ import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "./../api-client";
 import { AiFillStar } from "react-icons/ai";
 import GuestInfoForm from "../forms/GuestInfoForm/GuestInfoForm";
+import BookingSummary from "../components/BookingSummary";
+import SimpleAccommodationDisplay from "../components/SimpleAccommodationDisplay";
+import ReportButton from "../components/ReportButton";
 import { Badge } from "../components/ui/badge";
 import SocialShareButtons from "../components/SocialShareButtons";
-import AccommodationDisplay from "../components/AccommodationDisplay";
-import ReportButton from "../components/ReportButton";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
+import { useState } from "react";
 import {
   MapPin,
   Phone,
@@ -41,6 +43,7 @@ const isValidExternalUrl = (url: string | undefined): boolean => {
 const Detail = () => {
   const { id } = useParams();
   const { isAmenitySelected, addAmenity, removeAmenity, isPackageSelected, addPackage, removePackage, selectedPackages } = useBookingSelection();
+  const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
 
   // Check if any amenity is included in a selected package
   const isAmenityInPackage = (amenityId: string) => {
@@ -160,30 +163,14 @@ const Detail = () => {
 
         {/* Price and Guest Info */}
         <div className="flex items-center justify-between mt-4 p-4 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-gray-900">
-                {(hotel.hasDayRate && hotel.hasNightRate) ? `₱${hotel.dayRate || 0}/₱${hotel.nightRate || 0}` :
+          <div className="text-center">
+            <p className="text-2xl font-bold text-gray-900">
+              {(hotel.hasDayRate && hotel.hasNightRate) ? `₱${hotel.dayRate || 0}/₱${hotel.nightRate || 0}` :
                  hotel.hasDayRate ? `₱${hotel.dayRate || 0}` :
                  hotel.hasNightRate ? `₱${hotel.nightRate || 0}` :
                  `₱0`}
-              </p>
-              <p className="text-sm text-gray-600">Day rate Price / Night rate Price</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <p className="text-lg font-semibold text-gray-900">
-                  {hotel.adultCount}
-                </p>
-                <p className="text-sm text-gray-600">Adults</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg font-semibold text-gray-900">
-                  {hotel.childCount}
-                </p>
-                <p className="text-sm text-gray-600">Children</p>
-              </div>
-            </div>
+            </p>
+            <p className="text-sm text-gray-600">Day rate Price / Night rate Price</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-semibold text-gray-900">
@@ -198,6 +185,65 @@ const Detail = () => {
         (hotel.childEntranceFee && hotel.childEntranceFee.length > 0)) && (
         <div className="border border-slate-300 rounded-lg p-4">
           <h3 className="text-xl font-semibold mb-3">Entrance Fees</h3>
+          
+          {/* Rate Type Descriptions */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+            <h4 className="font-semibold text-blue-900 mb-2">Rate Type Information</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {hotel.adultEntranceFee?.dayRate && hotel.adultEntranceFee.dayRate > 0 && (
+                <div 
+                  className={`p-3 rounded border-2 cursor-pointer transition-all ${
+                    selectedRateType === 'day' 
+                      ? 'bg-blue-100 border-blue-400 text-blue-900' 
+                      : 'bg-white border-blue-100 text-blue-700 hover:border-blue-300 hover:bg-blue-50'
+                  }`}
+                  onClick={() => setSelectedRateType('day')}
+                >
+                  <h5 className="font-medium mb-1">Day Rate</h5>
+                  <p className="text-sm mb-2">
+                    Perfect for day trips! Check-in time is flexible, and check-out is automatically set at 5:00 PM on the same day.
+                  </p>
+                  <div className="text-xs font-medium">
+                    Adults: ₱{hotel.adultEntranceFee.dayRate.toLocaleString()}/person
+                    {hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && (
+                      <span className="ml-2">• Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.dayRate)).toLocaleString()}/person</span>
+                    )}
+                  </div>
+                </div>
+              )}
+              {hotel.adultEntranceFee?.nightRate && hotel.adultEntranceFee.nightRate > 0 && (
+                <div 
+                  className={`p-3 rounded border-2 cursor-pointer transition-all ${
+                    selectedRateType === 'night' 
+                      ? 'bg-green-100 border-green-400 text-green-900' 
+                      : 'bg-green-50 border-green-100 text-green-700 hover:border-green-300 hover:bg-green-100'
+                  }`}
+                  onClick={() => setSelectedRateType('night')}
+                >
+                  <h5 className="font-medium mb-1">Night Rate</h5>
+                  <p className="text-sm mb-2">
+                    Ideal for overnight stays! Enjoy 24-hour accommodation from check-in to check-out time the next day.
+                  </p>
+                  <div className="text-xs font-medium">
+                    Adults: ₱{hotel.adultEntranceFee.nightRate.toLocaleString()}/person
+                    {hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && (
+                      <span className="ml-2">• Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.nightRate)).toLocaleString()}/person</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {selectedRateType && (
+              <div className="mt-3 p-2 bg-white rounded border border-blue-200">
+                <p className="text-sm text-blue-700">
+                  <strong>Selected:</strong> {selectedRateType === 'day' ? 'Day Rate' : 'Night Rate'} - 
+                  <span className="ml-1">Scroll down to complete your booking with this rate type</span>
+                </p>
+              </div>
+            )}
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Adult Entrance Fee */}
             {hotel.adultEntranceFee && (hotel.adultEntranceFee.dayRate > 0 || hotel.adultEntranceFee.nightRate > 0) && (
@@ -674,13 +720,14 @@ const Detail = () => {
       )}
 
       {/* Rooms and Cottages */}
-      <AccommodationDisplay hotel={hotel} />
+      <SimpleAccommodationDisplay hotel={hotel} selectedRateType={selectedRateType} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr]">
         <div className="h-fit">
           <GuestInfoForm
             pricePerNight={hotel.hasDayRate ? hotel.dayRate || 0 : hotel.nightRate || 0}
             hotelId={hotel._id}
+            initialRateType={selectedRateType}
           />
         </div>
       </div>

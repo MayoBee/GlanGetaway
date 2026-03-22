@@ -81,7 +81,7 @@ router.get(
     const id = req.params.id.toString();
 
     try {
-      const hotel = await Hotel.findById(id);
+      const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description');
       res.json(hotel);
     } catch (error) {
       console.log(error);
@@ -104,8 +104,8 @@ router.post(
         return res.status(500).json({ message: "Payment system not properly configured" });
       }
 
-      // Use lean() for faster query - only fetch needed fields
-      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name').lean();
+      // Use lean() for faster query - only fetch needed fields including rooms
+      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description').lean();
       if (!hotel) {
         return res.status(400).json({ message: "Hotel not found" });
       }

@@ -130,12 +130,13 @@ const RoomsSection = () => {
                     <input
                       type="number"
                       min="1"
-                      max="10"
+                      max="100"
                       placeholder="1"
                       className="w-full border rounded pl-10 pr-3 py-2 font-normal"
                       {...register(`rooms.${index}.minOccupancy`, {
                         required: "Min occupancy is required",
-                        min: { value: 1, message: "At least 1 guest required" },
+                        min: { value: 1, message: "Minimum occupancy must be at least 1 person" },
+                        max: { value: 100, message: "Maximum occupancy cannot exceed 100 persons" },
                         validate: (value) => {
                           // Get the current max value from the same field array item
                           const currentRoom = roomFields[index];
@@ -168,12 +169,13 @@ const RoomsSection = () => {
                     <input
                       type="number"
                       min="1"
-                      max="10"
+                      max="100"
                       placeholder="2"
                       className="w-full border rounded pl-10 pr-3 py-2 font-normal"
                       {...register(`rooms.${index}.maxOccupancy`, {
                         required: "Max occupancy is required",
                         min: { value: 1, message: "At least 1 guest required" },
+                        max: { value: 100, message: "Maximum occupancy cannot exceed 100 persons" },
                         validate: (value) => {
                           // Get the current min value from the same field array item
                           const currentRoom = roomFields[index];

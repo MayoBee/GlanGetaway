@@ -122,13 +122,43 @@ const Booking = () => {
   // Update base price when hotel is loaded
   useEffect(() => {
     if (hotel && numberOfNights > 0) {
-      // Use nightRate as default pricing, fallback to dayRate if nightRate not available
-      const ratePerNight = hotel.hasNightRate ? hotel.nightRate : hotel.dayRate;
-      const basePrice = ratePerNight * numberOfNights;
+      // Calculate entrance fees instead of using day/night rates
+      let entranceFeeTotal = 0;
+      const rateType = 'nightRate'; // Default to night rate for booking
+      
+      // Adult entrance fees
+      if (hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
+        if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+          const groupsNeeded = Math.ceil(search.adultCount / (hotel.adultEntranceFee.groupQuantity || 1));
+          entranceFeeTotal += groupsNeeded * hotel.adultEntranceFee[rateType];
+        } else {
+          entranceFeeTotal += search.adultCount * hotel.adultEntranceFee[rateType];
+        }
+      }
+
+      // Child entrance fees
+      if (hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && search.childAges) {
+        search.childAges.forEach((age) => {
+          const ageGroup = hotel.childEntranceFee?.find(
+            (group) => age >= group.minAge && age <= group.maxAge
+          );
+          
+          if (ageGroup && ageGroup[rateType] > 0) {
+            if (ageGroup.pricingModel === 'per_group') {
+              const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
+              entranceFeeTotal += groupsNeeded * ageGroup[rateType];
+            } else {
+              entranceFeeTotal += ageGroup[rateType];
+            }
+          }
+        });
+      }
+
+      const basePrice = entranceFeeTotal;
       setBasePrice(basePrice);
-      console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "nights:", numberOfNights, "rate used:", hotel.hasNightRate ? 'nightRate' : 'dayRate');
+      console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "using entrance fees");
     }
-  }, [hotel, numberOfNights, setBasePrice]);
+  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges]);
 
   if (isLoadingHotel || isLoadingUser) {
     return (

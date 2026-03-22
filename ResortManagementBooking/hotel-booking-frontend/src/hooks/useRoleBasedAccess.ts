@@ -28,14 +28,17 @@ export const useRoleBasedAccess = () => {
   const canManageBilling = isAdmin || isResortOwner || isFrontDesk; // Admin, Resort Owner, and Front Desk can manage billing
   const canManageMaintenance = isAdmin || isResortOwner; // Only Admin and Resort Owner can manage maintenance
   
-  console.log("useRoleBasedAccess - Calculated permissions:", {
-    canCreateResort,
-    canApproveResorts,
-    canManageAllUsers,
-    canViewAllResorts,
-    canManageOwnResorts,
-    canBookResorts
-  });
+  // Only log in development to reduce console noise
+  if (process.env.NODE_ENV === 'development') {
+    console.log("useRoleBasedAccess - Calculated permissions:", {
+      canCreateResort,
+      canApproveResorts,
+      canManageAllUsers,
+      canViewAllResorts,
+      canManageOwnResorts,
+      canBookResorts
+    });
+  }
 
   const getAccessibleRoutes = () => {
     if (!isLoggedIn) {

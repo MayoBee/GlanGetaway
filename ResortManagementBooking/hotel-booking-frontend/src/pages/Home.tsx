@@ -5,13 +5,29 @@ import LatestDestinationCard from "../components/LastestDestinationCard";
 import Hero from "../components/Hero";
 
 const Home = () => {
-  const { data: hotels, isLoading, error } = useQuery("fetchQuery", () =>
-    apiClient.fetchHotels()
+  const { data: hotels, isLoading, error } = useQuery(
+    "fetchQuery", 
+    () => apiClient.fetchHotels(),
+    {
+      retry: (failureCount, error: any) => {
+        // Don't retry on network errors or connection refused
+        if (error.code === 'NETWORK_ERROR' || error.message?.includes('ERR_CONNECTION_REFUSED')) {
+          return false;
+        }
+        // Retry up to 2 times for other errors
+        return failureCount < 2;
+      },
+      retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
   );
 
-  console.log("Home component - Hotels data:", hotels);
-  console.log("Home component - Loading:", isLoading);
-  console.log("Home component - Error:", error);
+  // Remove debug logs in production
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Home component - Hotels data:", hotels);
+    console.log("Home component - Loading:", isLoading);
+    console.log("Home component - Error:", error);
+  }
 
   return (
     <>
@@ -36,7 +52,11 @@ const Home = () => {
             )}
             {error && (
               <div className="col-span-full text-center py-8">
-                <p className="text-red-500">Error loading resorts: {error.message}</p>
+                <p className="text-red-500">
+                  {error.message?.includes('ERR_CONNECTION_REFUSED') || error.code === 'NETWORK_ERROR'
+                    ? "Unable to connect to the server. Please check your internet connection or try again later."
+                    : `Error loading resorts: ${error.message}`}
+                </p>
               </div>
             )}
             {!isLoading && !error && hotels?.length === 0 && (

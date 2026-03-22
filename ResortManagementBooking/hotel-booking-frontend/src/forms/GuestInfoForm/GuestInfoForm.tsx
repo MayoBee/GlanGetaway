@@ -19,10 +19,12 @@ import { useState, useEffect } from "react";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";
 import BookingSummary from "../../components/BookingSummary";
 import * as apiClient from "../../api-client";
+import { useQuery } from "react-query";
 
 type Props = {
   hotelId: string;
   pricePerNight: number;
+  initialRateType?: 'day' | 'night';
 };
 
 type GuestInfoFormData = {
@@ -34,11 +36,21 @@ type GuestInfoFormData = {
   pwdCount: number;
 };
 
-const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
+const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Props) => {
   const search = useSearchContext();
   const { isLoggedIn } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Fetch hotel data to get entrance fees
+  const { data: hotel } = useQuery(
+    "fetchHotelById",
+    () => apiClient.fetchHotelById(hotelId),
+    {
+      enabled: !!hotelId,
+    }
+  );
+
   const { 
     setBasePrice, 
     setNumberOfNights, 
@@ -64,12 +76,57 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
   const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
 
   // Rate type state
-  const [rateType, setRateType] = useState<'day' | 'night'>('night');
+  const [rateType, setRateType] = useState<'day' | 'night'>(initialRateType);
   const [selectedNights, setSelectedNights] = useState<number>(1);
 
-  // Determine available rate types (for now, assume both are available)
-  const hasDayRate = true;
-  const hasNightRate = true;
+  // Calculate entrance fee total based on adults, children, and their ages
+  const calculateEntranceFeeTotal = () => {
+    if (!hotel) return 0;
+
+    let total = 0;
+    const rate = rateType === 'day' ? 'dayRate' : 'nightRate';
+
+    // Adult entrance fees
+    if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
+      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+        // Per group pricing - one charge covers groupQuantity people
+        const groupsNeeded = Math.ceil(adultCount / (hotel.adultEntranceFee.groupQuantity || 1));
+        total += groupsNeeded * hotel.adultEntranceFee[rate];
+      } else {
+        // Per head pricing
+        total += adultCount * hotel.adultEntranceFee[rate];
+      }
+    }
+
+    // Child entrance fees
+    if (hotel.childEntranceFee && hotel.childEntranceFee.length > 0) {
+      childAges.forEach((age) => {
+        // Find the appropriate age group for this child
+        const ageGroup = hotel.childEntranceFee?.find(
+          (group) => age >= group.minAge && age <= group.maxAge
+        );
+        
+        if (ageGroup && ageGroup[rate] > 0) {
+          if (ageGroup.pricingModel === 'per_group') {
+            // Per group pricing - one charge covers groupQuantity people
+            const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
+            total += groupsNeeded * ageGroup[rate];
+          } else {
+            // Per head pricing
+            total += ageGroup[rate];
+          }
+        }
+      });
+    }
+
+    return total;
+  };
+
+  // Determine available rate types based on entrance fees
+  const hasDayRate = hotel?.adultEntranceFee?.dayRate && hotel.adultEntranceFee.dayRate > 0 || 
+                    hotel?.childEntranceFee?.some(child => child.dayRate > 0);
+  const hasNightRate = hotel?.adultEntranceFee?.nightRate && hotel.adultEntranceFee.nightRate > 0 || 
+                     hotel?.childEntranceFee?.some(child => child.nightRate > 0);
 
   const {
     watch,
@@ -106,10 +163,12 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
       nights = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
     }
     
-    const basePrice = pricePerNight * nights;
+    // Use entrance fees for base price calculation
+    const entranceFeeTotal = calculateEntranceFeeTotal();
+    const basePrice = entranceFeeTotal;
     setBasePrice(basePrice);
     setNumberOfNights(nights);
-  }, [checkIn, checkOut, pricePerNight, setBasePrice, setNumberOfNights]);
+  }, [checkIn, checkOut, adultCount, childCount, childAges, rateType, hotel, setBasePrice, setNumberOfNights]);
 
   // Update child ages when child count changes
   useEffect(() => {
@@ -228,7 +287,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
               <span>Booking Summary</span>
             </div>
             <Badge variant="outline" className="text-sm">
-              ₱{pricePerNight}/night
+              {rateType === 'day' ? 'Day Rate' : 'Night Rate'}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -238,14 +297,13 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
           <div className="flex justify-between items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="text-gray-600">
-                ₱{pricePerNight} × {numberOfNights} night
-                {numberOfNights > 1 ? "s" : ""}
+                Entrance Fees ({rateType === 'day' ? 'Day' : 'Night'})
+                {totalCost > calculateEntranceFeeTotal() && (
+                  <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-200 ml-2">
+                    + Extras
+                  </Badge>
+                )}
               </span>
-              {totalCost > pricePerNight * numberOfNights && (
-                <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-200">
-                  + Extras
-                </Badge>
-              )}
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-blue-600">
@@ -407,7 +465,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                       </button>
                     </div>
                     <p className="text-xs text-green-600 mt-2">
-                      Each night = 24 hours. Total: ₱{pricePerNight * selectedNights}
+                      Each night = 24 hours. Total entrance fees: ₱{calculateEntranceFeeTotal().toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -419,7 +477,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
               <div className="space-y-3 pt-4 border-t border-gray-200">
                 <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                   <CreditCard className="h-4 w-4" />
-                  Rate Type Selection
+                  Select Rate Type (Choose One)
                 </Label>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -439,8 +497,14 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                         className="sr-only"
                       />
                       <div>
-                        <div className="font-medium">Day Rate (Customer/User)</div>
-                        <div className="text-xs text-gray-500">Flexible check-in time, check-out at 5PM</div>
+                        <div className="font-medium">Day Rate</div>
+                        <div className="text-xs text-gray-500">Flexible check-in, check-out at 5PM</div>
+                        <div className="text-xs text-blue-600 mt-1">
+                          Adults: ₱{hotel?.adultEntranceFee?.dayRate || 0}/person
+                          {hotel?.childEntranceFee && hotel.childEntranceFee.length > 0 && (
+                            <span> • Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.dayRate))}/person</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -461,11 +525,23 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                         className="sr-only"
                       />
                       <div>
-                        <div className="font-medium">Night Rate (Customer/User)</div>
-                        <div className="text-xs text-gray-500">Overnight stay (24 hours per night)</div>
+                        <div className="font-medium">Night Rate</div>
+                        <div className="text-xs text-gray-500">Overnight stay (24 hours)</div>
+                        <div className="text-xs text-green-600 mt-1">
+                          Adults: ₱{hotel?.adultEntranceFee?.nightRate || 0}/person
+                          {hotel?.childEntranceFee && hotel.childEntranceFee.length > 0 && (
+                            <span> • Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.nightRate))}/person</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
+                </div>
+                
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <p className="text-xs text-amber-700">
+                    <strong>Note:</strong> Once you select a rate type, the total cost will be automatically calculated based on the entrance fees for adults and children according to your selection.
+                  </p>
                 </div>
               </div>
             )}
@@ -740,7 +816,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight }: Props) => {
                         <span className="text-sm font-medium">Documents uploaded successfully</span>
                       </div>
                       <p className="text-xs text-green-600 mt-1">
-                        Discount amount: ₱{((pricePerNight * numberOfNights * (seniorCount + pwdCount)) * 0.2).toFixed(2)} ({seniorCount + pwdCount} guests × 20%)
+                        Discount amount: ₱{(calculateEntranceFeeTotal() * (seniorCount + pwdCount) * 0.2).toFixed(2)} ({seniorCount + pwdCount} guests × 20%)
                       </p>
                     </div>
                   )}

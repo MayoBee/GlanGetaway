@@ -189,6 +189,20 @@ export const updateMyHotelById = async (hotelFormData: FormData) => {
   return response.data;
 };
 
+export const updateMyHotelByIdJson = async (hotelData: any) => {
+  const hotelId = hotelData._id || hotelData.hotelId;
+  const response = await axiosInstance.put(
+    `/api/my-hotels/${hotelId}/json`,
+    hotelData,
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  return response.data;
+};
+
 export const deleteMyHotelById = async (hotelId: string) => {
   const response = await axiosInstance.delete(`/api/my-hotels/${hotelId}`);
   return response.data;

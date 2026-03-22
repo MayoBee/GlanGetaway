@@ -1,6 +1,6 @@
 import { useMutation } from "react-query";
 import { useNavigate } from "react-router-dom";
-import ManageHotelForm from "../forms/ManageHotelForm/ManageHotelForm";
+import ManageHotelForm, { HotelFormData } from "../forms/ManageHotelForm/ManageHotelForm";
 import useAppContext from "../hooks/useAppContext";
 import * as apiClient from "../api-client";
 
@@ -62,11 +62,33 @@ const AddHotel = () => {
     },
   });
 
-  const handleSave = (hotelFormData: FormData) => {
-    mutate(hotelFormData);
+  const handleSave = (hotelFormData: HotelFormData) => {
+    // Convert HotelFormData to FormData for API
+    const formData = new FormData();
+    
+    // Add all basic fields
+    Object.keys(hotelFormData).forEach(key => {
+      const value = hotelFormData[key as keyof HotelFormData];
+      if (value !== undefined && value !== null) {
+        if (key === 'imageFiles' && value instanceof FileList) {
+          // Handle image files
+          Array.from(value).forEach((file) => {
+            formData.append(`imageFiles`, file);
+          });
+        } else if (typeof value === 'object') {
+          // Handle nested objects
+          formData.append(key, JSON.stringify(value));
+        } else {
+          // Handle primitive values
+          formData.append(key, String(value));
+        }
+      }
+    });
+    
+    mutate(formData);
   };
 
-  return <ManageHotelForm onSave={handleSave} isLoading={isLoading} />;
+  return <ManageHotelForm onSave={handleSave} isLoading={isLoading} />;  
 };
 
 export default AddHotel;

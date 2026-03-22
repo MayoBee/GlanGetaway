@@ -7,7 +7,7 @@ type Props = {
   selectedRateType?: 'day' | 'night';
 };
 
-const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
+const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) => {
   const { 
     addRoom, 
     removeRoom, 
@@ -18,7 +18,6 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
     isRoomSelected, 
     isCottageSelected,
     isPackageSelected,
-    selectedPackages,
     numberOfNights 
   } = useBookingSelection();
 
@@ -126,12 +125,15 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                         <div className="text-sm">
                           <span className="font-medium text-gray-700">Amenities:</span>
                           <div className="ml-2">
-                            {pkg.includedAmenities.map(amenity => (
-                              <div key={amenity.id} className="flex items-center text-gray-600">
-                                <Check className="w-3 h-3 mr-1 text-green-500" />
-                                {amenity.name}
-                              </div>
-                            ))}
+                            {pkg.includedAmenities.map(amenityId => {
+                              const amenity = hotel.amenities?.find(a => a.id === amenityId);
+                              return amenity ? (
+                                <div key={amenityId} className="flex items-center text-gray-600">
+                                  <Check className="w-3 h-3 mr-1 text-green-500" />
+                                  {amenity.name}
+                                </div>
+                              ) : null;
+                            })}
                           </div>
                         </div>
                       )}
@@ -157,7 +159,44 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                         </button>
                       ) : (
                         <button
-                          onClick={() => addPackage(pkg)}
+                          onClick={() => addPackage({
+                            id: pkg.id,
+                            name: pkg.name,
+                            description: pkg.description,
+                            price: pkg.price,
+                            includedCottages: pkg.includedCottages.map(cottageId => {
+                              const cottage = cottages.find(c => c.id === cottageId);
+                              return cottage || {
+                                id: cottageId,
+                                name: cottageId,
+                                type: "",
+                                pricePerNight: 0,
+                                dayRate: 0,
+                                nightRate: 0,
+                                hasDayRate: false,
+                                hasNightRate: false,
+                                maxOccupancy: 1
+                              };
+                            }),
+                            includedRooms: pkg.includedRooms.map(roomId => {
+                              const room = rooms.find(r => r.id === roomId);
+                              return room || {
+                                id: roomId,
+                                name: roomId,
+                                type: "",
+                                pricePerNight: 0,
+                                maxOccupancy: 1
+                              };
+                            }),
+                            includedAmenities: pkg.includedAmenities.map(amenityId => {
+                              const amenity = hotel.amenities?.find(a => a.id === amenityId);
+                              return amenity || {
+                                id: amenityId,
+                                name: amenityId,
+                                price: 0
+                              };
+                            }),
+                          })}
                           className="flex-1 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center"
                         >
                           <Plus className="w-4 h-4 mr-1" />
@@ -366,7 +405,18 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
                           </button>
                         ) : (
                           <button
-                            onClick={() => addCottage(cottage)}
+                            onClick={() => addCottage({
+                              id: cottage.id,
+                              name: cottage.name,
+                              type: cottage.type,
+                              pricePerNight: selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate,
+                              dayRate: cottage.dayRate,
+                              nightRate: cottage.nightRate,
+                              hasDayRate: cottage.hasDayRate,
+                              hasNightRate: cottage.hasNightRate,
+                              maxOccupancy: cottage.maxOccupancy,
+                              description: cottage.description
+                            })}
                             className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
                           >
                             <Plus className="w-4 h-4 mr-1" />

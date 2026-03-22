@@ -131,7 +131,7 @@ export type HotelFormData = {
 
 type Props = {
   hotel?: HotelType;
-  onSave: (hotelFormData: FormData) => void;
+  onSave: (hotelFormData: HotelFormData) => void;
   isLoading: boolean;
 };
 
@@ -245,200 +245,19 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     }
   }, [hotel, reset]);
 
-  const onSubmit = handleSubmit((formDataJson: HotelFormData) => {
-    console.log("Form submitted with data:", formDataJson);
-    console.log("Type field value:", formDataJson.type);
-    console.log("Facilities field value:", formDataJson.facilities);
-    
-    const formData = new FormData();
-    if (hotel) {
-      formData.append("hotelId", hotel._id);
-    }
-    formData.append("name", formDataJson.name);
-    formData.append("city", formDataJson.city);
-    formData.append("country", formDataJson.country);
-    formData.append("description", formDataJson.description);
-    formDataJson.type.forEach((t, idx) => {
-      formData.append(`type[${idx}]`, t);
-    });
-    formData.append("dayRate", formDataJson.dayRate.toString());
-    formData.append("nightRate", formDataJson.nightRate.toString());
-    formData.append("hasDayRate", formDataJson.hasDayRate.toString());
-    formData.append("hasNightRate", formDataJson.hasNightRate.toString());
-    formData.append("dayRateCheckInTime", formDataJson.dayRateCheckInTime || "");
-    formData.append("dayRateCheckOutTime", formDataJson.dayRateCheckOutTime || "");
-    formData.append("nightRateCheckInTime", formDataJson.nightRateCheckInTime || "");
-    formData.append("nightRateCheckOutTime", formDataJson.nightRateCheckOutTime || "");
-    formData.append("starRating", formDataJson.starRating.toString());
-    formData.append("adultCount", formDataJson.adultCount.toString());
-    formData.append("childCount", formDataJson.childCount.toString());
-
-    formDataJson.facilities.forEach((facility, index) => {
-      formData.append(`facilities[${index}]`, facility);
-    });
-
-    // Add contact information
-    if (formDataJson.contact) {
-      formData.append("contact.phone", formDataJson.contact.phone || "");
-      formData.append("contact.email", formDataJson.contact.email || "");
-      formData.append("contact.website", formDataJson.contact.website || "");
-      formData.append("contact.facebook", formDataJson.contact.facebook || "");
-      formData.append("contact.instagram", formDataJson.contact.instagram || "");
-      formData.append("contact.tiktok", formDataJson.contact.tiktok || "");
-    }
-
-    // Add policies
-    if (formDataJson.policies) {
-      formData.append(
-        "policies.checkInTime",
-        formDataJson.policies.checkInTime || ""
-      );
-      formData.append(
-        "policies.checkOutTime",
-        formDataJson.policies.checkOutTime || ""
-      );
-      formData.append(
-        "policies.cancellationPolicy",
-        formDataJson.policies.cancellationPolicy || ""
-      );
-      formData.append(
-        "policies.petPolicy",
-        formDataJson.policies.petPolicy || ""
-      );
-      formData.append(
-        "policies.smokingPolicy",
-        formDataJson.policies.smokingPolicy || ""
-      );
-    }
-
-    // Add amenities
-    if (formDataJson.amenities && formDataJson.amenities.length > 0) {
-      formDataJson.amenities.forEach((amenity, index) => {
-        formData.append(`amenities[${index}][id]`, amenity.id);
-        formData.append(`amenities[${index}][name]`, amenity.name);
-        formData.append(`amenities[${index}][price]`, amenity.price.toString());
-        formData.append(`amenities[${index}][description]`, amenity.description || "");
-      });
-    }
-
+  const handleSave = async (formDataJson: HotelFormData) => {
     console.log('=== FORM SUBMISSION DEBUG ===');
     console.log('Form data JSON:', formDataJson);
     console.log('Rooms being sent:', formDataJson.rooms);
     console.log('Cottages being sent:', formDataJson.cottages);
     console.log('Packages being sent:', formDataJson.packages);
 
-    // Add rooms
-    if (formDataJson.rooms && formDataJson.rooms.length > 0) {
-      formDataJson.rooms.forEach((room, index) => {
-        formData.append(`rooms[${index}][id]`, room.id);
-        formData.append(`rooms[${index}][name]`, room.name);
-        formData.append(`rooms[${index}][type]`, room.type);
-        formData.append(`rooms[${index}][pricePerNight]`, room.pricePerNight.toString());
-        formData.append(`rooms[${index}][minOccupancy]`, room.minOccupancy.toString());
-        formData.append(`rooms[${index}][maxOccupancy]`, room.maxOccupancy.toString());
-        formData.append(`rooms[${index}][description]`, room.description || "");
-        if (room.amenities && room.amenities.length > 0) {
-          room.amenities.forEach((amenity, amenityIndex) => {
-            formData.append(`rooms[${index}][amenities][${amenityIndex}]`, amenity);
-          });
-        }
-      });
-    }
+    // For JSON endpoint, send the data directly as JSON
+    // This bypasses FormData issues and ensures rooms/cottages/packages are preserved
+    onSave(formDataJson);
+  };
 
-    // Add cottages
-    if (formDataJson.cottages && formDataJson.cottages.length > 0) {
-      formDataJson.cottages.forEach((cottage, index) => {
-        formData.append(`cottages[${index}][id]`, cottage.id);
-        formData.append(`cottages[${index}][name]`, cottage.name);
-        formData.append(`cottages[${index}][type]`, cottage.type);
-        formData.append(`cottages[${index}][pricePerNight]`, cottage.pricePerNight.toString());
-        formData.append(`cottages[${index}][dayRate]`, cottage.dayRate.toString());
-        formData.append(`cottages[${index}][nightRate]`, cottage.nightRate.toString());
-        formData.append(`cottages[${index}][hasDayRate]`, cottage.hasDayRate.toString());
-        formData.append(`cottages[${index}][hasNightRate]`, cottage.hasNightRate.toString());
-        formData.append(`cottages[${index}][minOccupancy]`, cottage.minOccupancy.toString());
-        formData.append(`cottages[${index}][maxOccupancy]`, cottage.maxOccupancy.toString());
-        formData.append(`cottages[${index}][description]`, cottage.description || "");
-        if (cottage.amenities && cottage.amenities.length > 0) {
-          cottage.amenities.forEach((amenity, amenityIndex) => {
-            formData.append(`cottages[${index}][amenities][${amenityIndex}]`, amenity);
-          });
-        }
-      });
-    }
-
-    // Add discounts
-    if (formDataJson.discounts) {
-      formData.append("discounts.seniorCitizenEnabled", formDataJson.discounts.seniorCitizenEnabled.toString());
-      formData.append("discounts.seniorCitizenPercentage", formDataJson.discounts.seniorCitizenPercentage.toString());
-      formData.append("discounts.pwdEnabled", formDataJson.discounts.pwdEnabled.toString());
-      formData.append("discounts.pwdPercentage", formDataJson.discounts.pwdPercentage.toString());
-    }
-
-    // Add packages
-    if (formDataJson.packages && formDataJson.packages.length > 0) {
-      formDataJson.packages.forEach((pkg, index) => {
-        formData.append(`packages[${index}][id]`, pkg.id);
-        formData.append(`packages[${index}][name]`, pkg.name);
-        formData.append(`packages[${index}][description]`, pkg.description);
-        formData.append(`packages[${index}][price]`, pkg.price.toString());
-        pkg.includedCottages.forEach((cottageId, cottageIndex) => {
-          formData.append(`packages[${index}][includedCottages][${cottageIndex}]`, cottageId);
-        });
-        pkg.includedRooms.forEach((roomId, roomIndex) => {
-          formData.append(`packages[${index}][includedRooms][${roomIndex}]`, roomId);
-        });
-        pkg.includedAmenities.forEach((amenityId, amenityIndex) => {
-          formData.append(`packages[${index}][includedAmenities][${amenityIndex}]`, amenityId);
-        });
-      });
-    }
-
-    // Add entrance fees
-    if (formDataJson.adultEntranceFee) {
-      formData.append("adultEntranceFee.dayRate", formDataJson.adultEntranceFee.dayRate.toString());
-      formData.append("adultEntranceFee.nightRate", formDataJson.adultEntranceFee.nightRate.toString());
-      formData.append("adultEntranceFee.pricingModel", formDataJson.adultEntranceFee.pricingModel);
-      if (formDataJson.adultEntranceFee.groupQuantity) {
-        formData.append("adultEntranceFee.groupQuantity", formDataJson.adultEntranceFee.groupQuantity.toString());
-      }
-    }
-
-    if (formDataJson.childEntranceFee && formDataJson.childEntranceFee.length > 0) {
-      formDataJson.childEntranceFee.forEach((childFee, index) => {
-        formData.append(`childEntranceFee[${index}][id]`, childFee.id);
-        formData.append(`childEntranceFee[${index}][minAge]`, childFee.minAge.toString());
-        formData.append(`childEntranceFee[${index}][maxAge]`, childFee.maxAge.toString());
-        formData.append(`childEntranceFee[${index}][dayRate]`, childFee.dayRate.toString());
-        formData.append(`childEntranceFee[${index}][nightRate]`, childFee.nightRate.toString());
-        formData.append(`childEntranceFee[${index}][pricingModel]`, childFee.pricingModel);
-        if (childFee.groupQuantity) {
-          formData.append(`childEntranceFee[${index}][groupQuantity]`, childFee.groupQuantity.toString());
-        }
-      });
-    }
-
-    if (formDataJson.imageUrls) {
-      formDataJson.imageUrls.forEach((url, index) => {
-        formData.append(`imageUrls[${index}]`, url);
-      });
-    }
-
-    if (formDataJson.imageFiles && formDataJson.imageFiles.length > 0) {
-      Array.from(formDataJson.imageFiles).forEach((imageFile) => {
-        formData.append(`imageFiles`, imageFile);
-      });
-    }
-
-    // Log FormData contents
-    console.log("FormData being sent:");
-    for (let [key, value] of formData.entries()) {
-      console.log(`${key}:`, value);
-    }
-    console.log("FormData entries count:", formData.entries.length);
-
-    onSave(formData);
-  });
+  const onSubmit = handleSubmit(handleSave);
 
   return (
     <FormProvider {...formMethods}>

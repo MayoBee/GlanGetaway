@@ -219,43 +219,43 @@ router.post(
         includedRooms: string[];
         includedAmenities: string[];
       }> = [];
-      let packageIndex = 0;
-      while (req.body[`packages[${packageIndex}][id]`]) {
+      let createPackageIndex = 0;
+      while (req.body[`packages[${createPackageIndex}][id]`]) {
         const includedCottages: string[] = [];
         const includedRooms: string[] = [];
         const includedAmenities: string[] = [];
         
         // Parse included cottages
-        let cottageIndex = 0;
-        while (req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]) {
-          includedCottages.push(req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]);
-          cottageIndex++;
+        let packageCottageIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]) {
+          includedCottages.push(req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]);
+          packageCottageIndex++;
         }
         
         // Parse included rooms
-        let roomIndex = 0;
-        while (req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]) {
-          includedRooms.push(req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]);
-          roomIndex++;
+        let packageRoomIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]) {
+          includedRooms.push(req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]);
+          packageRoomIndex++;
         }
         
         // Parse included amenities
         let amenityIndex = 0;
-        while (req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]) {
-          includedAmenities.push(req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]);
+        while (req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]) {
+          includedAmenities.push(req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]);
           amenityIndex++;
         }
         
         packages.push({
-          id: req.body[`packages[${packageIndex}][id]`],
-          name: req.body[`packages[${packageIndex}][name]`],
-          description: req.body[`packages[${packageIndex}][description]`],
-          price: parseFloat(req.body[`packages[${packageIndex}][price]`]) || 0,
+          id: req.body[`packages[${createPackageIndex}][id]`],
+          name: req.body[`packages[${createPackageIndex}][name]`],
+          description: req.body[`packages[${createPackageIndex}][description]`],
+          price: parseFloat(req.body[`packages[${createPackageIndex}][price]`]) || 0,
           includedCottages,
           includedRooms,
           includedAmenities,
         });
-        packageIndex++;
+        createPackageIndex++;
       }
       if (packages.length > 0) {
         newHotel.packages = packages;
@@ -272,26 +272,26 @@ router.post(
         description?: string;
         amenities?: string[];
       }> = [];
-      let roomIndex = 0;
-      while (req.body[`rooms[${roomIndex}][id]`]) {
+      let createRoomIndex = 0;
+      while (req.body[`rooms[${createRoomIndex}][id]`]) {
         const roomAmenities: string[] = [];
         let roomAmenityIndex = 0;
-        while (req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]) {
-          roomAmenities.push(req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]);
+        while (req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]) {
+          roomAmenities.push(req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]);
           roomAmenityIndex++;
         }
         
         rooms.push({
-          id: req.body[`rooms[${roomIndex}][id]`],
-          name: req.body[`rooms[${roomIndex}][name]`],
-          type: req.body[`rooms[${roomIndex}][type]`],
-          pricePerNight: parseFloat(req.body[`rooms[${roomIndex}][pricePerNight]`]) || 0,
-          minOccupancy: parseInt(req.body[`rooms[${roomIndex}][minOccupancy]`]) || 1,
-          maxOccupancy: parseInt(req.body[`rooms[${roomIndex}][maxOccupancy]`]) || 1,
-          description: req.body[`rooms[${roomIndex}][description]`] || "",
+          id: req.body[`rooms[${createRoomIndex}][id]`],
+          name: req.body[`rooms[${createRoomIndex}][name]`],
+          type: req.body[`rooms[${createRoomIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`rooms[${createRoomIndex}][pricePerNight]`]) || 0,
+          minOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`rooms[${createRoomIndex}][description]`] || "",
           amenities: roomAmenities,
         });
-        roomIndex++;
+        createRoomIndex++;
       }
       if (rooms.length > 0) {
         newHotel.rooms = rooms;
@@ -312,30 +312,30 @@ router.post(
         description?: string;
         amenities?: string[];
       }> = [];
-      let cottageIndex = 0;
-      while (req.body[`cottages[${cottageIndex}][id]`]) {
+      let createCottageIndex = 0;
+      while (req.body[`cottages[${createCottageIndex}][id]`]) {
         const cottageAmenities: string[] = [];
         let cottageAmenityIndex = 0;
-        while (req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]) {
-          cottageAmenities.push(req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]);
+        while (req.body[`cottages[${createCottageIndex}][amenities][${cottageAmenityIndex}]`]) {
+          cottageAmenities.push(req.body[`cottages[${createCottageIndex}][amenities][${cottageAmenityIndex}]`]);
           cottageAmenityIndex++;
         }
         
         cottages.push({
-          id: req.body[`cottages[${cottageIndex}][id]`],
-          name: req.body[`cottages[${cottageIndex}][name]`],
-          type: req.body[`cottages[${cottageIndex}][type]`],
-          pricePerNight: parseFloat(req.body[`cottages[${cottageIndex}][pricePerNight]`]) || 0,
-          dayRate: parseFloat(req.body[`cottages[${cottageIndex}][dayRate]`]) || 0,
-          nightRate: parseFloat(req.body[`cottages[${cottageIndex}][nightRate]`]) || 0,
-          hasDayRate: req.body[`cottages[${cottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasDayRate]`] === true,
-          hasNightRate: req.body[`cottages[${cottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasNightRate]`] === true,
-          minOccupancy: parseInt(req.body[`cottages[${cottageIndex}][minOccupancy]`]) || 1,
-          maxOccupancy: parseInt(req.body[`cottages[${cottageIndex}][maxOccupancy]`]) || 1,
-          description: req.body[`cottages[${cottageIndex}][description]`] || "",
+          id: req.body[`cottages[${createCottageIndex}][id]`],
+          name: req.body[`cottages[${createCottageIndex}][name]`],
+          type: req.body[`cottages[${createCottageIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`cottages[${createCottageIndex}][pricePerNight]`]) || 0,
+          dayRate: parseFloat(req.body[`cottages[${createCottageIndex}][dayRate]`]) || 0,
+          nightRate: parseFloat(req.body[`cottages[${createCottageIndex}][nightRate]`]) || 0,
+          hasDayRate: req.body[`cottages[${createCottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${createCottageIndex}][hasDayRate]`] === true,
+          hasNightRate: req.body[`cottages[${createCottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${createCottageIndex}][hasNightRate]`] === true,
+          minOccupancy: parseInt(req.body[`cottages[${createCottageIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`cottages[${createCottageIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`cottages[${createCottageIndex}][description]`] || "",
           amenities: cottageAmenities,
         });
-        cottageIndex++;
+        createCottageIndex++;
       }
       if (cottages.length > 0) {
         newHotel.cottages = cottages;
@@ -454,6 +454,100 @@ router.get("/:id", verifyToken, async (req: Request, res: Response) => {
   }
 });
 
+// New JSON-based update endpoint for better data handling
+router.put(
+  "/:hotelId/json",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      console.log("=== PUT /api/my-hotels/:hotelId/json called ===");
+      console.log("Request body:", req.body);
+      console.log("Hotel ID:", req.params.hotelId);
+      console.log("User ID:", req.userId);
+
+      // First, find the existing hotel
+      const existingHotel = await Hotel.findOne({
+        _id: req.params.hotelId,
+        userId: req.userId,
+      });
+
+      if (!existingHotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      // Prepare update data with all fields including rooms, cottages, and packages
+      const updateData: any = {
+        ...req.body,
+        lastUpdated: new Date(),
+      };
+
+      // Ensure imageUrls is always present and valid
+      if (!updateData.imageUrls || !Array.isArray(updateData.imageUrls) || updateData.imageUrls.length === 0) {
+        // Keep existing image URLs if none provided
+        updateData.imageUrls = existingHotel.imageUrls || [];
+      }
+
+      // Convert string numbers to actual numbers
+      if (updateData.dayRate !== undefined) updateData.dayRate = Number(updateData.dayRate);
+      if (updateData.nightRate !== undefined) updateData.nightRate = Number(updateData.nightRate);
+      if (updateData.starRating !== undefined) updateData.starRating = Number(updateData.starRating);
+      if (updateData.adultCount !== undefined) updateData.adultCount = Number(updateData.adultCount);
+      if (updateData.childCount !== undefined) updateData.childCount = Number(updateData.childCount);
+
+      // Convert boolean strings to actual booleans
+      if (updateData.hasDayRate !== undefined) updateData.hasDayRate = updateData.hasDayRate === "true" || updateData.hasDayRate === true;
+      if (updateData.hasNightRate !== undefined) updateData.hasNightRate = updateData.hasNightRate === "true" || updateData.hasNightRate === true;
+
+      // Validate required fields
+      const requiredFields = ['name', 'city', 'country', 'description', 'type', 'starRating', 'adultCount', 'childCount', 'facilities'];
+      for (const field of requiredFields) {
+        if (!updateData[field]) {
+          return res.status(400).json({ message: `${field} is required` });
+        }
+      }
+
+      // Ensure type is always an array
+      if (typeof updateData.type === "string") {
+        updateData.type = [updateData.type];
+      }
+
+      console.log("Final update data:", updateData);
+
+      const updatedHotel = await Hotel.findByIdAndUpdate(
+        req.params.hotelId,
+        updateData,
+        { new: true, runValidators: true }
+      );
+
+      if (!updatedHotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      console.log("Hotel updated successfully with rooms:", updatedHotel.rooms?.length || 0);
+      console.log("Hotel updated successfully with cottages:", updatedHotel.cottages?.length || 0);
+      console.log("Hotel updated successfully with packages:", updatedHotel.packages?.length || 0);
+
+      res.status(200).json(updatedHotel);
+    } catch (error: any) {
+      console.error("Error updating hotel:", error);
+      
+      // Handle validation errors
+      if (error.name === 'ValidationError') {
+        const validationErrors = Object.values(error.errors).map((err: any) => ({
+          field: err.path,
+          message: err.message,
+        }));
+        return res.status(400).json({ 
+          message: "Validation failed", 
+          errors: validationErrors 
+        });
+      }
+      
+      res.status(500).json({ message: "Something went wrong", error: error.message });
+    }
+  }
+);
+
 // Fixed TypeScript types for rooms and cottages parsing
 router.put(
   "/:hotelId",
@@ -462,13 +556,54 @@ router.put(
   async (req: Request, res: Response) => {
     try {
       console.log("=== PUT /api/my-hotels/:hotelId called ===");
-      console.log("Request body:", req.body);
+      console.log("Request body keys:", Object.keys(req.body));
+      console.log("Request body sample:", req.body);
       console.log("=== BACKEND UPDATE DEBUG ===");
       console.log("Request body:", req.body);
       console.log("Hotel ID:", req.params.hotelId);
       console.log("User ID:", req.userId);
       console.log("Files:", (req as any).files);
       console.log("Files length:", (req as any).files?.length);
+      
+      // Debug rooms data
+      console.log("=== ROOMS DEBUG ===");
+      let debugRoomIndex = 0;
+      while (req.body[`rooms[${debugRoomIndex}][id]`]) {
+        console.log(`Room ${debugRoomIndex}:`, {
+          id: req.body[`rooms[${debugRoomIndex}][id]`],
+          name: req.body[`rooms[${debugRoomIndex}][name]`],
+          pricePerNight: req.body[`rooms[${debugRoomIndex}][pricePerNight]`]
+        });
+        debugRoomIndex++;
+      }
+      console.log(`Total rooms found: ${debugRoomIndex}`);
+      
+      // Debug cottages data
+      console.log("=== COTTAGES DEBUG ===");
+      let debugCottageIndex = 0;
+      while (req.body[`cottages[${debugCottageIndex}][id]`]) {
+        console.log(`Cottage ${debugCottageIndex}:`, {
+          id: req.body[`cottages[${debugCottageIndex}][id]`],
+          name: req.body[`cottages[${debugCottageIndex}][name]`],
+          dayRate: req.body[`cottages[${debugCottageIndex}][dayRate]`],
+          nightRate: req.body[`cottages[${debugCottageIndex}][nightRate]`]
+        });
+        debugCottageIndex++;
+      }
+      console.log(`Total cottages found: ${debugCottageIndex}`);
+      
+      // Debug packages data
+      console.log("=== PACKAGES DEBUG ===");
+      let debugPackageIndex = 0;
+      while (req.body[`packages[${debugPackageIndex}][id]`]) {
+        console.log(`Package ${debugPackageIndex}:`, {
+          id: req.body[`packages[${debugPackageIndex}][id]`],
+          name: req.body[`packages[${debugPackageIndex}][name]`],
+          price: req.body[`packages[${debugPackageIndex}][price]`]
+        });
+        debugPackageIndex++;
+      }
+      console.log(`Total packages found: ${debugPackageIndex}`);
 
       // First, find the existing hotel
       const existingHotel = await Hotel.findOne({
@@ -592,43 +727,43 @@ router.put(
         includedRooms: string[];
         includedAmenities: string[];
       }> = [];
-      let packageIndex = 0;
-      while (req.body[`packages[${packageIndex}][id]`]) {
+      let createPackageIndex = 0;
+      while (req.body[`packages[${createPackageIndex}][id]`]) {
         const includedCottages: string[] = [];
         const includedRooms: string[] = [];
         const includedAmenities: string[] = [];
         
         // Parse included cottages
-        let cottageIndex = 0;
-        while (req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]) {
-          includedCottages.push(req.body[`packages[${packageIndex}][includedCottages][${cottageIndex}]`]);
-          cottageIndex++;
+        let packageCottageIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]) {
+          includedCottages.push(req.body[`packages[${createPackageIndex}][includedCottages][${packageCottageIndex}]`]);
+          packageCottageIndex++;
         }
         
         // Parse included rooms
-        let roomIndex = 0;
-        while (req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]) {
-          includedRooms.push(req.body[`packages[${packageIndex}][includedRooms][${roomIndex}]`]);
-          roomIndex++;
+        let packageRoomIndex = 0;
+        while (req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]) {
+          includedRooms.push(req.body[`packages[${createPackageIndex}][includedRooms][${packageRoomIndex}]`]);
+          packageRoomIndex++;
         }
         
         // Parse included amenities
         let amenityIndex = 0;
-        while (req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]) {
-          includedAmenities.push(req.body[`packages[${packageIndex}][includedAmenities][${amenityIndex}]`]);
+        while (req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]) {
+          includedAmenities.push(req.body[`packages[${createPackageIndex}][includedAmenities][${amenityIndex}]`]);
           amenityIndex++;
         }
         
         packages.push({
-          id: req.body[`packages[${packageIndex}][id]`],
-          name: req.body[`packages[${packageIndex}][name]`],
-          description: req.body[`packages[${packageIndex}][description]`],
-          price: parseFloat(req.body[`packages[${packageIndex}][price]`]) || 0,
+          id: req.body[`packages[${createPackageIndex}][id]`],
+          name: req.body[`packages[${createPackageIndex}][name]`],
+          description: req.body[`packages[${createPackageIndex}][description]`],
+          price: parseFloat(req.body[`packages[${createPackageIndex}][price]`]) || 0,
           includedCottages,
           includedRooms,
           includedAmenities,
         });
-        packageIndex++;
+        createPackageIndex++;
       }
       if (packages.length > 0) {
         updateData.packages = packages;
@@ -645,26 +780,26 @@ router.put(
         description?: string;
         amenities?: string[];
       }> = [];
-      let roomIndex = 0;
-      while (req.body[`rooms[${roomIndex}][id]`]) {
+      let createRoomIndex = 0;
+      while (req.body[`rooms[${createRoomIndex}][id]`]) {
         const roomAmenities: string[] = [];
         let roomAmenityIndex = 0;
-        while (req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]) {
-          roomAmenities.push(req.body[`rooms[${roomIndex}][amenities][${roomAmenityIndex}]`]);
+        while (req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]) {
+          roomAmenities.push(req.body[`rooms[${createRoomIndex}][amenities][${roomAmenityIndex}]`]);
           roomAmenityIndex++;
         }
         
         rooms.push({
-          id: req.body[`rooms[${roomIndex}][id]`],
-          name: req.body[`rooms[${roomIndex}][name]`],
-          type: req.body[`rooms[${roomIndex}][type]`],
-          pricePerNight: parseFloat(req.body[`rooms[${roomIndex}][pricePerNight]`]) || 0,
-          minOccupancy: parseInt(req.body[`rooms[${roomIndex}][minOccupancy]`]) || 1,
-          maxOccupancy: parseInt(req.body[`rooms[${roomIndex}][maxOccupancy]`]) || 1,
-          description: req.body[`rooms[${roomIndex}][description]`] || "",
+          id: req.body[`rooms[${createRoomIndex}][id]`],
+          name: req.body[`rooms[${createRoomIndex}][name]`],
+          type: req.body[`rooms[${createRoomIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`rooms[${createRoomIndex}][pricePerNight]`]) || 0,
+          minOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`rooms[${createRoomIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`rooms[${createRoomIndex}][description]`] || "",
           amenities: roomAmenities,
         });
-        roomIndex++;
+        createRoomIndex++;
       }
       if (rooms.length > 0) {
         updateData.rooms = rooms;
@@ -685,30 +820,30 @@ router.put(
         description?: string;
         amenities?: string[];
       }> = [];
-      let cottageIndex = 0;
-      while (req.body[`cottages[${cottageIndex}][id]`]) {
+      let updateCottageIndex = 0;
+      while (req.body[`cottages[${updateCottageIndex}][id]`]) {
         const cottageAmenities: string[] = [];
         let cottageAmenityIndex = 0;
-        while (req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]) {
-          cottageAmenities.push(req.body[`cottages[${cottageIndex}][amenities][${cottageAmenityIndex}]`]);
+        while (req.body[`cottages[${updateCottageIndex}][amenities][${cottageAmenityIndex}]`]) {
+          cottageAmenities.push(req.body[`cottages[${updateCottageIndex}][amenities][${cottageAmenityIndex}]`]);
           cottageAmenityIndex++;
         }
         
         cottages.push({
-          id: req.body[`cottages[${cottageIndex}][id]`],
-          name: req.body[`cottages[${cottageIndex}][name]`],
-          type: req.body[`cottages[${cottageIndex}][type]`],
-          pricePerNight: parseFloat(req.body[`cottages[${cottageIndex}][pricePerNight]`]) || 0,
-          dayRate: parseFloat(req.body[`cottages[${cottageIndex}][dayRate]`]) || 0,
-          nightRate: parseFloat(req.body[`cottages[${cottageIndex}][nightRate]`]) || 0,
-          hasDayRate: req.body[`cottages[${cottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasDayRate]`] === true,
-          hasNightRate: req.body[`cottages[${cottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${cottageIndex}][hasNightRate]`] === true,
-          minOccupancy: parseInt(req.body[`cottages[${cottageIndex}][minOccupancy]`]) || 1,
-          maxOccupancy: parseInt(req.body[`cottages[${cottageIndex}][maxOccupancy]`]) || 1,
-          description: req.body[`cottages[${cottageIndex}][description]`] || "",
+          id: req.body[`cottages[${updateCottageIndex}][id]`],
+          name: req.body[`cottages[${updateCottageIndex}][name]`],
+          type: req.body[`cottages[${updateCottageIndex}][type]`],
+          pricePerNight: parseFloat(req.body[`cottages[${updateCottageIndex}][pricePerNight]`]) || 0,
+          dayRate: parseFloat(req.body[`cottages[${updateCottageIndex}][dayRate]`]) || 0,
+          nightRate: parseFloat(req.body[`cottages[${updateCottageIndex}][nightRate]`]) || 0,
+          hasDayRate: req.body[`cottages[${updateCottageIndex}][hasDayRate]`] === "true" || req.body[`cottages[${updateCottageIndex}][hasDayRate]`] === true,
+          hasNightRate: req.body[`cottages[${updateCottageIndex}][hasNightRate]`] === "true" || req.body[`cottages[${updateCottageIndex}][hasNightRate]`] === true,
+          minOccupancy: parseInt(req.body[`cottages[${updateCottageIndex}][minOccupancy]`]) || 1,
+          maxOccupancy: parseInt(req.body[`cottages[${updateCottageIndex}][maxOccupancy]`]) || 1,
+          description: req.body[`cottages[${updateCottageIndex}][description]`] || "",
           amenities: cottageAmenities,
         });
-        cottageIndex++;
+        updateCottageIndex++;
       }
       if (cottages.length > 0) {
         updateData.cottages = cottages;

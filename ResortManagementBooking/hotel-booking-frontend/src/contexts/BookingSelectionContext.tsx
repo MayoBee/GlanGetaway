@@ -76,6 +76,7 @@ interface BookingSelectionContextType {
   remainingAmount: number;
   numberOfNights: number;
   depositPercentage: number;
+  selectedRateType: 'day' | 'night';
   addRoom: (room: SelectedRoom) => void;
   removeRoom: (roomId: string) => void;
   addCottage: (cottage: SelectedCottage) => void;
@@ -88,6 +89,7 @@ interface BookingSelectionContextType {
   setBasePrice: (price: number) => void;
   setNumberOfNights: (nights: number) => void;
   setDepositPercentage: (percentage: number) => void;
+  setRateType: (rateType: 'day' | 'night') => void;
   calculateTotal: () => void;
   isRoomSelected: (roomId: string) => boolean;
   isCottageSelected: (cottageId: string) => boolean;
@@ -117,11 +119,15 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   const [basePrice, setBasePrice] = useState<number>(0);
   const [numberOfNights, setNumberOfNights] = useState<number>(1);
   const [depositPercentage, setDepositPercentage] = useState<number>(50); // Default 50% down payment
+  const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
 
   const calculateTotal = () => {
     const accommodationTotal = 
       selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * numberOfNights), 0) +
-      selectedCottages.reduce((sum, cottage) => sum + (cottage.pricePerNight * numberOfNights), 0);
+      selectedCottages.reduce((sum, cottage) => {
+        const rate = selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate;
+        return sum + (rate * numberOfNights);
+      }, 0);
     
     const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
     const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
@@ -139,7 +145,10 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
 
   const accommodationTotal = 
     selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * numberOfNights), 0) +
-    selectedCottages.reduce((sum, cottage) => sum + (cottage.pricePerNight * numberOfNights), 0);
+    selectedCottages.reduce((sum, cottage) => {
+      const rate = selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate;
+      return sum + (rate * numberOfNights);
+    }, 0);
 
   const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
   const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
@@ -220,6 +229,10 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     return selectedPackages.some(pkg => pkg.id === packageId);
   };
 
+  const setRateType = (rateType: 'day' | 'night') => {
+    setSelectedRateType(rateType);
+  };
+
   const value: BookingSelectionContextType = {
     selectedRooms,
     selectedCottages,
@@ -234,6 +247,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     remainingAmount,
     numberOfNights,
     depositPercentage,
+    selectedRateType,
     addRoom,
     removeRoom,
     addCottage,
@@ -246,6 +260,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     setBasePrice,
     setNumberOfNights,
     setDepositPercentage,
+    setRateType,
     calculateTotal,
     isRoomSelected,
     isCottageSelected,

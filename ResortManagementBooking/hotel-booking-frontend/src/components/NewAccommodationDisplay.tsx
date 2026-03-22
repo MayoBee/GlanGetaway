@@ -214,7 +214,18 @@ const NewAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) =
                           </button>
                         ) : (
                           <button
-                            onClick={() => addCottage(cottage)}
+                            onClick={() => addCottage({
+                              id: cottage.id,
+                              name: cottage.name,
+                              type: cottage.type,
+                              pricePerNight: selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate,
+                              dayRate: cottage.dayRate,
+                              nightRate: cottage.nightRate,
+                              hasDayRate: cottage.hasDayRate,
+                              hasNightRate: cottage.hasNightRate,
+                              maxOccupancy: cottage.maxOccupancy,
+                              description: cottage.description
+                            })}
                             className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
                           >
                             <Plus className="w-4 h-4 mr-1" />

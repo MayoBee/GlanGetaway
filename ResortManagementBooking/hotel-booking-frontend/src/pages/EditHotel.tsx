@@ -9,6 +9,20 @@ const EditHotel = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
 
+  console.log("EditHotel - hotelId:", hotelId);
+  console.log("EditHotel - current URL:", window.location.href);
+
+  if (!hotelId) {
+    console.error("No hotelId found in URL params");
+    showToast({
+      title: "Error",
+      description: "No resort ID found. Please navigate from My Resorts page.",
+      type: "ERROR",
+    });
+    navigate("/my-hotels");
+    return null;
+  }
+
   const { data: hotel } = useQuery(
     "fetchMyHotelById",
     () => apiClient.fetchMyHotelById(hotelId || ""),
@@ -17,7 +31,7 @@ const EditHotel = () => {
     }
   );
 
-  const { mutate, isLoading } = useMutation(apiClient.updateMyHotelById, {
+  const { mutate, isLoading } = useMutation(apiClient.updateMyHotelByIdJson, {
     onSuccess: () => {
       showToast({
         title: "Resort Updated Successfully",
@@ -30,17 +44,30 @@ const EditHotel = () => {
         navigate("/my-hotels");
       }, 1500); // Give user time to see the success message
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Edit hotel error:", error);
+      console.error("Error response:", error.response?.data);
+      
+      let errorMessage = "There was an error updating your resort. Please try again.";
+      
+      if (error.response?.data) {
+        if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+          errorMessage = error.response.data.errors.map((e: any) => e.message).join(", ");
+        }
+      }
+      
       showToast({
         title: "Failed to Update Resort",
-        description:
-          "There was an error updating your resort. Please try again.",
+        description: errorMessage,
         type: "ERROR",
       });
     },
   });
 
-  const handleSave = (hotelFormData: FormData) => {
+  const handleSave = (hotelFormData: any) => {
+    // Don't add hotelId to the data - it comes from URL parameter
     mutate(hotelFormData);
   };
 

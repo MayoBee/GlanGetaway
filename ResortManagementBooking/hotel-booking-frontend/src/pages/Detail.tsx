@@ -3,8 +3,7 @@ import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "./../api-client";
 import { AiFillStar } from "react-icons/ai";
 import GuestInfoForm from "../forms/GuestInfoForm/GuestInfoForm";
-import BookingSummary from "../components/BookingSummary";
-import SimpleAccommodationDisplay from "../components/SimpleAccommodationDisplay";
+import FreshAccommodationDisplay from "../components/FreshAccommodationDisplay";
 import ReportButton from "../components/ReportButton";
 import { Badge } from "../components/ui/badge";
 import SocialShareButtons from "../components/SocialShareButtons";
@@ -42,7 +41,7 @@ const isValidExternalUrl = (url: string | undefined): boolean => {
 
 const Detail = () => {
   const { id } = useParams();
-  const { isAmenitySelected, addAmenity, removeAmenity, isPackageSelected, addPackage, removePackage, selectedPackages } = useBookingSelection();
+  const { isAmenitySelected, addAmenity, removeAmenity, isPackageSelected, addPackage, removePackage, selectedPackages, setRateType } = useBookingSelection();
   const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
 
   // Check if any amenity is included in a selected package
@@ -197,7 +196,10 @@ const Detail = () => {
                       ? 'bg-blue-100 border-blue-400 text-blue-900' 
                       : 'bg-white border-blue-100 text-blue-700 hover:border-blue-300 hover:bg-blue-50'
                   }`}
-                  onClick={() => setSelectedRateType('day')}
+                  onClick={() => {
+                    setSelectedRateType('day');
+                    setRateType('day');
+                  }}
                 >
                   <h5 className="font-medium mb-1">Day Rate</h5>
                   <p className="text-sm mb-2">
@@ -218,7 +220,10 @@ const Detail = () => {
                       ? 'bg-green-100 border-green-400 text-green-900' 
                       : 'bg-green-50 border-green-100 text-green-700 hover:border-green-300 hover:bg-green-100'
                   }`}
-                  onClick={() => setSelectedRateType('night')}
+                  onClick={() => {
+                    setSelectedRateType('night');
+                    setRateType('night');
+                  }}
                 >
                   <h5 className="font-medium mb-1">Night Rate</h5>
                   <p className="text-sm mb-2">
@@ -720,7 +725,7 @@ const Detail = () => {
       )}
 
       {/* Rooms and Cottages */}
-      <SimpleAccommodationDisplay hotel={hotel} selectedRateType={selectedRateType} />
+      <FreshAccommodationDisplay hotel={hotel} selectedRateType={selectedRateType} />
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr]">
         <div className="h-fit">

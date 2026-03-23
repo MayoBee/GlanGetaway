@@ -47,7 +47,7 @@ export interface IActivity extends Document {
 
 const activitySchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
+    hotelId: { type: String, required: true },
     name: { type: String, required: true },
     type: {
       type: String,

@@ -81,8 +81,6 @@ export type HotelType = {
   country: string;
   description: string;
   type: string[];
-  adultCount: number;
-  childCount: number;
   facilities: string[];
   dayRate: number;
   nightRate: number;
@@ -187,6 +185,8 @@ export type HotelType = {
     includedCottages: string[];
     includedRooms: string[];
     includedAmenities: string[];
+    includedAdultEntranceFee: boolean;
+    includedChildEntranceFee: boolean;
   }>;
   // Approval system fields
   isApproved?: boolean;

@@ -1,6 +1,6 @@
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, X, Users, DollarSign, Trash2 } from "lucide-react";
+import { Plus, X, Users } from "lucide-react";
 
 const GuestsSection = () => {
   const {
@@ -41,7 +41,7 @@ const GuestsSection = () => {
               Day Rate (₱)
             </label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
               <input
                 type="number"
                 min="0"
@@ -68,7 +68,7 @@ const GuestsSection = () => {
               Night Rate (₱)
             </label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+              <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
               <input
                 type="number"
                 min="0"
@@ -231,7 +231,7 @@ const GuestsSection = () => {
                     Day Rate (₱)
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
                     <input
                       type="number"
                       min="0"
@@ -258,7 +258,7 @@ const GuestsSection = () => {
                     Night Rate (₱)
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
                     <input
                       type="number"
                       min="0"

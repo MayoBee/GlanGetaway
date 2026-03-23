@@ -100,7 +100,6 @@ userSchema.pre("save", async function (next) {
 });
 
 // Optimized indexes for better performance
-userSchema.index({ email: 1 }); // Simple index for email lookups
 userSchema.index({ email: 1, isActive: 1 }); // Compound index for active users
 userSchema.index({ createdAt: -1 }); // For user listing queries
 

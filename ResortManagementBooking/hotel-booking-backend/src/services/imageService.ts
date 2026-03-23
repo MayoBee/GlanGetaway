@@ -14,11 +14,11 @@ class ImageService {
       // In production, we need to go up more levels from dist/hotel-booking-backend/src
       this.uploadDir = path.join(__dirname, '..', '..', '..', '..', 'uploads');
     } else {
-      // In development, go up from src
-      this.uploadDir = path.join(__dirname, '..', 'uploads');
+      // In development (running from src), go up from src to project root
+      this.uploadDir = path.join(__dirname, '..', '..', 'uploads');
     }
     
-    this.baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 5000}`;
+    this.baseUrl = process.env.BACKEND_URL || `http://localhost:${process.env.PORT || 7002}`;
     
     // Ensure upload directory exists
     this.ensureUploadDir();
@@ -121,13 +121,6 @@ class ImageService {
     const oneYear = 365 * 24 * 60 * 60;
     res.setHeader('Cache-Control', `public, max-age=${oneYear}, immutable`);
     res.setHeader('ETag', `"${stats.size}-${stats.mtime.getTime()}"`);
-    
-    // CORS and security headers
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Range');
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
     
     // Accept-Ranges for partial content support
     res.setHeader('Accept-Ranges', 'bytes');

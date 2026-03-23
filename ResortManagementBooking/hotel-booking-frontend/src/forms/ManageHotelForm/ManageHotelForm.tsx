@@ -8,7 +8,6 @@ import FreshPackagesSection from "./FreshPackagesSection";
 import AmenitiesSection from "./AmenitiesSection";
 import GuestsSection from "./GuestsSection";
 import PoliciesSection from "./PoliciesSection";
-import DiscountsSection from "./DiscountsSection";
 import ImagesSection from "./ImagesSection";
 import ContactSection from "./ContactSection";
 import { HotelType } from "../../../../shared/types";
@@ -32,8 +31,6 @@ export type HotelFormData = {
   facilities: string[];
   imageFiles?: FileList;
   imageUrls: string[];
-  adultCount: number;
-  childCount: number;
   amenities?: Array<{
     id: string;
     name: string;
@@ -126,6 +123,8 @@ export type HotelFormData = {
     includedCottages: string[];
     includedRooms: string[];
     includedAmenities: string[];
+    includedAdultEntranceFee: boolean;
+    includedChildEntranceFee: boolean;
   }>;
 };
 
@@ -147,15 +146,13 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       type: [],
       dayRate: 0,
       nightRate: 0,
-      hasDayRate: true,
-      hasNightRate: true,
+      hasDayRate: false,
+      hasNightRate: false,
       dayRateCheckInTime: "08:00 AM",
       dayRateCheckOutTime: "05:00 PM",
       nightRateCheckInTime: "02:00 PM",
       nightRateCheckOutTime: "02:00 PM",
       starRating: 3,
-      adultCount: 1,
-      childCount: 0,
       facilities: [],
       imageUrls: [],
       contact: {
@@ -203,8 +200,8 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         // Handle the new day/night rate fields with fallbacks
         dayRate: hotel.dayRate || 0,
         nightRate: hotel.nightRate || 0,
-        hasDayRate: hotel.hasDayRate !== undefined ? hotel.hasDayRate : true,
-        hasNightRate: hotel.hasNightRate !== undefined ? hotel.hasNightRate : true,
+        hasDayRate: hotel.hasDayRate !== undefined ? hotel.hasDayRate : false,
+        hasNightRate: hotel.hasNightRate !== undefined ? hotel.hasNightRate : false,
         dayRateCheckInTime: (hotel as any).dayRateCheckInTime || "08:00 AM",
         dayRateCheckOutTime: (hotel as any).dayRateCheckOutTime || "05:00 PM",
         nightRateCheckInTime: (hotel as any).nightRateCheckInTime || "02:00 PM",
@@ -240,6 +237,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           groupQuantity: 1,
         },
         childEntranceFee: hotel.childEntranceFee || [],
+        imageUrls: hotel.imageUrls || [],
       };
       reset(formData);
     }
@@ -263,9 +261,9 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     <FormProvider {...formMethods}>
       <form className="flex flex-col gap-10" onSubmit={onSubmit}>
         <DetailsSection />
+        <GuestsSection />
         <TypeSection />
         <FacilitiesSection />
-        <GuestsSection />
         <FreshRoomsSection />
         <FreshCottagesSection />
         <AmenitiesSection />

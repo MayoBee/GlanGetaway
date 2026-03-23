@@ -1,28 +1,45 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, Minus, Package, DollarSign } from "lucide-react";
+import { Plus, Package, Check, X } from "lucide-react";
+import { useState } from "react";
 
 const FreshPackagesSection = () => {
   const { control } = useFormContext<HotelFormData>();
   const rooms = useWatch({ control, name: "rooms" });
   const cottages = useWatch({ control, name: "cottages" });
   const amenities = useWatch({ control, name: "amenities" });
+  const adultEntranceFee = useWatch({ control, name: "adultEntranceFee" });
   
   const { fields, append, remove } = useFieldArray({
     control,
     name: "packages",
   });
+  const [confirmedPackages, setConfirmedPackages] = useState<Set<string>>(new Set());
 
   const addPackage = () => {
+    const newPackageId = `package_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     append({
-      id: `package_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: newPackageId,
       name: "",
       description: "",
       price: 0,
       includedRooms: [],
       includedCottages: [],
       includedAmenities: [],
+      includedAdultEntranceFee: false,
+      includedChildEntranceFee: false,
     });
+  };
+
+  const confirmPackage = (packageId: string) => {
+    setConfirmedPackages(prev => new Set(prev).add(packageId));
+    setTimeout(() => {
+      setConfirmedPackages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(packageId);
+        return newSet;
+      });
+    }, 2000);
   };
 
   return (
@@ -42,17 +59,10 @@ const FreshPackagesSection = () => {
       {fields.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
           <Package className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500 mb-2">No packages added yet</p>
-          <button
-            type="button"
-            onClick={addPackage}
-            className="text-purple-500 hover:text-purple-600 font-medium"
-          >
-            Create your first package
-          </button>
+          <p className="text-gray-500">No packages added yet</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="max-h-96 overflow-y-auto space-y-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
           {fields.map((field, index) => (
             <div key={field.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="flex justify-between items-start mb-4">
@@ -60,9 +70,9 @@ const FreshPackagesSection = () => {
                 <button
                   type="button"
                   onClick={() => remove(index)}
-                  className="text-red-500 hover:text-red-600"
+                  className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
                 >
-                  <Minus className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -86,7 +96,7 @@ const FreshPackagesSection = () => {
                     Package Price
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
                     <input
                       {...control.register(`packages.${index}.price` as const)}
                       type="number"
@@ -122,7 +132,7 @@ const FreshPackagesSection = () => {
                   </label>
                   {rooms && rooms.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {rooms.map((room, roomIndex) => (
+                      {rooms.map((room) => (
                         <label
                           key={room.id}
                           className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100"
@@ -151,7 +161,7 @@ const FreshPackagesSection = () => {
                   </label>
                   {cottages && cottages.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {cottages.map((cottage, cottageIndex) => (
+                      {cottages.map((cottage) => (
                         <label
                           key={cottage.id}
                           className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100"
@@ -180,7 +190,7 @@ const FreshPackagesSection = () => {
                   </label>
                   {amenities && amenities.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {amenities.map((amenity, amenityIndex) => (
+                      {amenities.map((amenity) => (
                         <label
                           key={amenity.id}
                           className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100"
@@ -201,6 +211,54 @@ const FreshPackagesSection = () => {
                     </p>
                   )}
                 </div>
+
+                {/* Entrance Fees */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🎫 Included Entrance Fees
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100">
+                      <input
+                        {...control.register(`packages.${index}.includedAdultEntranceFee` as const)}
+                        type="checkbox"
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">
+                        Adult Entrance Fee (Day: ₱{adultEntranceFee?.dayRate || 0}, Night: ₱{adultEntranceFee?.nightRate || 0})
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100">
+                      <input
+                        {...control.register(`packages.${index}.includedChildEntranceFee` as const)}
+                        type="checkbox"
+                        className="w-4 h-4"
+                      />
+                      <span className="text-sm">
+                        Child Entrance Fee (Available rates for children)
+                      </span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 When included in a package, entrance fees become free for the user since they're already paid for in the package price.
+                  </p>
+                </div>
+              </div>
+
+              {/* Confirm Button */}
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => confirmPackage(field.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    confirmedPackages.has(field.id)
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                  {confirmedPackages.has(field.id) ? 'Confirmed' : 'Confirm Package'}
+                </button>
               </div>
             </div>
           ))}

@@ -68,8 +68,8 @@ export interface IHousekeepingTask extends Document {
 
 const housekeepingTaskSchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
-    bookingId: { type: String, index: true },
+    hotelId: { type: String, required: true },
+    bookingId: { type: String },
     roomId: { type: String, required: true, index: true },
     roomNumber: { type: String, required: true },
     taskType: {
@@ -162,7 +162,6 @@ const housekeepingTaskSchema = new mongoose.Schema(
 // Compound indexes
 housekeepingTaskSchema.index({ hotelId: 1, status: 1 });
 housekeepingTaskSchema.index({ assignedTo: 1, status: 1 });
-housekeepingTaskSchema.index({ qrCode: 1 }, { unique: true });
 housekeepingTaskSchema.index({ bookingId: 1 });
 
 // Default checklist for checkout

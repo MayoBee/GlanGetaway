@@ -65,8 +65,8 @@ export interface IBilling extends Document {
 
 const billingSchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
-    bookingId: { type: String, required: true, index: true },
+    hotelId: { type: String, required: true },
+    bookingId: { type: String, required: true },
     guestId: { type: String, required: true },
     guestName: { type: String, required: true },
     roomCharges: [

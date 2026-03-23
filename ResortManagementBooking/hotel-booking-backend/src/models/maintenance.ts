@@ -44,7 +44,7 @@ export interface IMaintenance extends Document {
 
 const maintenanceSchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
+    hotelId: { type: String, required: true },
     roomId: { type: String },
     roomNumber: { type: String },
     amenityId: { type: String },

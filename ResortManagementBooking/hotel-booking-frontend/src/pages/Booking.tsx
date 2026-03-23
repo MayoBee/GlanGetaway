@@ -63,6 +63,7 @@ const Booking = () => {
     selectedRooms, 
     selectedCottages, 
     selectedAmenities,
+    selectedPackages,
     setBasePrice,
     setNumberOfNights
   } = useBookingSelection();
@@ -126,8 +127,12 @@ const Booking = () => {
       let entranceFeeTotal = 0;
       const rateType = 'nightRate'; // Default to night rate for booking
       
-      // Adult entrance fees
-      if (hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
+      // Check if any selected packages include entrance fees (making them free)
+      const hasAdultEntranceFeeInPackage = selectedPackages.some(pkg => pkg.includedAdultEntranceFee);
+      const hasChildEntranceFeeInPackage = selectedPackages.some(pkg => pkg.includedChildEntranceFee);
+      
+      // Adult entrance fees (only if not included in any package)
+      if (!hasAdultEntranceFeeInPackage && hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
         if (hotel.adultEntranceFee.pricingModel === 'per_group') {
           const groupsNeeded = Math.ceil(search.adultCount / (hotel.adultEntranceFee.groupQuantity || 1));
           entranceFeeTotal += groupsNeeded * hotel.adultEntranceFee[rateType];
@@ -136,8 +141,8 @@ const Booking = () => {
         }
       }
 
-      // Child entrance fees
-      if (hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && search.childAges) {
+      // Child entrance fees (only if not included in any package)
+      if (!hasChildEntranceFeeInPackage && hotel.childEntranceFee && hotel.childEntranceFee.length > 0 && search.childAges) {
         search.childAges.forEach((age) => {
           const ageGroup = hotel.childEntranceFee?.find(
             (group) => age >= group.minAge && age <= group.maxAge
@@ -156,9 +161,16 @@ const Booking = () => {
 
       const basePrice = entranceFeeTotal;
       setBasePrice(basePrice);
+      
+      // Log debugging info
+      if (hasAdultEntranceFeeInPackage || hasChildEntranceFeeInPackage) {
+        console.log("Entrance fees included in package - making them free!");
+        console.log("Adult entrance fee included:", hasAdultEntranceFeeInPackage);
+        console.log("Child entrance fee included:", hasChildEntranceFeeInPackage);
+      }
       console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "using entrance fees");
     }
-  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges]);
+  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages]);
 
   if (isLoadingHotel || isLoadingUser) {
     return (

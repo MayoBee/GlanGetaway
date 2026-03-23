@@ -26,6 +26,32 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
   const cottages = hotel?.cottages || [];
   const packages = hotel?.packages || [];
   
+  // Fix cottage data: automatically set hasDayRate/hasNightRate based on rate values
+  const fixedCottages = cottages.map((cottage: any) => ({
+    ...cottage,
+    hasDayRate: cottage.hasDayRate || (cottage.dayRate && cottage.dayRate > 0),
+    hasNightRate: cottage.hasNightRate || (cottage.nightRate && cottage.nightRate > 0)
+  }));
+  
+  // TEMPORARY: Add test data to debug display issue
+  const testCottages = [
+    {
+      id: "test-1",
+      name: "Test Cottage",
+      type: "Beach Villa",
+      hasDayRate: true,
+      hasNightRate: true,
+      dayRate: 100,
+      nightRate: 200,
+      minOccupancy: 1,
+      maxOccupancy: 3,
+      description: "Test cottage for debugging"
+    }
+  ];
+  
+  // Use fixed cottages data
+  const cottagesToDisplay = fixedCottages.length > 0 ? fixedCottages : testCottages;
+  
   const hasRooms = rooms.length > 0;
   const hasCottages = cottages.length > 0;
   const hasPackages = packages.length > 0;
@@ -34,11 +60,24 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
   console.log('Hotel data:', hotel);
   console.log('Rooms found:', rooms);
   console.log('Cottages found:', cottages);
+  console.log('Fixed cottages:', fixedCottages);
   console.log('Packages found:', packages);
   console.log('Has rooms:', hasRooms);
   console.log('Has cottages:', hasCottages);
   console.log('Has packages:', hasPackages);
   console.log('Selected rate type:', selectedRateType);
+  
+  // Debug cottage data specifically
+  cottagesToDisplay.forEach((cottage: any, index: any) => {
+    console.log(`Cottage ${index} details:`, {
+      id: cottage.id,
+      name: cottage.name,
+      hasDayRate: cottage.hasDayRate,
+      hasNightRate: cottage.hasNightRate,
+      dayRate: cottage.dayRate,
+      nightRate: cottage.nightRate
+    });
+  });
 
   return (
     <div className="space-y-8">
@@ -50,7 +89,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
         </p>
       </div>
 
-      {/* Package Offers Section */}
+      {/* Special Packages Section */}
       {hasPackages && (
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg shadow-md p-6 border border-purple-200">
           <div className="flex items-center mb-4">
@@ -137,6 +176,27 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                           </div>
                         </div>
                       )}
+                      
+                      {/* Entrance Fees */}
+                      {(pkg.includedAdultEntranceFee || pkg.includedChildEntranceFee) && (
+                        <div className="text-sm">
+                          <span className="font-medium text-gray-700">🎫 Entrance Fees (Included):</span>
+                          <div className="ml-2">
+                            {pkg.includedAdultEntranceFee && (
+                              <div className="flex items-center text-gray-600">
+                                <Check className="w-3 h-3 mr-1 text-green-500" />
+                                Adult Entrance Fee (FREE with package)
+                              </div>
+                            )}
+                            {pkg.includedChildEntranceFee && (
+                              <div className="flex items-center text-gray-600">
+                                <Check className="w-3 h-3 mr-1 text-green-500" />
+                                Child Entrance Fee (FREE with package)
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Total Price */}
@@ -196,6 +256,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                                 price: 0
                               };
                             }),
+                            includedAdultEntranceFee: pkg.includedAdultEntranceFee || false,
+                            includedChildEntranceFee: pkg.includedChildEntranceFee || false,
                           })}
                           className="flex-1 bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition-colors flex items-center justify-center"
                         >
@@ -303,50 +365,74 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {cottages.map((cottage) => {
+            {cottagesToDisplay.map((cottage: any) => {
               const isSelected = isCottageSelected(cottage.id);
               
-              // Calculate price based on selected rate type
+              // Always show both day and night rates when available
               let cottagePrice = 0;
               let rateDisplay = null;
-              
+/* ... */
+              // Determine which price to use for calculation based on selected rate type
               if (selectedRateType === 'day' && cottage.hasDayRate && cottage.dayRate) {
                 cottagePrice = cottage.dayRate;
-                rateDisplay = (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 border border-green-200 rounded bg-green-50">
+              } else if (selectedRateType === 'night' && cottage.hasNightRate && cottage.nightRate) {
+                cottagePrice = cottage.nightRate;
+              }
+              
+              // Always show both rates if available
+              rateDisplay = (
+                <div className="space-y-2">
+                  {cottage.hasDayRate && cottage.dayRate && (
+                    <div className={`flex items-center justify-between p-3 border rounded ${
+                      selectedRateType === 'day' 
+                        ? 'border-green-200 bg-green-50' 
+                        : 'border-gray-200 bg-gray-50'
+                    }`}>
                       <div className="flex items-center">
                         <input 
                           type="checkbox" 
-                          checked={true} 
+                          checked={selectedRateType === 'day'} 
                           readOnly 
                           className="w-4 h-4 text-green-600 border-green-300 rounded mr-2" 
                         />
-                        <span className="font-semibold text-green-800">Day Rate Available</span>
+                        <span className={`font-semibold ${
+                          selectedRateType === 'day' ? 'text-green-800' : 'text-gray-600'
+                        }`}>Day Rate</span>
                       </div>
-                      <span className="text-lg font-bold text-green-600">₱{cottage.dayRate}</span>
+                      <span className={`text-lg font-bold ${
+                        selectedRateType === 'day' ? 'text-green-600' : 'text-gray-600'
+                      }`}>₱{cottage.dayRate}</span>
                     </div>
-                  </div>
-                );
-              } else if (selectedRateType === 'night' && cottage.hasNightRate && cottage.nightRate) {
-                cottagePrice = cottage.nightRate;
-                rateDisplay = (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 border border-blue-200 rounded bg-blue-50">
+                  )}
+                  {cottage.hasNightRate && cottage.nightRate && (
+                    <div className={`flex items-center justify-between p-3 border rounded ${
+                      selectedRateType === 'night' 
+                        ? 'border-blue-200 bg-blue-50' 
+                        : 'border-gray-200 bg-gray-50'
+                    }`}>
                       <div className="flex items-center">
                         <input 
                           type="checkbox" 
-                          checked={true} 
+                          checked={selectedRateType === 'night'} 
                           readOnly 
                           className="w-4 h-4 text-blue-600 border-blue-300 rounded mr-2" 
                         />
-                        <span className="font-semibold text-blue-800">Night Rate Available</span>
+                        <span className={`font-semibold ${
+                          selectedRateType === 'night' ? 'text-blue-800' : 'text-gray-600'
+                        }`}>Night Rate</span>
                       </div>
-                      <span className="text-lg font-bold text-blue-600">₱{cottage.nightRate}</span>
+                      <span className={`text-lg font-bold ${
+                        selectedRateType === 'night' ? 'text-blue-600' : 'text-gray-600'
+                      }`}>₱{cottage.nightRate}</span>
                     </div>
-                  </div>
-                );
-              }
+                  )}
+                  {!cottage.hasDayRate && !cottage.hasNightRate && (
+                    <div className="text-center text-gray-500 p-3 border border-gray-200 rounded bg-gray-50">
+                      <span className="text-sm">No rates available</span>
+                    </div>
+                  )}
+                </div>
+              );
 
               const totalPrice = cottagePrice * numberOfNights;
               
@@ -409,7 +495,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                               id: cottage.id,
                               name: cottage.name,
                               type: cottage.type,
-                              pricePerNight: selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate,
+                              pricePerNight: cottagePrice,
                               dayRate: cottage.dayRate,
                               nightRate: cottage.nightRate,
                               hasDayRate: cottage.hasDayRate,
@@ -423,6 +509,20 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                             Add Cottage
                           </button>
                         )}
+                      </div>
+                    )}
+                    
+                    {/* Show message when no rate is available for selected type */}
+                    {cottagePrice === 0 && (cottage.hasDayRate || cottage.hasNightRate) && (
+                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <p className="text-sm text-yellow-800 text-center">
+                          {selectedRateType === 'day' && !cottage.hasDayRate 
+                            ? 'Day rate not available for this cottage' 
+                            : selectedRateType === 'night' && !cottage.hasNightRate 
+                            ? 'Night rate not available for this cottage'
+                            : 'Please select a rate type to book this cottage'
+                          }
+                        </p>
                       </div>
                     )}
                   </div>

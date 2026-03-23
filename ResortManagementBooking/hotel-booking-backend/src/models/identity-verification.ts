@@ -41,8 +41,8 @@ export interface IIdentityVerification extends Document {
 
 const identityVerificationSchema = new mongoose.Schema(
   {
-    bookingId: { type: String, required: true, index: true },
-    hotelId: { type: String, required: true, index: true },
+    bookingId: { type: String, required: true },
+    hotelId: { type: String, required: true },
     guestId: { type: String, required: true },
     // Guest info from booking
     guestName: { type: String, required: true },

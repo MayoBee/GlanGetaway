@@ -115,10 +115,12 @@ router.get("/business-stats", verifyToken, requireAdmin, async (req: Request, re
     const totalRating = resorts.reduce((sum, resort) => sum + (resort.averageRating || 0), 0);
     const averageRating = resorts.length > 0 ? totalRating / resorts.length : 0;
 
-    // Calculate occupancy rate (simplified - based on total possible bookings)
+    // Calculate occupancy rate (simplified - based on actual bookings vs estimated capacity)
     const totalPossibleBookings = resorts.reduce((sum, resort) => {
       const daysInPeriod = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      return sum + (resort.adultCount * daysInPeriod);
+      // Estimate capacity based on rooms and cottages (10 guests per room/cottage as a reasonable average)
+      const estimatedCapacity = ((resort.rooms?.length || 0) + (resort.cottages?.length || 0)) * 10 * daysInPeriod;
+      return sum + Math.max(estimatedCapacity, 100 * daysInPeriod); // Minimum capacity fallback
     }, 0);
     const occupancyRate = totalPossibleBookings > 0 ? (totalBookings / totalPossibleBookings) * 100 : 0;
 

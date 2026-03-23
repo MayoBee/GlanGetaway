@@ -39,7 +39,7 @@ export interface IRoom extends Document {
 
 const roomSchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
+    hotelId: { type: String, required: true },
     roomNumber: { type: String, required: true },
     floor: { type: Number, required: true, default: 1 },
     roomType: {

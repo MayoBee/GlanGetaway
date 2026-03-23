@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { HotelType } from "../../../shared/types";
-import { MapPin, Star, Users } from "lucide-react";
+import { MapPin, Star } from "lucide-react";
 import { Badge } from "./ui/badge";
 import SmartImage from "./SmartImage";
 
@@ -86,20 +86,6 @@ const LatestDestinationCard = ({ hotel }: Props) => {
                   >
                     {hotel.type}
                   </Badge>
-                )}
-              </div>
-
-              {/* Guest Capacity */}
-              <div className="flex items-center space-x-3 text-white/80">
-                <div className="flex items-center space-x-1">
-                  <Users className="w-3 h-3" />
-                  <span className="text-xs">{hotel.adultCount} adults</span>
-                </div>
-                {hotel.childCount > 0 && (
-                  <div className="flex items-center space-x-1">
-                    <Users className="w-3 h-3" />
-                    <span className="text-xs">{hotel.childCount} children</span>
-                  </div>
                 )}
               </div>
             </div>

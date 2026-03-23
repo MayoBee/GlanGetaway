@@ -44,7 +44,7 @@ export interface IAmenity extends Document {
 
 const amenitySchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
+    hotelId: { type: String, required: true },
     name: { type: String, required: true },
     type: {
       type: String,

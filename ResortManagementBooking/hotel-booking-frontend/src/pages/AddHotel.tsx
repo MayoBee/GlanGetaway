@@ -26,36 +26,104 @@ const AddHotel = () => {
       console.error("Error response data:", error.response?.data);
       console.error("Error response status:", error.response?.status);
       
-      // Show alert for debugging
-      const errorInfo = error.response?.data ? JSON.stringify(error.response.data) : error.message;
-      alert("Backend Error: " + errorInfo);
+      let errorMessage = "";
+      let errorTitle = "Failed to Add Resort";
       
-      // Try to extract more details from the error response
-      let errorMessage = "There was an error saving your beach resort. Please try again.";
-      
-      if (error.response?.data) {
-        // Log the full response for debugging
-        console.log("Full error response:", JSON.stringify(error.response.data, null, 2));
-        
-        if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        } else if (error.response.data.errors) {
-          // Handle validation errors from backend
-          const validationErrors = error.response.data.errors;
-          if (Array.isArray(validationErrors)) {
-            errorMessage = validationErrors.map((e: any) => e.message).join(", ");
-          } else {
-            errorMessage = JSON.stringify(validationErrors);
-          }
-        } else if (typeof error.response.data === 'string') {
-          errorMessage = error.response.data;
+      // Network/Connection errors
+      if (!error.response) {
+        if (error.code === 'ECONNABORTED') {
+          errorTitle = "Request Timeout";
+          errorMessage = "The request took too long to complete. Please check your internet connection and try again.";
+        } else if (error.message === 'Network Error') {
+          errorTitle = "Network Connection Error";
+          errorMessage = "Unable to connect to the server. Please check your internet connection and try again.";
+        } else {
+          errorTitle = "Connection Error";
+          errorMessage = "Unable to add resort. Please check your internet connection and try again.";
         }
-      } else if (error.message) {
-        errorMessage = error.message;
+      }
+      // HTTP Status Code specific errors
+      else if (error.response) {
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        switch (status) {
+          case 400:
+            errorTitle = "Invalid Data";
+            if (data.message) {
+              errorMessage = `Validation error: ${data.message}`;
+            } else if (data.errors && Array.isArray(data.errors)) {
+              errorMessage = `Please fix the following issues: ${data.errors.map((e: any) => e.message).join(", ")}`;
+            } else {
+              errorMessage = "Please check all required fields and try again.";
+            }
+            break;
+            
+          case 401:
+            errorTitle = "Authentication Error";
+            errorMessage = "Your session has expired. Please log in again and retry.";
+            break;
+            
+          case 403:
+            errorTitle = "Permission Denied";
+            errorMessage = "You don't have permission to add resorts. Please contact your administrator.";
+            break;
+            
+          case 409:
+            errorTitle = "Duplicate Resort";
+            errorMessage = "A resort with this name or location already exists. Please check your details and try again.";
+            break;
+            
+          case 413:
+            errorTitle = "File Too Large";
+            errorMessage = "One or more images are too large. Please compress images and try again.";
+            break;
+            
+          case 422:
+            errorTitle = "Validation Error";
+            if (data.message) {
+              errorMessage = data.message;
+            } else if (data.errors && Array.isArray(data.errors)) {
+              errorMessage = data.errors.map((e: any) => e.message).join(", ");
+            } else {
+              errorMessage = "Please check all fields for correct formatting and required information.";
+            }
+            break;
+            
+          case 429:
+            errorTitle = "Too Many Requests";
+            errorMessage = "Please wait a moment before trying again.";
+            break;
+            
+          case 500:
+            errorTitle = "Server Error";
+            errorMessage = "Our server encountered an error. Please try again in a few minutes.";
+            break;
+            
+          case 502:
+          case 503:
+          case 504:
+            errorTitle = "Service Unavailable";
+            errorMessage = "Our servers are temporarily unavailable. Please try again in a few minutes.";
+            break;
+            
+          default:
+            errorTitle = "Add Failed";
+            if (data.message) {
+              errorMessage = data.message;
+            } else {
+              errorMessage = `An unexpected error occurred (${status}). Please try again or contact support if the problem persists.`;
+            }
+        }
+      }
+      
+      // Fallback if no specific error message was set
+      if (!errorMessage) {
+        errorMessage = "Unable to add resort. Please try again or contact support if the problem persists.";
       }
       
       showToast({
-        title: "Failed to Add Resort",
+        title: errorTitle,
         description: errorMessage,
         type: "ERROR",
       });

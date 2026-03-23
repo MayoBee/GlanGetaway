@@ -1,6 +1,7 @@
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Check } from "lucide-react";
+import { useState } from "react";
 
 const AmenitiesSection = () => {
   const { control, register, formState: { errors } } = useFormContext<HotelFormData>();
@@ -8,14 +9,27 @@ const AmenitiesSection = () => {
     control,
     name: "amenities",
   });
+  const [confirmedAmenities, setConfirmedAmenities] = useState<Set<string>>(new Set());
 
   const handleAddAmenity = () => {
+    const newAmenityId = Math.random().toString(36).substr(2, 9);
     append({
-      id: Math.random().toString(36).substr(2, 9),
+      id: newAmenityId,
       name: "",
       price: 0,
       description: "",
     });
+  };
+
+  const confirmAmenity = (amenityId: string) => {
+    setConfirmedAmenities(prev => new Set(prev).add(amenityId));
+    setTimeout(() => {
+      setConfirmedAmenities(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(amenityId);
+        return newSet;
+      });
+    }, 2000);
   };
 
   return (
@@ -27,7 +41,7 @@ const AmenitiesSection = () => {
         </p>
       </div>
 
-      <div className="space-y-3 max-h-96 overflow-y-auto">
+      <div className="space-y-3 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 bg-gray-50">
         {fields.map((field, index) => (
           <div
             key={field.id}
@@ -85,6 +99,19 @@ const AmenitiesSection = () => {
                 {...register(`amenities.${index}.description`)}
               />
             </div>
+
+            <button
+              type="button"
+              onClick={() => confirmAmenity(field.id)}
+              className={`p-2 rounded transition flex items-center gap-1 ${
+                confirmedAmenities.has(field.id)
+                  ? 'bg-green-500 text-white'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+              title={confirmedAmenities.has(field.id) ? 'Confirmed' : 'Confirm Amenity'}
+            >
+              <Check className="w-4 h-4" />
+            </button>
 
             <button
               type="button"

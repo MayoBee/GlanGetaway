@@ -23,6 +23,8 @@ const PackagesSection = () => {
       includedCottages: [],
       includedRooms: [],
       includedAmenities: [],
+      includedAdultEntranceFee: false,
+      includedChildEntranceFee: false,
     });
   };
 
@@ -262,6 +264,48 @@ const PackagesSection = () => {
                   ) : (
                     <p className="text-gray-500 text-sm">No amenities available. Add amenities first.</p>
                   )}
+                </div>
+
+                {/* Entrance Fees Selection */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    🎫 Included Entrance Fees
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100">
+                      <input
+                        type="checkbox"
+                        checked={currentPackage.includedAdultEntranceFee || false}
+                        onChange={(e) => {
+                          const currentPackages = control._formValues.packages;
+                          currentPackages[index].includedAdultEntranceFee = e.target.checked;
+                          control._formValues.packages = [...currentPackages];
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">
+                        Adult Entrance Fee (Day Rate: ₱{control._formValues.adultEntranceFee?.dayRate || 0}, Night Rate: ₱{control._formValues.adultEntranceFee?.nightRate || 0})
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100">
+                      <input
+                        type="checkbox"
+                        checked={currentPackage.includedChildEntranceFee || false}
+                        onChange={(e) => {
+                          const currentPackages = control._formValues.packages;
+                          currentPackages[index].includedChildEntranceFee = e.target.checked;
+                          control._formValues.packages = [...currentPackages];
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">
+                        Child Entrance Fee (Available rates for children)
+                      </span>
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    💡 When included in a package, entrance fees become free for the user since they're already paid for in the package price.
+                  </p>
                 </div>
               </div>
 

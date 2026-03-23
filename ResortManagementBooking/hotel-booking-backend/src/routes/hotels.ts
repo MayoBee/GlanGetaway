@@ -81,7 +81,27 @@ router.get(
     const id = req.params.id.toString();
 
     try {
+      console.log("=== FETCH HOTEL BY ID DEBUG ===");
+      console.log("Hotel ID requested:", id);
+      
       const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description');
+      
+      console.log("Hotel data found:", hotel);
+      console.log("Cottages data:", hotel?.cottages);
+      
+      if (hotel?.cottages) {
+        hotel.cottages.forEach((cottage: any, index: number) => {
+          console.log(`Cottage ${index} from DB:`, {
+            id: cottage.id,
+            name: cottage.name,
+            hasDayRate: cottage.hasDayRate,
+            hasNightRate: cottage.hasNightRate,
+            dayRate: cottage.dayRate,
+            nightRate: cottage.nightRate
+          });
+        });
+      }
+      
       res.json(hotel);
     } catch (error) {
       console.log(error);
@@ -260,18 +280,6 @@ const constructSearchQuery = (queryParams: any) => {
       { country: { $regex: destination, $options: "i" } },
       { type: { $regex: destination, $options: "i" } },
     ];
-  }
-
-  if (queryParams.adultCount) {
-    constructedQuery.adultCount = {
-      $gte: parseInt(queryParams.adultCount),
-    };
-  }
-
-  if (queryParams.childCount) {
-    constructedQuery.childCount = {
-      $gte: parseInt(queryParams.childCount),
-    };
   }
 
   if (queryParams.facilities) {

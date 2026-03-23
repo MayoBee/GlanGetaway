@@ -137,8 +137,8 @@ const weatherTriggerSchema = new mongoose.Schema(
 
 const weatherAlertSchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
-    bookingId: { type: String, index: true },
+    hotelId: { type: String, required: true },
+    bookingId: { type: String },
     alertType: {
       type: String,
       enum: ["severe_weather", "typhoon", "heavy_rain", "high_winds", "flood"],
@@ -186,8 +186,8 @@ const weatherAlertSchema = new mongoose.Schema(
 
 const rebookingTokenSchema = new mongoose.Schema(
   {
-    bookingId: { type: String, required: true, index: true },
-    hotelId: { type: String, required: true, index: true },
+    bookingId: { type: String, required: true },
+    hotelId: { type: String, required: true },
     guestId: { type: String, required: true },
     token: { type: String, required: true, unique: true },
     expiresAt: { type: Date, required: true },
@@ -208,7 +208,6 @@ const rebookingTokenSchema = new mongoose.Schema(
 // Indexes
 weatherAlertSchema.index({ hotelId: 1, alertType: 1 });
 weatherAlertSchema.index({ bookingId: 1, status: 1 });
-rebookingTokenSchema.index({ token: 1 }, { unique: true });
 rebookingTokenSchema.index({ expiresAt: 1, status: 1 });
 
 export const WeatherTrigger = mongoose.model<IWeatherTrigger>(

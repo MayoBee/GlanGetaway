@@ -332,12 +332,6 @@ const MyHotels = () => {
                   <BiMoney className="w-4 h-4 text-primary-600" />
                   <span>₱{hotel.nightRate} per night</span>
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <BiHotel className="w-4 h-4 text-primary-600" />
-                  <span>
-                    {hotel.adultCount} adults, {hotel.childCount} children
-                  </span>
-                </div>
               </div>
 
               {/* Hotel Stats */}

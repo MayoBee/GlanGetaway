@@ -18,7 +18,7 @@ export interface INotification extends Document {
 
 const notificationSchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
+    hotelId: { type: String, required: true },
     userId: { type: String, required: true, index: true },
     type: {
       type: String,

@@ -40,8 +40,8 @@ export interface IPaymentTransaction extends Document {
 
 const paymentTransactionSchema = new mongoose.Schema(
   {
-    bookingId: { type: String, required: true, index: true },
-    hotelId: { type: String, required: true, index: true },
+    bookingId: { type: String, required: true },
+    hotelId: { type: String, required: true },
     guestId: { type: String, required: true },
     amount: { type: Number, required: true },
     currency: { type: String, default: "PHP" },

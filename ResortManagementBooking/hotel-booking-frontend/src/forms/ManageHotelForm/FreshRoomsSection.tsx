@@ -1,6 +1,7 @@
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, Minus, Users, DollarSign, Bed } from "lucide-react";
+import { Plus, Users, Bed, Check, X } from "lucide-react";
+import { useState } from "react";
 
 const FreshRoomsSection = () => {
   const { control, watch } = useFormContext<HotelFormData>();
@@ -8,10 +9,12 @@ const FreshRoomsSection = () => {
     control,
     name: "rooms",
   });
+  const [confirmedRooms, setConfirmedRooms] = useState<Set<string>>(new Set());
 
   const addRoom = () => {
+    const newRoomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     append({
-      id: `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: newRoomId,
       name: "",
       type: "",
       pricePerNight: 0,
@@ -20,6 +23,17 @@ const FreshRoomsSection = () => {
       description: "",
       amenities: [],
     });
+  };
+
+  const confirmRoom = (roomId: string) => {
+    setConfirmedRooms(prev => new Set(prev).add(roomId));
+    setTimeout(() => {
+      setConfirmedRooms(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(roomId);
+        return newSet;
+      });
+    }, 2000);
   };
 
   return (
@@ -39,17 +53,10 @@ const FreshRoomsSection = () => {
       {fields.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
           <Bed className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500 mb-2">No rooms added yet</p>
-          <button
-            type="button"
-            onClick={addRoom}
-            className="text-blue-500 hover:text-blue-600 font-medium"
-          >
-            Add your first room
-          </button>
+          <p className="text-gray-500">No rooms added yet</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="max-h-96 overflow-y-auto space-y-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
           {fields.map((field, index) => (
             <div key={field.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="flex justify-between items-start mb-4">
@@ -57,9 +64,9 @@ const FreshRoomsSection = () => {
                 <button
                   type="button"
                   onClick={() => remove(index)}
-                  className="text-red-500 hover:text-red-600"
+                  className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
                 >
-                  <Minus className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -102,7 +109,7 @@ const FreshRoomsSection = () => {
                     Price Per Night
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
                     <input
                       {...control.register(`rooms.${index}.pricePerNight` as const)}
                       type="number"
@@ -159,6 +166,22 @@ const FreshRoomsSection = () => {
                   placeholder="Describe the room features, view, amenities..."
                   className="w-full border rounded px-3 py-2 font-normal resize-none"
                 />
+              </div>
+
+              {/* Confirm Button */}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => confirmRoom(field.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    confirmedRooms.has(field.id)
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                  {confirmedRooms.has(field.id) ? 'Confirmed' : 'Confirm Room'}
+                </button>
               </div>
             </div>
           ))}

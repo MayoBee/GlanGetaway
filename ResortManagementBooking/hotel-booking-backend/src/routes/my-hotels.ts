@@ -90,14 +90,6 @@ router.post(
       .notEmpty()
       .isNumeric()
       .withMessage("Star rating is required and must be a number"),
-    body("adultCount")
-      .notEmpty()
-      .isNumeric()
-      .withMessage("Adult count is required and must be a number"),
-    body("childCount")
-      .notEmpty()
-      .isNumeric()
-      .withMessage("Child count is required and must be a number"),
     body("facilities")
       .notEmpty()
       .isArray()
@@ -464,6 +456,21 @@ router.put(
       console.log("Request body:", req.body);
       console.log("Hotel ID:", req.params.hotelId);
       console.log("User ID:", req.userId);
+      
+      // Debug cottages specifically
+      if (req.body.cottages) {
+        console.log("Cottages being saved:", req.body.cottages);
+        req.body.cottages.forEach((cottage: any, index: number) => {
+          console.log(`Cottage ${index} being saved:`, {
+            id: cottage.id,
+            name: cottage.name,
+            hasDayRate: cottage.hasDayRate,
+            hasNightRate: cottage.hasNightRate,
+            dayRate: cottage.dayRate,
+            nightRate: cottage.nightRate
+          });
+        });
+      }
 
       // First, find the existing hotel
       const existingHotel = await Hotel.findOne({
@@ -481,25 +488,123 @@ router.put(
         lastUpdated: new Date(),
       };
 
+      // Remove fields that don't exist in HotelType
+      delete updateData.adultCount;
+      delete updateData.childCount;
+
       // Ensure imageUrls is always present and valid
       if (!updateData.imageUrls || !Array.isArray(updateData.imageUrls) || updateData.imageUrls.length === 0) {
         // Keep existing image URLs if none provided
         updateData.imageUrls = existingHotel.imageUrls || [];
       }
 
+      // Explicitly handle array fields to ensure they remain as arrays
+      // These fields are sent as proper object arrays from frontend and should not be stringified
+      const arrayFields = ['rooms', 'cottages', 'packages', 'amenities'];
+      for (const field of arrayFields) {
+        if (updateData[field]) {
+          // If it's a string, try to parse it as JSON
+          if (typeof updateData[field] === 'string') {
+            try {
+              updateData[field] = JSON.parse(updateData[field]);
+              console.log(`Parsed ${field} from string to array:`, updateData[field]);
+            } catch (parseError) {
+              console.log(`Failed to parse ${field} as JSON, keeping as is:`, updateData[field]);
+            }
+          }
+          
+          // Now ensure all nested objects have proper types
+          if (Array.isArray(updateData[field])) {
+            updateData[field] = updateData[field].map((item: any) => {
+              const processedItem: any = { ...item };
+              
+              // For rooms: convert pricePerNight, minOccupancy, maxOccupancy to numbers
+              if (field === 'rooms') {
+                if (processedItem.pricePerNight !== undefined) {
+                  processedItem.pricePerNight = Number(processedItem.pricePerNight) || 0;
+                }
+                if (processedItem.minOccupancy !== undefined) {
+                  processedItem.minOccupancy = Number(processedItem.minOccupancy) || 1;
+                }
+                if (processedItem.maxOccupancy !== undefined) {
+                  processedItem.maxOccupancy = Number(processedItem.maxOccupancy) || 1;
+                }
+              }
+              
+              // For cottages: convert pricePerNight, dayRate, nightRate, minOccupancy, maxOccupancy to numbers
+              if (field === 'cottages') {
+                if (processedItem.pricePerNight !== undefined) {
+                  processedItem.pricePerNight = Number(processedItem.pricePerNight) || 0;
+                }
+                if (processedItem.dayRate !== undefined) {
+                  processedItem.dayRate = Number(processedItem.dayRate) || 0;
+                }
+                if (processedItem.nightRate !== undefined) {
+                  processedItem.nightRate = Number(processedItem.nightRate) || 0;
+                }
+                if (processedItem.minOccupancy !== undefined) {
+                  processedItem.minOccupancy = Number(processedItem.minOccupancy) || 1;
+                }
+                if (processedItem.maxOccupancy !== undefined) {
+                  processedItem.maxOccupancy = Number(processedItem.maxOccupancy) || 1;
+                }
+                if (processedItem.hasDayRate !== undefined) {
+                  processedItem.hasDayRate = processedItem.hasDayRate === true || processedItem.hasDayRate === 'true';
+                }
+                if (processedItem.hasNightRate !== undefined) {
+                  processedItem.hasNightRate = processedItem.hasNightRate === true || processedItem.hasNightRate === 'true';
+                }
+              }
+              
+              // For packages: convert price to number and handle boolean fields
+              if (field === 'packages') {
+                if (processedItem.price !== undefined) {
+                  processedItem.price = Number(processedItem.price) || 0;
+                }
+                if (processedItem.includedAdultEntranceFee !== undefined) {
+                  processedItem.includedAdultEntranceFee = processedItem.includedAdultEntranceFee === true || processedItem.includedAdultEntranceFee === 'true';
+                }
+                if (processedItem.includedChildEntranceFee !== undefined) {
+                  processedItem.includedChildEntranceFee = processedItem.includedChildEntranceFee === true || processedItem.includedChildEntranceFee === 'true';
+                }
+              }
+              
+              // For amenities: convert price to number
+              if (field === 'amenities') {
+                if (processedItem.price !== undefined) {
+                  processedItem.price = Number(processedItem.price) || 0;
+                }
+              }
+              
+              return processedItem;
+            });
+          }
+        }
+      }
+
+      // Parse stringified JSON fields that might come from frontend
+      const stringifiedFields = ['facilities', 'type', 'imageUrls', 'childEntranceFee'];
+      for (const field of stringifiedFields) {
+        if (updateData[field] && typeof updateData[field] === 'string') {
+          try {
+            updateData[field] = JSON.parse(updateData[field]);
+          } catch (parseError) {
+            console.log(`Failed to parse ${field} as JSON, keeping as is:`, updateData[field]);
+          }
+        }
+      }
+
       // Convert string numbers to actual numbers
       if (updateData.dayRate !== undefined) updateData.dayRate = Number(updateData.dayRate);
       if (updateData.nightRate !== undefined) updateData.nightRate = Number(updateData.nightRate);
       if (updateData.starRating !== undefined) updateData.starRating = Number(updateData.starRating);
-      if (updateData.adultCount !== undefined) updateData.adultCount = Number(updateData.adultCount);
-      if (updateData.childCount !== undefined) updateData.childCount = Number(updateData.childCount);
 
       // Convert boolean strings to actual booleans
       if (updateData.hasDayRate !== undefined) updateData.hasDayRate = updateData.hasDayRate === "true" || updateData.hasDayRate === true;
       if (updateData.hasNightRate !== undefined) updateData.hasNightRate = updateData.hasNightRate === "true" || updateData.hasNightRate === true;
 
       // Validate required fields
-      const requiredFields = ['name', 'city', 'country', 'description', 'type', 'starRating', 'adultCount', 'childCount', 'facilities'];
+      const requiredFields = ['name', 'city', 'country', 'description', 'type', 'starRating', 'facilities'];
       for (const field of requiredFields) {
         if (!updateData[field]) {
           return res.status(400).json({ message: `${field} is required` });
@@ -513,15 +618,27 @@ router.put(
 
       console.log("Final update data:", updateData);
 
-      const updatedHotel = await Hotel.findByIdAndUpdate(
-        req.params.hotelId,
-        updateData,
-        { new: true, runValidators: true }
-      );
-
-      if (!updatedHotel) {
+      // Use findById + save instead of findByIdAndUpdate to properly handle embedded arrays
+      const hotel = await Hotel.findById(req.params.hotelId);
+      
+      if (!hotel) {
         return res.status(404).json({ message: "Hotel not found" });
       }
+
+      // Deep clone and sanitize the update data to ensure nested arrays are proper objects
+      const sanitizedData = JSON.parse(JSON.stringify(updateData));
+
+      // Update the hotel using set to properly handle nested arrays
+      hotel.set({
+        ...sanitizedData,
+        // Ensure these are actual arrays of objects - explicitly re-assign
+        rooms: Array.isArray(sanitizedData.rooms) ? [...sanitizedData.rooms] : [],
+        cottages: Array.isArray(sanitizedData.cottages) ? [...sanitizedData.cottages] : [],
+        amenities: Array.isArray(sanitizedData.amenities) ? [...sanitizedData.amenities] : [],
+        packages: Array.isArray(sanitizedData.packages) ? [...sanitizedData.packages] : [],
+      });
+      
+      const updatedHotel = await hotel.save();
 
       console.log("Hotel updated successfully with rooms:", updatedHotel.rooms?.length || 0);
       console.log("Hotel updated successfully with cottages:", updatedHotel.cottages?.length || 0);
@@ -627,8 +744,6 @@ router.put(
         hasDayRate: req.body.hasDayRate === "true" || req.body.hasDayRate === true,
         hasNightRate: req.body.hasNightRate === "true" || req.body.hasNightRate === true,
         starRating: Number(req.body.starRating),
-        adultCount: Number(req.body.adultCount),
-        childCount: Number(req.body.childCount),
         facilities: Array.isArray(req.body.facilities)
           ? req.body.facilities
           : [req.body.facilities],

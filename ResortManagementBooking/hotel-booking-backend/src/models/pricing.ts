@@ -62,7 +62,7 @@ export interface IPricing extends Document {
 
 const pricingSchema = new mongoose.Schema(
   {
-    hotelId: { type: String, required: true, index: true },
+    hotelId: { type: String, required: true },
     seasonalRates: [
       {
         name: { type: String, required: true },

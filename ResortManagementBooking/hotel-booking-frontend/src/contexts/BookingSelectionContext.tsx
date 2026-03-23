@@ -60,6 +60,8 @@ export interface SelectedPackage {
     price: number;
     description?: string;
   }>;
+  includedAdultEntranceFee: boolean;
+  includedChildEntranceFee: boolean;
 }
 
 interface BookingSelectionContextType {

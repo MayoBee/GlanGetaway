@@ -278,14 +278,32 @@ app.use(
 
 // Serve uploaded files using the new image service
 app.get('/uploads/:filename', (req, res) => {
+  // Set CORS headers for image serving
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  
   imageService.serveImage(req, res);
 });
 
 // Also handle the old static route for backwards compatibility
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  next();
+}, express.static(path.join(__dirname, '..', '..', 'uploads')));
 
 // Dynamic Port Configuration (for Coolify/VPS and local development)
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 7002;
 
 const backendBaseUrl =
   process.env.BACKEND_URL?.replace(/\/$/, "") || `http://localhost:${PORT}`;

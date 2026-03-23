@@ -1,6 +1,52 @@
 import mongoose from "mongoose";
 import { HotelType } from "../../../shared/types";
 
+// Define subdocument schemas explicitly
+const RoomSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  type: { type: String, required: true },
+  pricePerNight: { type: Number, required: true },
+  minOccupancy: { type: Number, required: true },
+  maxOccupancy: { type: Number, required: true },
+  description: { type: String, default: '' },
+  amenities: [{ type: String }],
+}, { _id: false });
+
+const CottageSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  type: { type: String, required: true },
+  pricePerNight: { type: Number, default: 0 },
+  dayRate: { type: Number, default: 0 },
+  nightRate: { type: Number, default: 0 },
+  hasDayRate: { type: Boolean, default: false },
+  hasNightRate: { type: Boolean, default: false },
+  minOccupancy: { type: Number, required: true },
+  maxOccupancy: { type: Number, required: true },
+  description: { type: String, default: '' },
+  amenities: [{ type: String }],
+}, { _id: false });
+
+const AmenitySchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  price: { type: Number, default: 0 },
+  description: { type: String, default: '' },
+}, { _id: false });
+
+const PackageSchema = new mongoose.Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  description: { type: String, default: '' },
+  price: { type: Number, default: 0 },
+  includedCottages: [{ type: String }],
+  includedRooms: [{ type: String }],
+  includedAmenities: [{ type: String }],
+  includedAdultEntranceFee: { type: Boolean, default: false },
+  includedChildEntranceFee: { type: Boolean, default: false },
+}, { _id: false });
+
 const hotelSchema = new mongoose.Schema<HotelType>(
   {
     userId: { type: String, required: true },
@@ -9,8 +55,6 @@ const hotelSchema = new mongoose.Schema<HotelType>(
     country: { type: String, required: true },
     description: { type: String, required: true },
     type: [{ type: String, required: true }],
-    adultCount: { type: Number, required: true },
-    childCount: { type: Number, required: true },
     facilities: [{ type: String, required: true }],
     dayRate: { type: Number, required: true },
     nightRate: { type: Number, required: true },
@@ -53,53 +97,10 @@ const hotelSchema = new mongoose.Schema<HotelType>(
       petPolicy: String,
       smokingPolicy: String,
     },
-    amenities: [
-      {
-        id: String,
-        name: String,
-        price: Number,
-        description: String,
-      },
-    ],
-    rooms: [
-      {
-        id: String,
-        name: String,
-        type: String,
-        pricePerNight: Number,
-        minOccupancy: Number,
-        maxOccupancy: Number,
-        description: String,
-        amenities: [String],
-      },
-    ],
-    cottages: [
-      {
-        id: String,
-        name: String,
-        type: String,
-        pricePerNight: Number,
-        dayRate: Number,
-        nightRate: Number,
-        hasDayRate: Boolean,
-        hasNightRate: Boolean,
-        minOccupancy: Number,
-        maxOccupancy: Number,
-        description: String,
-        amenities: [String],
-      },
-    ],
-    packages: [
-      {
-        id: String,
-        name: String,
-        description: String,
-        price: Number,
-        includedCottages: [String],
-        includedRooms: [String],
-        includedAmenities: [String],
-      },
-    ],
+    amenities: [AmenitySchema],
+    rooms: [RoomSchema],
+    cottages: [CottageSchema],
+    packages: [PackageSchema],
     // Analytics and performance fields
     totalBookings: { type: Number, default: 0 },
     totalRevenue: { type: Number, default: 0 },

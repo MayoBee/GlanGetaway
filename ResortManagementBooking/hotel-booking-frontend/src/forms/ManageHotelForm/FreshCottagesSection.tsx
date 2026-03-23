@@ -1,6 +1,7 @@
 import { useFieldArray, useFormContext } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, Minus, Users, DollarSign, Home } from "lucide-react";
+import { Plus, Users, Home, Check, X } from "lucide-react";
+import { useState } from "react";
 
 const FreshCottagesSection = () => {
   const { control } = useFormContext<HotelFormData>();
@@ -8,10 +9,12 @@ const FreshCottagesSection = () => {
     control,
     name: "cottages",
   });
+  const [confirmedCottages, setConfirmedCottages] = useState<Set<string>>(new Set());
 
   const addCottage = () => {
+    const newCottageId = `cottage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     append({
-      id: `cottage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: newCottageId,
       name: "",
       type: "",
       pricePerNight: 0,
@@ -24,6 +27,17 @@ const FreshCottagesSection = () => {
       description: "",
       amenities: [],
     });
+  };
+
+  const confirmCottage = (cottageId: string) => {
+    setConfirmedCottages(prev => new Set(prev).add(cottageId));
+    setTimeout(() => {
+      setConfirmedCottages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(cottageId);
+        return newSet;
+      });
+    }, 2000);
   };
 
   return (
@@ -43,17 +57,10 @@ const FreshCottagesSection = () => {
       {fields.length === 0 ? (
         <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
           <Home className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <p className="text-gray-500 mb-2">No cottages added yet</p>
-          <button
-            type="button"
-            onClick={addCottage}
-            className="text-green-500 hover:text-green-600 font-medium"
-          >
-            Add your first cottage
-          </button>
+          <p className="text-gray-500">No cottages added yet</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="max-h-96 overflow-y-auto space-y-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
           {fields.map((field, index) => (
             <div key={field.id} className="border rounded-lg p-4 bg-gray-50">
               <div className="flex justify-between items-start mb-4">
@@ -61,9 +68,9 @@ const FreshCottagesSection = () => {
                 <button
                   type="button"
                   onClick={() => remove(index)}
-                  className="text-red-500 hover:text-red-600"
+                  className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
                 >
-                  <Minus className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
 
@@ -112,7 +119,7 @@ const FreshCottagesSection = () => {
                       className="w-4 h-4 text-green-600 border-green-300 rounded"
                     />
                     <div className="relative flex-1">
-                      <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                      <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
                       <input
                         {...control.register(`cottages.${index}.dayRate` as const)}
                         type="number"
@@ -138,7 +145,7 @@ const FreshCottagesSection = () => {
                       className="w-4 h-4 text-blue-600 border-blue-300 rounded"
                     />
                     <div className="relative flex-1">
-                      <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                      <span className="absolute left-3 top-2.5 w-4 h-4 text-gray-400 flex items-center justify-center text-sm font-medium">₱</span>
                       <input
                         {...control.register(`cottages.${index}.nightRate` as const)}
                         type="number"
@@ -197,6 +204,22 @@ const FreshCottagesSection = () => {
                   placeholder="Describe the cottage features, view, amenities..."
                   className="w-full border rounded px-3 py-2 font-normal resize-none"
                 />
+              </div>
+
+              {/* Confirm Button */}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => confirmCottage(field.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    confirmedCottages.has(field.id)
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                  {confirmedCottages.has(field.id) ? 'Confirmed' : 'Confirm Cottage'}
+                </button>
               </div>
             </div>
           ))}

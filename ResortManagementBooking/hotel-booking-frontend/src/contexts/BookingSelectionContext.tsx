@@ -6,6 +6,7 @@ export interface SelectedRoom {
   type: string;
   pricePerNight: number;
   maxOccupancy: number;
+  units: number;
   description?: string;
 }
 
@@ -19,6 +20,7 @@ export interface SelectedCottage {
   hasDayRate: boolean;
   hasNightRate: boolean;
   maxOccupancy: number;
+  units: number;
   description?: string;
 }
 
@@ -26,6 +28,7 @@ export interface SelectedAmenity {
   id: string;
   name: string;
   price: number;
+  units: number;
   description?: string;
 }
 
@@ -87,6 +90,9 @@ interface BookingSelectionContextType {
   removeAmenity: (amenityId: string) => void;
   addPackage: (pkg: SelectedPackage) => void;
   removePackage: (packageId: string) => void;
+  updateRoomUnits: (roomId: string, units: number) => void;
+  updateCottageUnits: (cottageId: string, units: number) => void;
+  updateAmenityUnits: (amenityId: string, units: number) => void;
   clearSelections: () => void;
   setBasePrice: (price: number) => void;
   setNumberOfNights: (nights: number) => void;
@@ -125,13 +131,13 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
 
   const calculateTotal = () => {
     const accommodationTotal = 
-      selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * numberOfNights), 0) +
+      selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * room.units * numberOfNights), 0) +
       selectedCottages.reduce((sum, cottage) => {
         const rate = selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate;
-        return sum + (rate * numberOfNights);
+        return sum + (rate * cottage.units * numberOfNights);
       }, 0);
     
-    const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
+    const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * amenity.units), 0);
     const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
     
     const total = basePrice + accommodationTotal + amenitiesTotal + packagesTotal;
@@ -146,13 +152,13 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   };
 
   const accommodationTotal = 
-    selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * numberOfNights), 0) +
+    selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * room.units * numberOfNights), 0) +
     selectedCottages.reduce((sum, cottage) => {
       const rate = selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate;
-      return sum + (rate * numberOfNights);
+      return sum + (rate * cottage.units * numberOfNights);
     }, 0);
 
-  const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + amenity.price, 0);
+  const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * amenity.units), 0);
   const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
 
   const totalCalculation = calculateTotal();
@@ -208,6 +214,30 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     setSelectedPackages(prev => prev.filter(pkg => pkg.id !== packageId));
   };
 
+  const updateRoomUnits = (roomId: string, units: number) => {
+    setSelectedRooms(prev => 
+      prev.map(room => 
+        room.id === roomId ? { ...room, units } : room
+      )
+    );
+  };
+
+  const updateCottageUnits = (cottageId: string, units: number) => {
+    setSelectedCottages(prev => 
+      prev.map(cottage => 
+        cottage.id === cottageId ? { ...cottage, units } : cottage
+      )
+    );
+  };
+
+  const updateAmenityUnits = (amenityId: string, units: number) => {
+    setSelectedAmenities(prev => 
+      prev.map(amenity => 
+        amenity.id === amenityId ? { ...amenity, units } : amenity
+      )
+    );
+  };
+
   const clearSelections = () => {
     setSelectedRooms([]);
     setSelectedCottages([]);
@@ -258,6 +288,9 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     removeAmenity,
     addPackage,
     removePackage,
+    updateRoomUnits,
+    updateCottageUnits,
+    updateAmenityUnits,
     clearSelections,
     setBasePrice,
     setNumberOfNights,

@@ -1,14 +1,15 @@
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Bed, Check, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const FreshRoomsSection = () => {
-  const { control, watch } = useFormContext<HotelFormData>();
-  const { fields, append, remove } = useFieldArray({
+  const { control } = useFormContext<HotelFormData>();
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "rooms",
   });
+  const rooms = useWatch({ control, name: "rooms" });
   const [confirmedRooms, setConfirmedRooms] = useState<Set<string>>(new Set());
 
   const addRoom = () => {
@@ -20,20 +21,46 @@ const FreshRoomsSection = () => {
       pricePerNight: 0,
       minOccupancy: 1,
       maxOccupancy: 1,
+      units: 1,
       description: "",
       amenities: [],
+      isConfirmed: false,
     });
   };
 
+  // Load confirmed states from form data
+  useEffect(() => {
+    if (rooms) {
+      const confirmedIds = rooms
+        .filter(room => room.isConfirmed)
+        .map(room => room.id)
+        .filter(Boolean);
+      setConfirmedRooms(new Set(confirmedIds));
+    }
+  }, [rooms]);
+
   const confirmRoom = (roomId: string) => {
-    setConfirmedRooms(prev => new Set(prev).add(roomId));
-    setTimeout(() => {
-      setConfirmedRooms(prev => {
-        const newSet = new Set(prev);
+    setConfirmedRooms(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(roomId)) {
         newSet.delete(roomId);
-        return newSet;
-      });
-    }, 2000);
+      } else {
+        newSet.add(roomId);
+      }
+      return newSet;
+    });
+
+    // Update the form data with the new confirmation state
+    if (rooms) {
+      const roomIndex = rooms.findIndex(room => room.id === roomId);
+      if (roomIndex !== -1) {
+        const isCurrentlyConfirmed = confirmedRooms.has(roomId);
+        update(roomIndex, {
+          ...rooms[roomIndex],
+          isConfirmed: !isCurrentlyConfirmed,
+        });
+      }
+    }
   };
 
   return (
@@ -119,6 +146,22 @@ const FreshRoomsSection = () => {
                       className="w-full border rounded pl-10 pr-3 py-2 font-normal"
                     />
                   </div>
+                </div>
+
+                {/* Units */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Available Units
+                  </label>
+                  <input
+                    {...control.register(`rooms.${index}.units` as const)}
+                    type="number"
+                    min="1"
+                    max="100"
+                    placeholder="1"
+                    className="w-full border rounded px-3 py-2 font-normal"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Number of available units</p>
                 </div>
 
                 {/* Occupancy Range */}

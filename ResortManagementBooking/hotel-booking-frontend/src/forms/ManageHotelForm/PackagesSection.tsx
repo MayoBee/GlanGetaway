@@ -14,6 +14,100 @@ const PackagesSection = () => {
   const rooms = useWatch({ control, name: "rooms" });
   const amenities = useWatch({ control, name: "amenities" });
 
+  const handleCottageUnitsChange = (packageIndex: number, cottageId: string, units: number) => {
+    const currentPackages = control._formValues.packages;
+    const packageToUpdate = currentPackages[packageIndex];
+    const cottageIndex = packageToUpdate.includedCottages.findIndex((c: any) => c.id === cottageId);
+    
+    if (cottageIndex !== -1) {
+      packageToUpdate.includedCottages[cottageIndex].units = units;
+    }
+    
+    control._formValues.packages = [...currentPackages];
+  };
+
+  const handleRoomUnitsChange = (packageIndex: number, roomId: string, units: number) => {
+    const currentPackages = control._formValues.packages;
+    const packageToUpdate = currentPackages[packageIndex];
+    const roomIndex = packageToUpdate.includedRooms.findIndex((r: any) => r.id === roomId);
+    
+    if (roomIndex !== -1) {
+      packageToUpdate.includedRooms[roomIndex].units = units;
+    }
+    
+    control._formValues.packages = [...currentPackages];
+  };
+
+  const handleAmenityUnitsChange = (packageIndex: number, amenityId: string, units: number) => {
+    const currentPackages = control._formValues.packages;
+    const packageToUpdate = currentPackages[packageIndex];
+    const amenityIndex = packageToUpdate.includedAmenities.findIndex((a: any) => a.id === amenityId);
+    
+    if (amenityIndex !== -1) {
+      packageToUpdate.includedAmenities[amenityIndex].units = units;
+    }
+    
+    control._formValues.packages = [...currentPackages];
+  };
+
+  const handleAddCustomCottage = (packageIndex: number) => {
+    const currentPackages = control._formValues.packages;
+    const packageToUpdate = currentPackages[packageIndex];
+    
+    const newCottage = {
+      id: `custom_cottage_${Date.now()}`,
+      name: "Custom Cottage",
+      type: "Custom",
+      pricePerNight: 0,
+      dayRate: 0,
+      nightRate: 0,
+      hasDayRate: false,
+      hasNightRate: false,
+      minOccupancy: 1,
+      maxOccupancy: 4,
+      units: 1,
+      description: "Custom cottage for this package"
+    };
+    
+    packageToUpdate.includedCottages.push(newCottage);
+    control._formValues.packages = [...currentPackages];
+  };
+
+  const handleAddCustomRoom = (packageIndex: number) => {
+    const currentPackages = control._formValues.packages;
+    const packageToUpdate = currentPackages[packageIndex];
+    
+    const newRoom = {
+      id: `custom_room_${Date.now()}`,
+      name: "Custom Room",
+      type: "Custom",
+      pricePerNight: 0,
+      minOccupancy: 1,
+      maxOccupancy: 4,
+      units: 1,
+      description: "Custom room for this package"
+    };
+    
+    packageToUpdate.includedRooms.push(newRoom);
+    control._formValues.packages = [...currentPackages];
+  };
+
+  const handleAddCustomAmenity = (packageIndex: number) => {
+    const currentPackages = control._formValues.packages;
+    const packageToUpdate = currentPackages[packageIndex];
+    
+    const newAmenity = {
+      id: `custom_amenity_${Date.now()}`,
+      name: "Custom Amenity",
+      price: 0,
+      units: 1,
+      description: "Custom amenity for this package"
+    };
+    
+    packageToUpdate.includedAmenities.push(newAmenity);
+    control._formValues.packages = [...currentPackages];
+  };
+
   const handleAddPackage = () => {
     append({
       id: Math.random().toString(36).substr(2, 9),
@@ -31,27 +125,39 @@ const PackagesSection = () => {
   const handleCottageToggle = (packageIndex: number, cottageId: string) => {
     const currentPackages = control._formValues.packages;
     const packageToUpdate = currentPackages[packageIndex];
-    const isIncluded = packageToUpdate.includedCottages.includes(cottageId);
+    const isIncluded = packageToUpdate.includedCottages.some((c: any) => c.id === cottageId);
     
     if (isIncluded) {
-      packageToUpdate.includedCottages = packageToUpdate.includedCottages.filter((id: string) => id !== cottageId);
+      packageToUpdate.includedCottages = packageToUpdate.includedCottages.filter((c: any) => c.id !== cottageId);
     } else {
-      packageToUpdate.includedCottages.push(cottageId);
+      const cottage = cottages.find((c: any) => c.id === cottageId);
+      if (cottage) {
+        packageToUpdate.includedCottages.push({
+          ...cottage,
+          units: 1 // Default to 1 unit
+        });
+      }
     }
     
-    // Force re-render by updating the field array
+    // Force re-render by updating field array
     control._formValues.packages = [...currentPackages];
   };
 
   const handleRoomToggle = (packageIndex: number, roomId: string) => {
     const currentPackages = control._formValues.packages;
     const packageToUpdate = currentPackages[packageIndex];
-    const isIncluded = packageToUpdate.includedRooms.includes(roomId);
+    const isIncluded = packageToUpdate.includedRooms.some((r: any) => r.id === roomId);
     
     if (isIncluded) {
-      packageToUpdate.includedRooms = packageToUpdate.includedRooms.filter((id: string) => id !== roomId);
+      packageToUpdate.includedRooms = packageToUpdate.includedRooms.filter((r: any) => r.id !== roomId);
     } else {
-      packageToUpdate.includedRooms.push(roomId);
+      const room = rooms.find((r: any) => r.id === roomId);
+      if (room) {
+        packageToUpdate.includedRooms.push({
+          ...room,
+          units: 1 // Default to 1 unit
+        });
+      }
     }
     
     // Force re-render by updating the field array
@@ -61,12 +167,18 @@ const PackagesSection = () => {
   const handleAmenityToggle = (packageIndex: number, amenityId: string) => {
     const currentPackages = control._formValues.packages;
     const packageToUpdate = currentPackages[packageIndex];
-    const isIncluded = packageToUpdate.includedAmenities.includes(amenityId);
+    const isIncluded = packageToUpdate.includedAmenities.some((a: any) => a.id === amenityId);
     
     if (isIncluded) {
-      packageToUpdate.includedAmenities = packageToUpdate.includedAmenities.filter((id: string) => id !== amenityId);
+      packageToUpdate.includedAmenities = packageToUpdate.includedAmenities.filter((a: any) => a.id !== amenityId);
     } else {
-      packageToUpdate.includedAmenities.push(amenityId);
+      const amenity = amenities.find((a: any) => a.id === amenityId);
+      if (amenity) {
+        packageToUpdate.includedAmenities.push({
+          ...amenity,
+          units: 1 // Default to 1 unit
+        });
+      }
     }
     
     // Force re-render by updating the field array
@@ -184,26 +296,60 @@ const PackagesSection = () => {
                     Included Cottages
                   </label>
                   {cottages && cottages.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {cottages.map((cottage) => (
-                        <label
-                          key={cottage.id}
-                          className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={currentPackage.includedCottages?.includes(cottage.id) || false}
-                            onChange={() => handleCottageToggle(index, cottage.id)}
-                            className="rounded"
-                          />
-                          <span className="text-sm">
-                            {cottage.name} - ₱{cottage.pricePerNight}/night
-                          </span>
-                        </label>
-                      ))}
+                    <div className="space-y-2">
+                      {cottages.map((cottage) => {
+                        const includedCottage = currentPackage.includedCottages?.find((c: any) => c.id === cottage.id);
+                        const isIncluded = !!includedCottage;
+                        const units = includedCottage?.units || 1;
+                        
+                        return (
+                          <div key={cottage.id} className="border rounded p-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <input
+                                type="checkbox"
+                                checked={isIncluded}
+                                onChange={() => handleCottageToggle(index, cottage.id)}
+                                className="rounded"
+                              />
+                              <span className="text-sm flex-1">
+                                {cottage.name} - ₱{cottage.pricePerNight}/night
+                              </span>
+                              {isIncluded && (
+                                <div className="flex items-center gap-1">
+                                  <label className="text-xs text-gray-600">Units:</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="99"
+                                    value={units}
+                                    onChange={(e) => handleCottageUnitsChange(index, cottage.id, parseInt(e.target.value) || 1)}
+                                    className="w-16 text-xs border rounded px-1 py-1"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomCottage(index)}
+                        className="w-full border-2 border-dashed border-gray-300 rounded p-2 text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                      >
+                        + Add Custom Cottage
+                      </button>
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-sm">No cottages available. Add cottages first.</p>
+                    <div className="space-y-2">
+                      <p className="text-gray-500 text-sm">No cottages available. Add cottages first.</p>
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomCottage(index)}
+                        className="w-full border-2 border-dashed border-gray-300 rounded p-2 text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                      >
+                        + Add Custom Cottage
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -214,26 +360,60 @@ const PackagesSection = () => {
                     Included Rooms
                   </label>
                   {rooms && rooms.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {rooms.map((room) => (
-                        <label
-                          key={room.id}
-                          className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={currentPackage.includedRooms?.includes(room.id) || false}
-                            onChange={() => handleRoomToggle(index, room.id)}
-                            className="rounded"
-                          />
-                          <span className="text-sm">
-                            {room.name} - ₱{room.pricePerNight}/night
-                          </span>
-                        </label>
-                      ))}
+                    <div className="space-y-2">
+                      {rooms.map((room) => {
+                        const includedRoom = currentPackage.includedRooms?.find((r: any) => r.id === room.id);
+                        const isIncluded = !!includedRoom;
+                        const units = includedRoom?.units || 1;
+                        
+                        return (
+                          <div key={room.id} className="border rounded p-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <input
+                                type="checkbox"
+                                checked={isIncluded}
+                                onChange={() => handleRoomToggle(index, room.id)}
+                                className="rounded"
+                              />
+                              <span className="text-sm flex-1">
+                                {room.name} - ₱{room.pricePerNight}/night
+                              </span>
+                              {isIncluded && (
+                                <div className="flex items-center gap-1">
+                                  <label className="text-xs text-gray-600">Units:</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="99"
+                                    value={units}
+                                    onChange={(e) => handleRoomUnitsChange(index, room.id, parseInt(e.target.value) || 1)}
+                                    className="w-16 text-xs border rounded px-1 py-1"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomRoom(index)}
+                        className="w-full border-2 border-dashed border-gray-300 rounded p-2 text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                      >
+                        + Add Custom Room
+                      </button>
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-sm">No rooms available. Add rooms first.</p>
+                    <div className="space-y-2">
+                      <p className="text-gray-500 text-sm">No rooms available. Add rooms first.</p>
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomRoom(index)}
+                        className="w-full border-2 border-dashed border-gray-300 rounded p-2 text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                      >
+                        + Add Custom Room
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -243,26 +423,60 @@ const PackagesSection = () => {
                     Included Amenities
                   </label>
                   {amenities && amenities.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {amenities.map((amenity) => (
-                        <label
-                          key={amenity.id}
-                          className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-gray-100"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={currentPackage.includedAmenities?.includes(amenity.id) || false}
-                            onChange={() => handleAmenityToggle(index, amenity.id)}
-                            className="rounded"
-                          />
-                          <span className="text-sm">
-                            {amenity.name} - ₱{amenity.price}
-                          </span>
-                        </label>
-                      ))}
+                    <div className="space-y-2">
+                      {amenities.map((amenity) => {
+                        const includedAmenity = currentPackage.includedAmenities?.find((a: any) => a.id === amenity.id);
+                        const isIncluded = !!includedAmenity;
+                        const units = includedAmenity?.units || 1;
+                        
+                        return (
+                          <div key={amenity.id} className="border rounded p-2">
+                            <div className="flex items-center gap-2 mb-2">
+                              <input
+                                type="checkbox"
+                                checked={isIncluded}
+                                onChange={() => handleAmenityToggle(index, amenity.id)}
+                                className="rounded"
+                              />
+                              <span className="text-sm flex-1">
+                                {amenity.name} - ₱{amenity.price}
+                              </span>
+                              {isIncluded && (
+                                <div className="flex items-center gap-1">
+                                  <label className="text-xs text-gray-600">Units:</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="99"
+                                    value={units}
+                                    onChange={(e) => handleAmenityUnitsChange(index, amenity.id, parseInt(e.target.value) || 1)}
+                                    className="w-16 text-xs border rounded px-1 py-1"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomAmenity(index)}
+                        className="w-full border-2 border-dashed border-gray-300 rounded p-2 text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                      >
+                        + Add Custom Amenity
+                      </button>
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-sm">No amenities available. Add amenities first.</p>
+                    <div className="space-y-2">
+                      <p className="text-gray-500 text-sm">No amenities available. Add amenities first.</p>
+                      <button
+                        type="button"
+                        onClick={() => handleAddCustomAmenity(index)}
+                        className="w-full border-2 border-dashed border-gray-300 rounded p-2 text-sm text-gray-600 hover:border-gray-400 hover:text-gray-700"
+                      >
+                        + Add Custom Amenity
+                      </button>
+                    </div>
                   )}
                 </div>
 

@@ -27,6 +27,7 @@ export type HotelFormData = {
   dayRateCheckOutTime: string;
   nightRateCheckInTime: string;
   nightRateCheckOutTime: string;
+  hasNightRateTimeRestrictions: boolean;
   starRating: number;
   facilities: string[];
   imageFiles?: FileList;
@@ -35,7 +36,9 @@ export type HotelFormData = {
     id: string;
     name: string;
     price: number;
+    units: number;
     description?: string;
+    isConfirmed?: boolean;
   }>;
   rooms?: Array<{
     id: string;
@@ -44,8 +47,10 @@ export type HotelFormData = {
     pricePerNight: number;
     minOccupancy: number;
     maxOccupancy: number;
+    units: number;
     description?: string;
     amenities?: string[];
+    isConfirmed?: boolean;
   }>;
   cottages?: Array<{
     id: string;
@@ -58,8 +63,10 @@ export type HotelFormData = {
     hasNightRate: boolean;
     minOccupancy: number;
     maxOccupancy: number;
+    units: number;
     description?: string;
     amenities?: string[];
+    isConfirmed?: boolean;
   }>;
   // New fields
   contact?: {
@@ -77,9 +84,12 @@ export type HotelFormData = {
     dayCheckOutTime: string;
     nightCheckInTime: string;
     nightCheckOutTime: string;
-    cancellationPolicy: string;
-    petPolicy: string;
-    smokingPolicy: string;
+    resortPolicies?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      isConfirmed?: boolean;
+    }>;
   };
   location?: {
     latitude: number;
@@ -114,17 +124,47 @@ export type HotelFormData = {
     nightRate: number;
     pricingModel: "per_head" | "per_group";
     groupQuantity?: number;
+    isConfirmed?: boolean;
   }>;
   packages?: Array<{
     id: string;
     name: string;
     description: string;
     price: number;
-    includedCottages: string[];
-    includedRooms: string[];
-    includedAmenities: string[];
+    includedCottages: Array<{
+      id: string;
+      name: string;
+      type: string;
+      pricePerNight: number;
+      dayRate: number;
+      nightRate: number;
+      hasDayRate: boolean;
+      hasNightRate: boolean;
+      minOccupancy: number;
+      maxOccupancy: number;
+      units: number;
+      description?: string;
+    }>;
+    includedRooms: Array<{
+      id: string;
+      name: string;
+      type: string;
+      pricePerNight: number;
+      minOccupancy: number;
+      maxOccupancy: number;
+      units: number;
+      description?: string;
+    }>;
+    includedAmenities: Array<{
+      id: string;
+      name: string;
+      price: number;
+      units: number;
+      description?: string;
+    }>;
     includedAdultEntranceFee: boolean;
     includedChildEntranceFee: boolean;
+    isConfirmed?: boolean;
   }>;
 };
 
@@ -166,9 +206,11 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       policies: {
         checkInTime: "",
         checkOutTime: "",
-        cancellationPolicy: "",
-        petPolicy: "",
-        smokingPolicy: "",
+        dayCheckInTime: "",
+        dayCheckOutTime: "",
+        nightCheckInTime: "",
+        nightCheckOutTime: "",
+        resortPolicies: [],
       },
       amenities: [],
       rooms: [],
@@ -217,9 +259,11 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         policies: hotel.policies || {
           checkInTime: "",
           checkOutTime: "",
-          cancellationPolicy: "",
-          petPolicy: "",
-          smokingPolicy: "",
+          dayCheckInTime: "",
+          dayCheckOutTime: "",
+          nightCheckInTime: "",
+          nightCheckOutTime: "",
+          resortPolicies: [],
         },
         rooms: hotel.rooms || [],
         cottages: hotel.cottages || [],

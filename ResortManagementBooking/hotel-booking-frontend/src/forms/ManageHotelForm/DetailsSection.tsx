@@ -9,7 +9,10 @@ const DetailsSection = () => {
   const {
     register,
     formState: { errors },
+    watch,
   } = useFormContext<HotelFormData>();
+  
+  const hasNightRateTimeRestrictions = watch("hasNightRateTimeRestrictions");
 
 
   return (
@@ -185,6 +188,64 @@ const DetailsSection = () => {
               <span className="text-red-500 text-sm">{errors.nightRate.message}</span>
             )}
           </div>
+          
+          <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg border border-green-200">
+            <input
+              type="checkbox"
+              id="hasNightRateTimeRestrictions"
+              className="h-4 w-4 text-green-600"
+              {...register("hasNightRateTimeRestrictions")}
+            />
+            <label htmlFor="hasNightRateTimeRestrictions" className="flex-1 cursor-pointer">
+              <span className="font-medium text-green-800">Does your resort have a fixed minimum check-in time and maximum check-out time?</span>
+              <span className="text-xs text-green-600 block">Enable to set specific time restrictions for night rate bookings</span>
+            </label>
+          </div>
+          
+          {hasNightRateTimeRestrictions && (
+            <div className="grid grid-cols-2 gap-4 mt-3">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Minimum Check-in Time
+                </label>
+                <input
+                  type="text"
+                  placeholder="02:00 PM"
+                  className="w-full border rounded px-3 py-2 font-normal"
+                  {...register("nightRateCheckInTime", { 
+                    required: "Check-in time is required when time restrictions are enabled",
+                    pattern: {
+                      value: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s*(AM|PM)$/i,
+                      message: "Please use format like 02:00 PM"
+                    }
+                  })}
+                />
+                {errors.nightRateCheckInTime && (
+                  <span className="text-red-500 text-sm">{errors.nightRateCheckInTime.message}</span>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Maximum Check-out Time
+                </label>
+                <input
+                  type="text"
+                  placeholder="12:00 PM"
+                  className="w-full border rounded px-3 py-2 font-normal"
+                  {...register("nightRateCheckOutTime", { 
+                    required: "Check-out time is required when time restrictions are enabled",
+                    pattern: {
+                      value: /^(0?[1-9]|1[0-2]):[0-5][0-9]\s*(AM|PM)$/i,
+                      message: "Please use format like 12:00 PM"
+                    }
+                  })}
+                />
+                {errors.nightRateCheckOutTime && (
+                  <span className="text-red-500 text-sm">{errors.nightRateCheckOutTime.message}</span>
+                )}
+              </div>
+            </div>
+          )}
           
           <div className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
             💡 Night rate duration will be automatically calculated based on guest check-in and check-out dates

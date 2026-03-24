@@ -22,6 +22,7 @@ const CottagesSection = () => {
       hasNightRate: false,
       minOccupancy: 1,
       maxOccupancy: 4,
+      units: 1,
       description: "",
       amenities: [],
     });

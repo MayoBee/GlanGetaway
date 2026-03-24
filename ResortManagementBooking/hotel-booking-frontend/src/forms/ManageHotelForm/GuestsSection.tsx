@@ -1,6 +1,7 @@
-import { useFormContext, useFieldArray } from "react-hook-form";
+import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, X, Users } from "lucide-react";
+import { Plus, X, Users, Check } from "lucide-react";
+import { useState, useEffect } from "react";
 
 const GuestsSection = () => {
   const {
@@ -10,23 +11,63 @@ const GuestsSection = () => {
     watch,
   } = useFormContext<HotelFormData>();
   
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "childEntranceFee",
   });
 
+  const childEntranceFees = useWatch({ control, name: "childEntranceFee" });
+  const [confirmedAgeGroups, setConfirmedAgeGroups] = useState<Set<string>>(new Set());
+
   const adultPricingModel = watch("adultEntranceFee.pricingModel");
 
   const handleAddChildAgeGroup = () => {
+    const newAgeGroupId = `ageGroup_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     append({
-      id: Math.random().toString(36).substr(2, 9),
+      id: newAgeGroupId,
       minAge: 1,
       maxAge: 5,
       dayRate: 0,
       nightRate: 0,
       pricingModel: "per_head",
       groupQuantity: 1,
+      isConfirmed: false,
     });
+  };
+
+  // Load confirmed states from form data
+  useEffect(() => {
+    if (childEntranceFees) {
+      const confirmedIds = childEntranceFees
+        .filter(ageGroup => ageGroup.isConfirmed)
+        .map(ageGroup => ageGroup.id)
+        .filter(Boolean);
+      setConfirmedAgeGroups(new Set(confirmedIds));
+    }
+  }, [childEntranceFees]);
+
+  const confirmAgeGroup = (ageGroupId: string) => {
+    setConfirmedAgeGroups(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(ageGroupId)) {
+        newSet.delete(ageGroupId);
+      } else {
+        newSet.add(ageGroupId);
+      }
+      return newSet;
+    });
+
+    // Update the form data with the new confirmation state
+    if (childEntranceFees) {
+      const ageGroupIndex = childEntranceFees.findIndex(ageGroup => ageGroup.id === ageGroupId);
+      if (ageGroupIndex !== -1) {
+        const isCurrentlyConfirmed = confirmedAgeGroups.has(ageGroupId);
+        update(ageGroupIndex, {
+          ...childEntranceFees[ageGroupIndex],
+          isConfirmed: !isCurrentlyConfirmed,
+        });
+      }
+    }
   };
 
   return (
@@ -328,6 +369,22 @@ const GuestsSection = () => {
                   )}
                 </div>
               )}
+
+              {/* Confirm Button */}
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => confirmAgeGroup(field.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                    confirmedAgeGroups.has(field.id)
+                      ? 'bg-green-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                  {confirmedAgeGroups.has(field.id) ? 'Confirmed' : 'Confirm Age Group'}
+                </button>
+              </div>
             </div>
           ))}
         </div>

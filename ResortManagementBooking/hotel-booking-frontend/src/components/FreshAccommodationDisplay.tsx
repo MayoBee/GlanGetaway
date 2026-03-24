@@ -15,6 +15,9 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
     removeCottage, 
     addPackage,
     removePackage,
+    updateRoomUnits,
+    updateCottageUnits,
+    updateAmenityUnits,
     isRoomSelected, 
     isCottageSelected,
     isPackageSelected,
@@ -22,6 +25,9 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
     addAmenity,
     removeAmenity,
     selectedPackages,
+    selectedRooms,
+    selectedCottages,
+    selectedAmenities,
     numberOfNights 
   } = useBookingSelection();
 
@@ -297,7 +303,9 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {rooms.map((room) => {
               const isSelected = isRoomSelected(room.id);
-              const totalPrice = room.pricePerNight * numberOfNights;
+              const selectedRoom = selectedRooms.find(r => r.id === room.id);
+              const currentUnits = selectedRoom?.units || 1;
+              const totalPrice = room.pricePerNight * currentUnits * numberOfNights;
               
               return (
                 <div 
@@ -332,10 +340,51 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                       <p className="text-sm text-gray-600">{room.description}</p>
                     )}
 
+                    {/* Unit Selection */}
+                    {isSelected && (
+                      <div className="border-t pt-3">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Number of Units
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateRoomUnits(room.id, Math.max(1, currentUnits - 1))}
+                            className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                            disabled={currentUnits <= 1}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            max={room.units || 10}
+                            value={currentUnits}
+                            onChange={(e) => {
+                              const units = Math.max(1, Math.min(room.units || 10, parseInt(e.target.value) || 1));
+                              updateRoomUnits(room.id, units);
+                            }}
+                            className="w-16 text-center border rounded px-2 py-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateRoomUnits(room.id, Math.min(room.units || 10, currentUnits + 1))}
+                            className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                            disabled={currentUnits >= (room.units || 10)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                          <span className="text-sm text-gray-500 ml-2">
+                            Available: {room.units || 10}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Total Price */}
                     <div className="border-t pt-3">
                       <div className="flex justify-between items-center">
-                        <span className="text-gray-600">Total ({numberOfNights} nights):</span>
+                        <span className="text-gray-600">Total ({numberOfNights} nights × {currentUnits} units):</span>
                         <span className="text-xl font-bold text-green-600">₱{totalPrice}</span>
                       </div>
                     </div>
@@ -352,7 +401,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                         </button>
                       ) : (
                         <button
-                          onClick={() => addRoom(room)}
+                          onClick={() => addRoom({...room, units: 1})}
                           className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
                         >
                           <Plus className="w-4 h-4 mr-1" />

@@ -93,9 +93,14 @@ const hotelSchema = new mongoose.Schema<HotelType>(
       dayCheckOutTime: String,
       nightCheckInTime: String,
       nightCheckOutTime: String,
-      cancellationPolicy: String,
-      petPolicy: String,
-      smokingPolicy: String,
+      resortPolicies: [
+        {
+          id: { type: String, required: true },
+          title: { type: String, required: true },
+          description: { type: String, required: true },
+          isConfirmed: { type: Boolean, default: false },
+        },
+      ],
     },
     amenities: [AmenitySchema],
     rooms: [RoomSchema],
@@ -148,6 +153,7 @@ const hotelSchema = new mongoose.Schema<HotelType>(
         nightRate: { type: Number, required: true },
         pricingModel: { type: String, enum: ["per_head", "per_group"], default: "per_head" },
         groupQuantity: { type: Number, default: 1 },
+        isConfirmed: { type: Boolean, default: false },
       },
     ],
     // Audit fields

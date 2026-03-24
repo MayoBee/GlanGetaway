@@ -1,7 +1,7 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Package, Check, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const FreshPackagesSection = () => {
   const { control } = useFormContext<HotelFormData>();
@@ -9,8 +9,9 @@ const FreshPackagesSection = () => {
   const cottages = useWatch({ control, name: "cottages" });
   const amenities = useWatch({ control, name: "amenities" });
   const adultEntranceFee = useWatch({ control, name: "adultEntranceFee" });
+  const packages = useWatch({ control, name: "packages" });
   
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "packages",
   });
@@ -28,18 +29,43 @@ const FreshPackagesSection = () => {
       includedAmenities: [],
       includedAdultEntranceFee: false,
       includedChildEntranceFee: false,
+      isConfirmed: false,
     });
   };
 
+  // Load confirmed states from form data
+  useEffect(() => {
+    if (packages) {
+      const confirmedIds = packages
+        .filter(pkg => pkg.isConfirmed)
+        .map(pkg => pkg.id)
+        .filter(Boolean);
+      setConfirmedPackages(new Set(confirmedIds));
+    }
+  }, [packages]);
+
   const confirmPackage = (packageId: string) => {
-    setConfirmedPackages(prev => new Set(prev).add(packageId));
-    setTimeout(() => {
-      setConfirmedPackages(prev => {
-        const newSet = new Set(prev);
+    setConfirmedPackages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(packageId)) {
         newSet.delete(packageId);
-        return newSet;
-      });
-    }, 2000);
+      } else {
+        newSet.add(packageId);
+      }
+      return newSet;
+    });
+
+    // Update the form data with the new confirmation state
+    if (packages) {
+      const packageIndex = packages.findIndex(pkg => pkg.id === packageId);
+      if (packageIndex !== -1) {
+        const isCurrentlyConfirmed = confirmedPackages.has(packageId);
+        update(packageIndex, {
+          ...packages[packageIndex],
+          isConfirmed: !isCurrentlyConfirmed,
+        });
+      }
+    }
   };
 
   return (

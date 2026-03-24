@@ -86,6 +86,10 @@ export type HotelType = {
   nightRate: number;
   hasDayRate: boolean;
   hasNightRate: boolean;
+  dayRateCheckInTime: string;
+  dayRateCheckOutTime: string;
+  nightRateCheckInTime: string;
+  nightRateCheckOutTime: string;
   starRating: number;
   imageUrls: string[];
   lastUpdated: Date;
@@ -119,15 +123,19 @@ export type HotelType = {
     dayCheckOutTime: string;
     nightCheckInTime: string;
     nightCheckOutTime: string;
-    cancellationPolicy: string;
-    petPolicy: string;
-    smokingPolicy: string;
+    resortPolicies?: Array<{
+      id: string;
+      title: string;
+      description: string;
+      isConfirmed?: boolean;
+    }>;
   };
   amenities?: Array<{
     id: string;
     name: string;
     price: number;
     description?: string;
+    isConfirmed?: boolean;
   }>;
   rooms?: Array<{
     id: string;
@@ -138,6 +146,7 @@ export type HotelType = {
     maxOccupancy: number;
     description?: string;
     amenities?: string[];
+    isConfirmed?: boolean;
   }>;
   cottages?: Array<{
     id: string;
@@ -152,6 +161,7 @@ export type HotelType = {
     maxOccupancy: number;
     description?: string;
     amenities?: string[];
+    isConfirmed?: boolean;
   }>;
   totalBookings?: number;
   totalRevenue?: number;
@@ -187,6 +197,7 @@ export type HotelType = {
     includedAmenities: string[];
     includedAdultEntranceFee: boolean;
     includedChildEntranceFee: boolean;
+    isConfirmed?: boolean;
   }>;
   // Approval system fields
   isApproved?: boolean;
@@ -207,7 +218,8 @@ export type HotelType = {
     dayRate: number;
     nightRate: number;
     pricingModel: "per_head" | "per_group";
-    groupQuantity?: number; // Only required if pricingModel is "per_group"
+    groupQuantity?: number;
+    isConfirmed?: boolean;
   }>;
   createdAt?: Date;
   updatedAt?: Date;

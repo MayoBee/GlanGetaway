@@ -163,10 +163,29 @@ router.post(
         dayCheckOutTime: req.body["policies.dayCheckOutTime"] || "",
         nightCheckInTime: req.body["policies.nightCheckInTime"] || "",
         nightCheckOutTime: req.body["policies.nightCheckOutTime"] || "",
-        cancellationPolicy: req.body["policies.cancellationPolicy"] || "",
-        petPolicy: req.body["policies.petPolicy"] || "",
-        smokingPolicy: req.body["policies.smokingPolicy"] || "",
+        resortPolicies: [],
       };
+
+      // Parse resort policies from FormData
+      const resortPolicies: Array<{
+        id: string;
+        title: string;
+        description: string;
+        isConfirmed?: boolean;
+      }> = [];
+      let policyIndex = 0;
+      while (req.body[`policies.resortPolicies[${policyIndex}][id]`]) {
+        resortPolicies.push({
+          id: req.body[`policies.resortPolicies[${policyIndex}][id]`],
+          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || "",
+          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || "",
+          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true,
+        });
+        policyIndex++;
+      }
+      if (resortPolicies.length > 0) {
+        newHotel.policies.resortPolicies = resortPolicies;
+      }
 
       // Parse amenities from FormData
       const amenities: Array<{
@@ -401,6 +420,7 @@ router.post(
           nightRate: number;
           pricingModel: "per_head" | "per_group";
           groupQuantity?: number;
+          isConfirmed?: boolean;
         }> = [];
         let childFeeIndex = 0;
         while (req.body[`childEntranceFee[${childFeeIndex}][id]`]) {
@@ -412,6 +432,7 @@ router.post(
             nightRate: Number(req.body[`childEntranceFee[${childFeeIndex}][nightRate]`]) || 0,
             pricingModel: req.body[`childEntranceFee[${childFeeIndex}][pricingModel]`] || "per_head",
             groupQuantity: req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`] ? Number(req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`]) : undefined,
+            isConfirmed: req.body[`childEntranceFee[${childFeeIndex}][isConfirmed]`] === "true" || req.body[`childEntranceFee[${childFeeIndex}][isConfirmed]`] === true,
           });
           childFeeIndex++;
         }
@@ -530,7 +551,7 @@ router.put(
 
       // Explicitly handle array fields to ensure they remain as arrays
       // These fields are sent as proper object arrays from frontend and should not be stringified
-      const arrayFields = ['rooms', 'cottages', 'packages', 'amenities'];
+      const arrayFields = ['rooms', 'cottages', 'packages', 'amenities', 'childEntranceFee'];
       for (const field of arrayFields) {
         if (updateData[field]) {
           // If it's a string, try to parse it as JSON
@@ -603,6 +624,28 @@ router.put(
               if (field === 'amenities') {
                 if (processedItem.price !== undefined) {
                   processedItem.price = Number(processedItem.price) || 0;
+                }
+              }
+              
+              // For childEntranceFee: convert numbers and handle boolean fields
+              if (field === 'childEntranceFee') {
+                if (processedItem.minAge !== undefined) {
+                  processedItem.minAge = Number(processedItem.minAge) || 0;
+                }
+                if (processedItem.maxAge !== undefined) {
+                  processedItem.maxAge = Number(processedItem.maxAge) || 0;
+                }
+                if (processedItem.dayRate !== undefined) {
+                  processedItem.dayRate = Number(processedItem.dayRate) || 0;
+                }
+                if (processedItem.nightRate !== undefined) {
+                  processedItem.nightRate = Number(processedItem.nightRate) || 0;
+                }
+                if (processedItem.groupQuantity !== undefined) {
+                  processedItem.groupQuantity = Number(processedItem.groupQuantity) || 1;
+                }
+                if (processedItem.isConfirmed !== undefined) {
+                  processedItem.isConfirmed = processedItem.isConfirmed === true || processedItem.isConfirmed === 'true';
                 }
               }
               
@@ -798,10 +841,29 @@ router.put(
         dayCheckOutTime: req.body["policies.dayCheckOutTime"] || "",
         nightCheckInTime: req.body["policies.nightCheckInTime"] || "",
         nightCheckOutTime: req.body["policies.nightCheckOutTime"] || "",
-        cancellationPolicy: req.body["policies.cancellationPolicy"] || "",
-        petPolicy: req.body["policies.petPolicy"] || "",
-        smokingPolicy: req.body["policies.smokingPolicy"] || "",
+        resortPolicies: [],
       };
+
+      // Parse resort policies from FormData
+      const resortPolicies: Array<{
+        id: string;
+        title: string;
+        description: string;
+        isConfirmed?: boolean;
+      }> = [];
+      let policyIndex = 0;
+      while (req.body[`policies.resortPolicies[${policyIndex}][id]`]) {
+        resortPolicies.push({
+          id: req.body[`policies.resortPolicies[${policyIndex}][id]`],
+          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || "",
+          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || "",
+          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true,
+        });
+        policyIndex++;
+      }
+      if (resortPolicies.length > 0) {
+        updateData.policies.resortPolicies = resortPolicies;
+      }
 
       // Parse amenities from FormData
       const amenities: Array<{

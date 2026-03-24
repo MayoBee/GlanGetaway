@@ -1,14 +1,15 @@
-import { useFieldArray, useFormContext } from "react-hook-form";
+import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Home, Check, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const FreshCottagesSection = () => {
   const { control } = useFormContext<HotelFormData>();
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
     control,
     name: "cottages",
   });
+  const cottages = useWatch({ control, name: "cottages" });
   const [confirmedCottages, setConfirmedCottages] = useState<Set<string>>(new Set());
 
   const addCottage = () => {
@@ -24,20 +25,46 @@ const FreshCottagesSection = () => {
       hasNightRate: false,
       minOccupancy: 1,
       maxOccupancy: 1,
+      units: 1,
       description: "",
       amenities: [],
+      isConfirmed: false,
     });
   };
 
+  // Load confirmed states from form data
+  useEffect(() => {
+    if (cottages) {
+      const confirmedIds = cottages
+        .filter(cottage => cottage.isConfirmed)
+        .map(cottage => cottage.id)
+        .filter(Boolean);
+      setConfirmedCottages(new Set(confirmedIds));
+    }
+  }, [cottages]);
+
   const confirmCottage = (cottageId: string) => {
-    setConfirmedCottages(prev => new Set(prev).add(cottageId));
-    setTimeout(() => {
-      setConfirmedCottages(prev => {
-        const newSet = new Set(prev);
+    setConfirmedCottages(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(cottageId)) {
         newSet.delete(cottageId);
-        return newSet;
-      });
-    }, 2000);
+      } else {
+        newSet.add(cottageId);
+      }
+      return newSet;
+    });
+
+    // Update the form data with the new confirmation state
+    if (cottages) {
+      const cottageIndex = cottages.findIndex(cottage => cottage.id === cottageId);
+      if (cottageIndex !== -1) {
+        const isCurrentlyConfirmed = confirmedCottages.has(cottageId);
+        update(cottageIndex, {
+          ...cottages[cottageIndex],
+          isConfirmed: !isCurrentlyConfirmed,
+        });
+      }
+    }
   };
 
   return (
@@ -157,6 +184,22 @@ const FreshCottagesSection = () => {
                     </div>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">Check to enable night rate pricing</p>
+                </div>
+
+                {/* Units */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                    Available Units
+                  </label>
+                  <input
+                    {...control.register(`cottages.${index}.units` as const)}
+                    type="number"
+                    min="1"
+                    max="100"
+                    placeholder="1"
+                    className="w-full border rounded px-3 py-2 font-normal"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Number of available units</p>
                 </div>
 
                 {/* Occupancy Range */}

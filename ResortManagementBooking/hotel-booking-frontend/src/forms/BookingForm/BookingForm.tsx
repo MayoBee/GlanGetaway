@@ -50,6 +50,7 @@ export type BookingFormData = {
     type: string;
     pricePerNight: number;
     maxOccupancy: number;
+    units: number;
     description?: string;
   }>;
   selectedCottages?: Array<{
@@ -58,12 +59,14 @@ export type BookingFormData = {
     type: string;
     pricePerNight: number;
     maxOccupancy: number;
+    units: number;
     description?: string;
   }>;
   selectedAmenities?: Array<{
     id: string;
     name: string;
     price: number;
+    units: number;
     description?: string;
   }>;
   selectedPackages?: Array<{

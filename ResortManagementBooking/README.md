@@ -4,7 +4,30 @@ A comprehensive, production-ready hotel booking platform built with the MERN sta
 
 ## 📋 Version History
 
-### Version 0.6.1 (Current)
+### Version 0.6.2 (Current Branch)
+**Release Date:** March 24, 2026
+
+**Key Updates:**
+- **Enhanced Resort Management System**: Comprehensive improvements to the resort booking and management platform
+- **Advanced Form Components**: Updated and optimized multiple form sections for better user experience
+- **Improved Backend Architecture**: Enhanced API routes and services for better performance
+- **Code Quality Improvements**: Refactored components and added better TypeScript support
+- **System Optimization**: Performance enhancements and bug fixes across the application
+
+**Technical Changes:**
+- Updated multiple form components in `ManageHotelForm` directory
+- Enhanced backend routes for hotels and my-hotels
+- Improved image service handling
+- Updated accommodation display components
+- Enhanced configuration and context files
+
+**Benefits:**
+- More robust and scalable resort management system
+- Better user experience with improved forms and interfaces
+- Enhanced performance and stability
+- Cleaner codebase with better maintainability
+
+### Version 0.6.1 (Previous Stable)
 **Release Date:** March 24, 2026
 
 **Key Updates:**

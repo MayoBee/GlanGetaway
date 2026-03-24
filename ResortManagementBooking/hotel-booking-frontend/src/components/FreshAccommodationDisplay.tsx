@@ -18,6 +18,10 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
     isRoomSelected, 
     isCottageSelected,
     isPackageSelected,
+    isAmenitySelected,
+    addAmenity,
+    removeAmenity,
+    selectedPackages,
     numberOfNights 
   } = useBookingSelection();
 
@@ -25,6 +29,14 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
   const rooms = hotel?.rooms || [];
   const cottages = hotel?.cottages || [];
   const packages = hotel?.packages || [];
+  const amenities = hotel?.amenities || [];
+
+  // Check if any amenity is included in a selected package
+  const isAmenityInPackage = (amenityId: string) => {
+    return selectedPackages.some(pkg => 
+      pkg.includedAmenities && pkg.includedAmenities.some(amenity => amenity.id === amenityId)
+    );
+  };
   
   // Fix cottage data: automatically set hasDayRate/hasNightRate based on rate values
   const fixedCottages = cottages.map((cottage: any) => ({
@@ -530,6 +542,96 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* Amenities & Activities */}
+      {amenities && amenities.length > 0 && (
+        <div className="bg-white rounded-lg shadow-md p-6 mt-8">
+          <h3 className="text-xl font-semibold mb-3">Amenities & Activities</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {amenities.map((amenity: any) => {
+              const isSelected = isAmenitySelected(amenity.id);
+              const isInPackage = isAmenityInPackage(amenity.id);
+              const isDisabled = isInPackage && !isSelected;
+              
+              return (
+                <div
+                  key={amenity.id}
+                  className={`border rounded-lg p-4 hover:shadow-md transition-all duration-200 ${
+                    isSelected 
+                      ? 'border-blue-500 bg-blue-50 shadow-md' 
+                      : isDisabled
+                        ? 'border-gray-200 bg-gray-100 opacity-50 cursor-not-allowed'
+                        : 'border-gray-200 hover:border-blue-300 cursor-pointer'
+                  }`}
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold text-gray-900">{amenity.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-blue-600">
+                        ₱{amenity.price}
+                      </span>
+                      {isSelected && (
+                        <div className="bg-blue-600 text-white p-1 rounded-full">
+                          <Check className="w-3 h-3" />
+                        </div>
+                      )}
+                      {isInPackage && !isSelected && (
+                        <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-medium">
+                          In Package
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {amenity.description && (
+                    <p className="text-sm text-gray-600 mb-3">{amenity.description}</p>
+                  )}
+                  <button
+                    className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 font-medium text-sm ${
+                      isDisabled
+                        ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                        : isSelected
+                          ? 'bg-red-600 hover:bg-red-700 text-white'
+                          : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                    disabled={isDisabled}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!isDisabled) {
+                        if (isSelected) {
+                          removeAmenity(amenity.id);
+                        } else {
+                          addAmenity({
+                            id: amenity.id,
+                            name: amenity.name,
+                            price: amenity.price,
+                            description: amenity.description
+                          });
+                        }
+                      }
+                    }}
+                  >
+                    {isSelected ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <span>Remove</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <Plus className="w-4 h-4" />
+                        <span>Add to Booking</span>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          {amenities.length === 0 && (
+            <div className="text-center text-gray-500 py-8">
+              No amenities available for this hotel.
+            </div>
+          )}
         </div>
       )}
 

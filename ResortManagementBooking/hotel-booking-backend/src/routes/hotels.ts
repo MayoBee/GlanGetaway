@@ -84,7 +84,7 @@ router.get(
       console.log("=== FETCH HOTEL BY ID DEBUG ===");
       console.log("Hotel ID requested:", id);
       
-      const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description');
+      const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities');
       
       console.log("Hotel data found:", hotel);
       console.log("Cottages data:", hotel?.cottages);
@@ -125,7 +125,7 @@ router.post(
       }
 
       // Use lean() for faster query - only fetch needed fields including rooms
-      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description').lean();
+      const hotel = await Hotel.findById(hotelId).select('nightRate dayRate hasNightRate name rooms cottages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities').lean();
       if (!hotel) {
         return res.status(400).json({ message: "Hotel not found" });
       }

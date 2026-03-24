@@ -113,12 +113,38 @@ router.post(
         newHotel.type = [newHotel.type];
       }
 
+      // Parse JSON string fields that might come from frontend
+      const jsonFields = ['adultEntranceFee', 'childEntranceFee', 'rooms', 'cottages', 'amenities', 'packages'];
+      for (const field of jsonFields) {
+        if (newHotel[field] && typeof newHotel[field] === 'string') {
+          try {
+            newHotel[field] = JSON.parse(newHotel[field]);
+          } catch (parseError) {
+            console.log(`Failed to parse ${field} as JSON, keeping as is:`, newHotel[field]);
+          }
+        }
+      }
+
+      // Fix empty string values in parsed arrays (required fields)
+      if (Array.isArray(newHotel.cottages)) {
+        newHotel.cottages = newHotel.cottages.map((c: any) => ({
+          ...c,
+          type: c.type || 'Standard',
+        }));
+      }
+      if (Array.isArray(newHotel.rooms)) {
+        newHotel.rooms = newHotel.rooms.map((r: any) => ({
+          ...r,
+          type: r.type || 'Standard',
+        }));
+      }
+
       // Clear problematic array fields that might be serialized as strings
-      // These will be properly parsed below
-      delete newHotel.rooms;
-      delete newHotel.cottages;
-      delete newHotel.amenities;
-      delete newHotel.packages;
+      // These will be properly parsed below (or use already parsed JSON)
+      if (!newHotel.rooms || !Array.isArray(newHotel.rooms)) delete newHotel.rooms;
+      if (!newHotel.cottages || !Array.isArray(newHotel.cottages)) delete newHotel.cottages;
+      if (!newHotel.amenities || !Array.isArray(newHotel.amenities)) delete newHotel.amenities;
+      if (!newHotel.packages || !Array.isArray(newHotel.packages)) delete newHotel.packages;
 
       // Handle nested objects from FormData
       newHotel.contact = {
@@ -355,39 +381,43 @@ router.post(
       newHotel.hasDayRate = req.body.hasDayRate === "true" || req.body.hasDayRate === true;
       newHotel.hasNightRate = req.body.hasNightRate === "true" || req.body.hasNightRate === true;
 
-      // Parse entrance fees from FormData
-      newHotel.adultEntranceFee = {
-        dayRate: Number(req.body["adultEntranceFee.dayRate"]) || 0,
-        nightRate: Number(req.body["adultEntranceFee.nightRate"]) || 0,
-        pricingModel: req.body["adultEntranceFee.pricingModel"] || "per_head",
-        groupQuantity: Number(req.body["adultEntranceFee.groupQuantity"]) || 1,
-      };
-
-      // Parse child entrance fees
-      const childEntranceFees: Array<{
-        id: string;
-        minAge: number;
-        maxAge: number;
-        dayRate: number;
-        nightRate: number;
-        pricingModel: "per_head" | "per_group";
-        groupQuantity?: number;
-      }> = [];
-      let childFeeIndex = 0;
-      while (req.body[`childEntranceFee[${childFeeIndex}][id]`]) {
-        childEntranceFees.push({
-          id: req.body[`childEntranceFee[${childFeeIndex}][id]`],
-          minAge: Number(req.body[`childEntranceFee[${childFeeIndex}][minAge]`]) || 0,
-          maxAge: Number(req.body[`childEntranceFee[${childFeeIndex}][maxAge]`]) || 0,
-          dayRate: Number(req.body[`childEntranceFee[${childFeeIndex}][dayRate]`]) || 0,
-          nightRate: Number(req.body[`childEntranceFee[${childFeeIndex}][nightRate]`]) || 0,
-          pricingModel: req.body[`childEntranceFee[${childFeeIndex}][pricingModel]`] || "per_head",
-          groupQuantity: req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`] ? Number(req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`]) : undefined,
-        });
-        childFeeIndex++;
+      // Parse entrance fees - use already parsed JSON or fallback to FormData
+      if (!newHotel.adultEntranceFee || typeof newHotel.adultEntranceFee !== 'object') {
+        newHotel.adultEntranceFee = {
+          dayRate: Number(req.body["adultEntranceFee.dayRate"]) || 0,
+          nightRate: Number(req.body["adultEntranceFee.nightRate"]) || 0,
+          pricingModel: req.body["adultEntranceFee.pricingModel"] || "per_head",
+          groupQuantity: Number(req.body["adultEntranceFee.groupQuantity"]) || 1,
+        };
       }
-      if (childEntranceFees.length > 0) {
-        newHotel.childEntranceFee = childEntranceFees;
+
+      // Parse child entrance fees - use already parsed JSON or fallback to FormData
+      if (!newHotel.childEntranceFee || !Array.isArray(newHotel.childEntranceFee)) {
+        const childEntranceFees: Array<{
+          id: string;
+          minAge: number;
+          maxAge: number;
+          dayRate: number;
+          nightRate: number;
+          pricingModel: "per_head" | "per_group";
+          groupQuantity?: number;
+        }> = [];
+        let childFeeIndex = 0;
+        while (req.body[`childEntranceFee[${childFeeIndex}][id]`]) {
+          childEntranceFees.push({
+            id: req.body[`childEntranceFee[${childFeeIndex}][id]`],
+            minAge: Number(req.body[`childEntranceFee[${childFeeIndex}][minAge]`]) || 0,
+            maxAge: Number(req.body[`childEntranceFee[${childFeeIndex}][maxAge]`]) || 0,
+            dayRate: Number(req.body[`childEntranceFee[${childFeeIndex}][dayRate]`]) || 0,
+            nightRate: Number(req.body[`childEntranceFee[${childFeeIndex}][nightRate]`]) || 0,
+            pricingModel: req.body[`childEntranceFee[${childFeeIndex}][pricingModel]`] || "per_head",
+            groupQuantity: req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`] ? Number(req.body[`childEntranceFee[${childFeeIndex}][groupQuantity]`]) : undefined,
+          });
+          childFeeIndex++;
+        }
+        if (childEntranceFees.length > 0) {
+          newHotel.childEntranceFee = childEntranceFees;
+        }
       }
 
       // Set approval status - resorts need admin approval

@@ -4,7 +4,7 @@ import { Plus, X, FileText, Check } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const PoliciesSection = () => {
-  const { control, register, formState: { errors }, watch } = useFormContext<HotelFormData>();
+  const { control, register, formState: { errors } } = useFormContext<HotelFormData>();
   const { fields, append, remove, update } = useFieldArray({
     control,
     name: "policies.resortPolicies",
@@ -91,50 +91,7 @@ const PoliciesSection = () => {
             </div>
           </div>
 
-          {/* Night Rate Times */}
-          <div className="space-y-3">
-            <h4 className="text-md font-medium text-purple-700">Night Rate</h4>
-            <label className="text-gray-700 text-sm font-bold flex items-center gap-2">
-              <input
-                type="checkbox"
-                className="w-4 h-4"
-                {...register("hasNightRateTimeRestrictions")}
-              />
-              Enable night rate time restrictions
-            </label>
-            {watch("hasNightRateTimeRestrictions") ? (
-              <div className="grid grid-cols-1 gap-3">
-                <label className="text-gray-700 text-sm font-bold">
-                  Night Check-in Time
-                  <input
-                    type="text"
-                    placeholder="e.g., 6:00 PM"
-                    className="border rounded w-full py-2 px-3 font-normal"
-                    {...register("policies.nightCheckInTime")}
-                  />
-                </label>
-                <label className="text-gray-700 text-sm font-bold">
-                  Night Check-out Time
-                  <input
-                    type="text"
-                    placeholder="e.g., 10:00 AM"
-                    className="border rounded w-full py-2 px-3 font-normal"
-                    {...register("policies.nightCheckOutTime")}
-                  />
-                </label>
-              </div>
-            ) : (
-              <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                <p className="text-purple-800 text-sm font-medium">
-                  Night rate is 24 hour overnight stay
-                </p>
-                <p className="text-purple-600 text-xs mt-1">
-                  Flexible check-in and check-out times
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+                  </div>
       </div>
 
       {/* Resort Policies */}

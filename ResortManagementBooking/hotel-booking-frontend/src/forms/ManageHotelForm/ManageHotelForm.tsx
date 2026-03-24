@@ -191,6 +191,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       nightRate: 0,
       hasDayRate: false,
       hasNightRate: false,
+      hasNightRateTimeRestrictions: false,
       dayRateCheckInTime: "08:00 AM",
       dayRateCheckOutTime: "05:00 PM",
       nightRateCheckInTime: "02:00 PM",

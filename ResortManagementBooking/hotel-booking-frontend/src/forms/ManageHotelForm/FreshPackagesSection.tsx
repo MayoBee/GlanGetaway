@@ -2,6 +2,7 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Package, Check, X, Home, Bed, Sparkles } from "lucide-react";
 import { useState, useEffect } from "react";
+import ImageUpload from "../../components/ImageUpload";
 
 interface PackageItemState {
   rooms: Map<string, { checked: boolean; units: number }>;
@@ -32,6 +33,7 @@ const FreshPackagesSection = () => {
       name: "",
       description: "",
       price: 0,
+      imageUrl: "",
       includedRooms: [],
       includedCottages: [],
       includedAmenities: [],
@@ -324,6 +326,22 @@ const FreshPackagesSection = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Package Image */}
+                  <div className="md:col-span-2">
+                    <ImageUpload
+                      value={packages?.[index]?.imageUrl || ""}
+                      onChange={(url: string) => {
+                        if (packages) {
+                          const updatedPackages = [...packages];
+                          updatedPackages[index] = { ...updatedPackages[index], imageUrl: url };
+                          // Update using the update method from useFieldArray
+                          update(index, updatedPackages[index]);
+                        }
+                      }}
+                      label="Package Image"
+                    />
+                  </div>
+
                   {/* Package Name */}
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-1">

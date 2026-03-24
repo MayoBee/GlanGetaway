@@ -2,6 +2,7 @@ import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Home, Check, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import ImageUpload from "../../components/ImageUpload";
 
 const FreshCottagesSection = () => {
   const { control } = useFormContext<HotelFormData>();
@@ -28,6 +29,7 @@ const FreshCottagesSection = () => {
       units: 1,
       description: "",
       amenities: [],
+      imageUrl: "",
       isConfirmed: false,
     });
   };
@@ -102,6 +104,22 @@ const FreshCottagesSection = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Cottage Image */}
+                <div className="md:col-span-2">
+                  <ImageUpload
+                    value={cottages?.[index]?.imageUrl || ""}
+                    onChange={(url: string) => {
+                      if (cottages) {
+                        const updatedCottages = [...cottages];
+                        updatedCottages[index] = { ...updatedCottages[index], imageUrl: url };
+                        // Update using the update method from useFieldArray
+                        update(index, updatedCottages[index]);
+                      }
+                    }}
+                    label="Cottage Image"
+                  />
+                </div>
+
                 {/* Cottage Name */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1">

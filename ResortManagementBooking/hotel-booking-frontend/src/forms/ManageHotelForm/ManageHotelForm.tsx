@@ -38,6 +38,7 @@ export type HotelFormData = {
     price: number;
     units: number;
     description?: string;
+    imageUrl?: string;
     isConfirmed?: boolean;
   }>;
   rooms?: Array<{
@@ -50,6 +51,7 @@ export type HotelFormData = {
     units: number;
     description?: string;
     amenities?: string[];
+    imageUrl?: string;
     isConfirmed?: boolean;
   }>;
   cottages?: Array<{
@@ -66,6 +68,7 @@ export type HotelFormData = {
     units: number;
     description?: string;
     amenities?: string[];
+    imageUrl?: string;
     isConfirmed?: boolean;
   }>;
   // New fields
@@ -131,6 +134,7 @@ export type HotelFormData = {
     name: string;
     description: string;
     price: number;
+    imageUrl?: string;
     includedCottages: Array<{
       id: string;
       name: string;
@@ -191,7 +195,6 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       nightRate: 0,
       hasDayRate: false,
       hasNightRate: false,
-      hasNightRateTimeRestrictions: false,
       dayRateCheckInTime: "08:00 AM",
       dayRateCheckOutTime: "05:00 PM",
       nightRateCheckInTime: "02:00 PM",

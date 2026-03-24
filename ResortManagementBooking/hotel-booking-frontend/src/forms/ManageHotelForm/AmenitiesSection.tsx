@@ -2,6 +2,7 @@ import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, X, Check } from "lucide-react";
 import { useState, useEffect } from "react";
+import ImageUpload from "../../components/ImageUpload";
 
 const AmenitiesSection = () => {
   const { control, register, formState: { errors } } = useFormContext<HotelFormData>();
@@ -20,6 +21,7 @@ const AmenitiesSection = () => {
       price: 0,
       units: 1,
       description: "",
+      imageUrl: "",
       isConfirmed: false,
     });
   };
@@ -80,26 +82,43 @@ const AmenitiesSection = () => {
         {fields.map((field, index) => (
           <div
             key={field.id}
-            className="flex gap-3 p-4 border border-gray-300 rounded-lg bg-gray-50 items-end"
+            className="border border-gray-300 rounded-lg bg-gray-50 p-4 space-y-4"
           >
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
-                Amenity Name
-              </label>
-              <input
-                type="text"
-                placeholder="e.g., Kayaks, Banana Boat, Karaoke"
-                className="w-full border rounded px-3 py-2 font-normal"
-                {...register(`amenities.${index}.name`, {
-                  required: "Amenity name is required",
-                })}
+            {/* Amenity Image */}
+            <div>
+              <ImageUpload
+                value={amenities?.[index]?.imageUrl || ""}
+                onChange={(url: string) => {
+                  if (amenities) {
+                    const updatedAmenities = [...amenities];
+                    updatedAmenities[index] = { ...updatedAmenities[index], imageUrl: url };
+                    // Update using the update method from useFieldArray
+                    update(index, updatedAmenities[index]);
+                  }
+                }}
+                label="Amenity Image"
               />
-              {errors.amenities?.[index]?.name && (
-                <span className="text-red-500 text-sm">
-                  {errors.amenities[index]?.name?.message}
-                </span>
-              )}
             </div>
+            
+            <div className="flex gap-3 items-end">
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Amenity Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g., Kayaks, Banana Boat, Karaoke"
+                  className="w-full border rounded px-3 py-2 font-normal"
+                  {...register(`amenities.${index}.name`, {
+                    required: "Amenity name is required",
+                  })}
+                />
+                {errors.amenities?.[index]?.name && (
+                  <span className="text-red-500 text-sm">
+                    {errors.amenities[index]?.name?.message}
+                  </span>
+                )}
+              </div>
 
             <div className="w-24">
               <label className="block text-sm font-semibold text-gray-700 mb-1">
@@ -156,7 +175,9 @@ const AmenitiesSection = () => {
                 {...register(`amenities.${index}.description`)}
               />
             </div>
+            </div>
 
+            <div className="flex gap-2">
             <button
               type="button"
               onClick={() => confirmAmenity(field.id)}
@@ -177,6 +198,7 @@ const AmenitiesSection = () => {
             >
               <X className="w-4 h-4" />
             </button>
+            </div>
           </div>
         ))}
       </div>

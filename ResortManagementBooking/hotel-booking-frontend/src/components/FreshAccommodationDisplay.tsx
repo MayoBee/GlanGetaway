@@ -130,6 +130,17 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                   }`}
                 >
                   <div className="space-y-3">
+                    {/* Package Image */}
+                    {pkg.imageUrl && (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={pkg.imageUrl}
+                          alt={pkg.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
                     {/* Package Header */}
                     <div className="flex justify-between items-start">
                       <div>
@@ -317,6 +328,17 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                   }`}
                 >
                   <div className="space-y-3">
+                    {/* Room Image */}
+                    {room.imageUrl && (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={room.imageUrl}
+                          alt={room.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
                     {/* Room Header */}
                     <div className="flex justify-between items-start">
                       <div>
@@ -507,6 +529,17 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                   }`}
                 >
                   <div className="space-y-3">
+                    {/* Cottage Image */}
+                    {cottage.imageUrl && (
+                      <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden">
+                        <img
+                          src={cottage.imageUrl}
+                          alt={cottage.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    
                     {/* Cottage Header */}
                     <div className="flex justify-between items-start">
                       <div>
@@ -615,6 +648,17 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                         : 'border-gray-200 hover:border-blue-300 cursor-pointer'
                   }`}
                 >
+                  {/* Amenity Image */}
+                  {amenity.imageUrl && (
+                    <div className="w-full h-32 bg-gray-100 rounded-lg overflow-hidden mb-3">
+                      <img
+                        src={amenity.imageUrl}
+                        alt={amenity.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between items-start mb-2">
                     <h4 className="font-semibold text-gray-900">{amenity.name}</h4>
                     <div className="flex items-center gap-2">

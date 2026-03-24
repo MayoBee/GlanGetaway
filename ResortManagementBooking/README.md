@@ -2,6 +2,31 @@
 
 A comprehensive, production-ready hotel booking platform built with the MERN stack (MongoDB, Express.js, React, Node.js) featuring advanced search, booking management, analytics dashboard, and payment integration.
 
+## 📋 Version History
+
+### Version 0.6.1 (Current)
+**Release Date:** March 24, 2026
+
+**Key Updates:**
+- **Enhanced Resort Pricing Display**: Updated pricing display to show "Day rate Price / Night rate Price" instead of "per night"
+- **Improved Pricing Logic**: Modified pricing system to use new `dayRate`/`nightRate` fields instead of legacy `pricePerNight` field
+- **Removed Custom Discounts Module**: Completely removed the "Custom Discounts & Promo Codes" module from add/edit resort forms
+- **Simplified Discount System**: Streamlined DiscountsSection to only include standard discounts (Senior Citizen and PWD)
+- **Form Optimization**: Simplified form submission logic and removed custom discounts handling
+
+**Technical Changes:**
+- Updated `Detail.tsx` pricing display format
+- Modified `ManageHotelForm.tsx` to remove custom discounts
+- Updated `HotelFormData` type definition
+- Simplified `DiscountsSection.tsx` component
+- Enhanced pricing consistency across all beach resorts
+
+**Benefits:**
+- Cleaner user interface with simplified pricing display
+- More maintainable discount system
+- Consistent pricing presentation across the application
+- Reduced complexity in resort management forms
+
 - **Frontend-Live-Demo:** [https://hotel-mern-booking.vercel.app/](https://hotel-mern-booking.vercel.app/)
 - **Backend-Live-Demo:** [https://hotel-booking-backend.arnobmahmud.com](https://hotel-booking-backend.arnobmahmud.com)
 

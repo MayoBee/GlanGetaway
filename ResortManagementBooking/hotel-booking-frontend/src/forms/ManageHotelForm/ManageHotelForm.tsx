@@ -140,7 +140,6 @@ export type HotelFormData = {
       nightRate: number;
       hasDayRate: boolean;
       hasNightRate: boolean;
-      minOccupancy: number;
       maxOccupancy: number;
       units: number;
       description?: string;
@@ -150,7 +149,6 @@ export type HotelFormData = {
       name: string;
       type: string;
       pricePerNight: number;
-      minOccupancy: number;
       maxOccupancy: number;
       units: number;
       description?: string;
@@ -160,6 +158,11 @@ export type HotelFormData = {
       name: string;
       price: number;
       units: number;
+      description?: string;
+    }>;
+    customItems: Array<{
+      id: string;
+      name: string;
       description?: string;
     }>;
     includedAdultEntranceFee: boolean;

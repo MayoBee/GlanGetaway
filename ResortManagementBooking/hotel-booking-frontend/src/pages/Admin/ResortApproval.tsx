@@ -7,6 +7,7 @@ import { HotelType } from "../../../../shared/types";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
+import SmartImage from "../../components/SmartImage";
 import { Loader2, Eye, CheckCircle, XCircle, Calendar, User, MapPin, Star } from "lucide-react";
 import { format } from "date-fns";
 
@@ -277,7 +278,7 @@ const ResortApproval: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">Price:</span>
-                        <span className="text-sm">₱{resort.pricePerNight}/night</span>
+                        <span className="text-sm">₱{resort.nightRate}/night</span>
                       </div>
                     </div>
                   </div>
@@ -300,11 +301,12 @@ const ResortApproval: React.FC = () => {
                         <h4 className="font-semibold mb-2">Images</h4>
                         <div className="flex gap-2">
                           {resort.imageUrls.slice(0, 3).map((image, index) => (
-                            <img
+                            <SmartImage
                               key={index}
                               src={image}
                               alt={`${resort.name} ${index + 1}`}
                               className="w-20 h-20 object-cover rounded"
+                              fallbackText="Image"
                             />
                           ))}
                           {resort.imageUrls.length > 3 && (

@@ -7,8 +7,11 @@ import FreshAccommodationDisplay from "../components/FreshAccommodationDisplay";
 import ReportButton from "../components/ReportButton";
 import { Badge } from "../components/ui/badge";
 import SocialShareButtons from "../components/SocialShareButtons";
+import SmartImage from "../components/SmartImage";
+import ImageCarousel from "../components/ImageCarousel";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 import { useState } from "react";
+import { parseHotelTypes } from "../utils/typeUtils";
 import {
   MapPin,
   Phone,
@@ -40,6 +43,8 @@ const Detail = () => {
   const { id } = useParams();
   const { setRateType } = useBookingSelection();
   const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
+  const [isCarouselOpen, setIsCarouselOpen] = useState(false);
+  const [carouselInitialIndex, setCarouselInitialIndex] = useState(0);
 
   const { data: hotel } = useQueryWithLoading(
     "fetchHotelById",
@@ -49,6 +54,15 @@ const Detail = () => {
       loadingMessage: "Loading hotel details...",
     }
   );
+
+  const handleImageClick = (index: number) => {
+    setCarouselInitialIndex(index);
+    setIsCarouselOpen(true);
+  };
+
+  const closeCarousel = () => {
+    setIsCarouselOpen(false);
+  };
 
   if (!hotel) {
     return (
@@ -123,9 +137,9 @@ const Detail = () => {
         )}
 
         {/* Resort Types */}
-        {hotel.type && hotel.type.length > 0 && (
+        {hotel.type && (
           <div className="flex flex-wrap gap-2 mt-4">
-            {hotel.type.map((type, index) => (
+            {parseHotelTypes(hotel.type).map((type, index) => (
               <Badge
                 key={index}
                 variant="outline"
@@ -140,12 +154,24 @@ const Detail = () => {
         {/* Hotel Images */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
           {hotel.imageUrls.map((image: string, i: number) => (
-            <div key={i} className="h-[300px]">
-              <img
+            <div 
+              key={i} 
+              className="relative h-[300px] cursor-pointer group"
+              onClick={() => handleImageClick(i)}
+            >
+              <SmartImage
                 src={image}
-                alt={hotel.name}
-                className="rounded-md w-full h-full object-cover object-center"
+                alt={`${hotel.name} - Image ${i + 1}`}
+                className="rounded-md w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+                fallbackText="Resort Image"
               />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 rounded-md flex items-center justify-center">
+                <div className="text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m0 0l3-3m-3 3l-3-3" />
+                  </svg>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -419,7 +445,9 @@ const Detail = () => {
       {hotel.policies && (
         <div className="border border-slate-300 rounded-lg p-4">
           <h3 className="text-xl font-semibold mb-3">Resort Policies</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          {/* Basic Policies */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             {hotel.policies.checkInTime && (
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-gray-600" />
@@ -453,6 +481,21 @@ const Detail = () => {
               </div>
             )}
           </div>
+
+          {/* Custom Resort Policies */}
+          {hotel.policies.resortPolicies && hotel.policies.resortPolicies.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h4 className="text-lg font-semibold mb-3 text-gray-800">Additional Resort Policies</h4>
+              <div className="space-y-3">
+                {hotel.policies.resortPolicies.map((policy, index) => (
+                  <div key={policy.id || index} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                    <h5 className="font-medium text-gray-900 mb-1">{policy.title}</h5>
+                    <p className="text-sm text-gray-700 leading-relaxed">{policy.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -509,6 +552,14 @@ const Detail = () => {
           />
         </div>
       </div>
+
+      {/* Image Carousel */}
+      <ImageCarousel
+        images={hotel.imageUrls}
+        isOpen={isCarouselOpen}
+        onClose={closeCarousel}
+        initialIndex={carouselInitialIndex}
+      />
     </div>
   );
 };

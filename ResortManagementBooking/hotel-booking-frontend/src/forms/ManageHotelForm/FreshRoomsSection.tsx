@@ -1,7 +1,7 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Bed, Check, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ImageUpload from "../../components/ImageUpload";
 
 const FreshRoomsSection = () => {
@@ -12,6 +12,9 @@ const FreshRoomsSection = () => {
   });
   const rooms = useWatch({ control, name: "rooms" });
   const [confirmedRooms, setConfirmedRooms] = useState<Set<string>>(new Set());
+  const [roomFiles, setRoomFiles] = useState<Map<string, File>>(new Map());
+  const isInitializingRef = useRef(false);
+  const confirmedRoomsRef = useRef<Set<string>>(new Set());
 
   const addRoom = () => {
     const newRoomId = `room_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -30,18 +33,30 @@ const FreshRoomsSection = () => {
     });
   };
 
-  // Load confirmed states from form data
+  // Initialize confirmed states only when component mounts or rooms change significantly
   useEffect(() => {
-    if (rooms) {
-      const confirmedIds = rooms
-        .filter(room => room.isConfirmed)
-        .map(room => room.id)
-        .filter(Boolean);
-      setConfirmedRooms(new Set(confirmedIds));
+    if (rooms && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+      
+      // Only initialize if we don't have any confirmed states yet
+      if (confirmedRoomsRef.current.size === 0) {
+        const confirmedIds = rooms
+          .filter(room => room.isConfirmed)
+          .map(room => room.id)
+          .filter(Boolean);
+        
+        const newConfirmedSet = new Set(confirmedIds);
+        setConfirmedRooms(newConfirmedSet);
+        confirmedRoomsRef.current = newConfirmedSet;
+      }
+      
+      setTimeout(() => {
+        isInitializingRef.current = false;
+      }, 100);
     }
-  }, [rooms]);
+  }, [rooms?.length]); // Only run when rooms length changes
 
-  const confirmRoom = (roomId: string) => {
+  const confirmRoom = useCallback((roomId: string) => {
     setConfirmedRooms(prev => {
       const newSet = new Set(prev);
       if (newSet.has(roomId)) {
@@ -49,6 +64,7 @@ const FreshRoomsSection = () => {
       } else {
         newSet.add(roomId);
       }
+      confirmedRoomsRef.current = newSet;
       return newSet;
     });
 
@@ -56,14 +72,14 @@ const FreshRoomsSection = () => {
     if (rooms) {
       const roomIndex = rooms.findIndex(room => room.id === roomId);
       if (roomIndex !== -1) {
-        const isCurrentlyConfirmed = confirmedRooms.has(roomId);
+        const isCurrentlyConfirmed = confirmedRoomsRef.current.has(roomId);
         update(roomIndex, {
           ...rooms[roomIndex],
           isConfirmed: !isCurrentlyConfirmed,
         });
       }
     }
-  };
+  }, [rooms, update]);
 
   return (
     <div className="space-y-4">
@@ -105,11 +121,36 @@ const FreshRoomsSection = () => {
                   <ImageUpload
                     value={rooms?.[index]?.imageUrl || ""}
                     onChange={(url: string) => {
+                      console.log(`=== ROOM IMAGE CHANGE DEBUG ===`);
+                      console.log(`Room ${index} image URL changed to:`, url.substring(0, 50) + "...");
                       if (rooms) {
                         const updatedRooms = [...rooms];
                         updatedRooms[index] = { ...updatedRooms[index], imageUrl: url };
                         // Update using the update method from useFieldArray
                         update(index, updatedRooms[index]);
+                        console.log(`Room ${index} updated in form`);
+                      }
+                    }}
+                    onFileChange={(file: File) => {
+                      console.log(`=== ROOM FILE CHANGE DEBUG ===`);
+                      console.log(`Room ${index} file received:`, file.name, file.size);
+                      // Store the file for upload
+                      const newRoomFiles = new Map(roomFiles);
+                      newRoomFiles.set(`room_${index}`, file);
+                      setRoomFiles(newRoomFiles);
+                      console.log(`Room ${index} file stored in roomFiles map`);
+                      
+                      // Also update the imageUrl with a temporary preview
+                      if (rooms) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                          const dataUrl = e.target?.result as string;
+                          const updatedRooms = [...rooms];
+                          updatedRooms[index] = { ...updatedRooms[index], imageUrl: dataUrl };
+                          update(index, updatedRooms[index]);
+                          console.log(`Room ${index} data URL set in form`);
+                        };
+                        reader.readAsDataURL(file);
                       }
                     }}
                     label="Room Image"
@@ -172,7 +213,15 @@ const FreshRoomsSection = () => {
                     Available Units
                   </label>
                   <input
-                    {...control.register(`rooms.${index}.units` as const)}
+                    {...control.register(`rooms.${index}.units` as const, {
+                      onChange: (e) => {
+                        console.log(`=== ROOM UNITS INPUT CHANGE ===`);
+                        console.log(`Room index: ${index}`);
+                        console.log(`New value:`, e.target.value);
+                        console.log(`Current room data:`, rooms?.[index]);
+                        console.log(`Parsed value:`, parseInt(e.target.value) || 1);
+                      }
+                    })}
                     type="number"
                     min="1"
                     max="100"

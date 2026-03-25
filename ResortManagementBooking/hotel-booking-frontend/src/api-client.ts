@@ -165,6 +165,20 @@ export const addMyHotel = async (hotelFormData: FormData) => {
   return response.data;
 };
 
+export const addMyHotelJson = async (hotelData: any) => {
+  console.log('=== ADD HOTEL JSON API CALL ===');
+  console.log('Sending data:', JSON.stringify(hotelData, null, 2));
+  
+  const response = await axiosInstance.post("/api/my-hotels/json", hotelData, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+  
+  console.log('Response data:', response.data);
+  return response.data;
+};
+
 export const fetchMyHotels = async (): Promise<HotelType[]> => {
   const response = await axiosInstance.get("/api/my-hotels");
   return response.data;

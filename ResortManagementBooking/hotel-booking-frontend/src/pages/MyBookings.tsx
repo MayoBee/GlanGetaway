@@ -2,6 +2,7 @@ import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "../api-client";
 import type { BookingType, HotelWithBookingsType } from "../../../shared/types";
 import { Badge } from "../components/ui/badge";
+import SmartImage from "../components/SmartImage";
 import { Button } from "../components/ui/button";
 import PaymentVerificationCard from "../components/PaymentVerificationCard";
 import {
@@ -121,7 +122,7 @@ const MyBookings = () => {
               (1000 * 60 * 60 * 24),
           ),
         );
-        return hotelTotal + hotel.pricePerNight * nights;
+        return hotelTotal + hotel.nightRate * nights;
       }, 0)
     );
   }, 0);
@@ -217,10 +218,11 @@ const MyBookings = () => {
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-b border-gray-200">
                 <div className="flex items-start gap-6">
                   <div className="relative">
-                    <img
+                    <SmartImage
                       src={hotel.imageUrls[0]}
                       className="w-24 h-24 rounded-lg object-cover object-center shadow-md"
                       alt={hotel.name}
+                      fallbackText="Hotel"
                     />
                     <div className="absolute -top-2 -right-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded-full">
                       {hotel.starRating}★
@@ -239,7 +241,7 @@ const MyBookings = () => {
                       </div>
                       <div className="flex items-center gap-1">
                         <Building className="w-4 h-4" />
-                        <span>₱{hotel.pricePerNight}/night</span>
+                        <span>₱{hotel.nightRate}/night</span>
                       </div>
                     </div>
                   </div>
@@ -262,7 +264,7 @@ const MyBookings = () => {
                           (1000 * 60 * 60 * 24),
                       ),
                     );
-                    const totalPrice = hotel.pricePerNight * nights;
+                    const totalPrice = hotel.nightRate * nights;
 
                     return (
                       <div

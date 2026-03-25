@@ -1,17 +1,18 @@
-import { FormProvider, useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
+import { useEffect } from "react";
 import DetailsSection from "./DetailsSection";
+import GuestsSection from "./GuestsSection";
 import TypeSection from "./TypeSection";
 import FacilitiesSection from "./FacilitiesSection";
 import FreshRoomsSection from "./FreshRoomsSection";
 import FreshCottagesSection from "./FreshCottagesSection";
-import FreshPackagesSection from "./FreshPackagesSection";
 import AmenitiesSection from "./AmenitiesSection";
-import GuestsSection from "./GuestsSection";
+import FreshPackagesSection from "./FreshPackagesSection";
+import ContactSection from "./ContactSection";
 import PoliciesSection from "./PoliciesSection";
 import ImagesSection from "./ImagesSection";
-import ContactSection from "./ContactSection";
+import { mergeUnitsWithBackendData, extractUnitsFromFormData } from "../../utils/unitsStorage";
 import { HotelType } from "../../../../shared/types";
-import { useEffect } from "react";
 
 export type HotelFormData = {
   name: string;
@@ -135,35 +136,9 @@ export type HotelFormData = {
     description: string;
     price: number;
     imageUrl?: string;
-    includedCottages: Array<{
-      id: string;
-      name: string;
-      type: string;
-      pricePerNight: number;
-      dayRate: number;
-      nightRate: number;
-      hasDayRate: boolean;
-      hasNightRate: boolean;
-      maxOccupancy: number;
-      units: number;
-      description?: string;
-    }>;
-    includedRooms: Array<{
-      id: string;
-      name: string;
-      type: string;
-      pricePerNight: number;
-      maxOccupancy: number;
-      units: number;
-      description?: string;
-    }>;
-    includedAmenities: Array<{
-      id: string;
-      name: string;
-      price: number;
-      units: number;
-      description?: string;
-    }>;
+    includedCottages: string[];
+    includedRooms: string[];
+    includedAmenities: string[];
     customItems: Array<{
       id: string;
       name: string;
@@ -243,19 +218,42 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
 
   useEffect(() => {
     if (hotel) {
+      console.log('=== MANAGE HOTEL FORM: Loading hotel data', hotel._id);
+      
+      // Get current form values to preserve confirmed states
+      const currentValues = formMethods.getValues();
+      
+      // Merge backend data with saved units data
+      const mergedHotelData = mergeUnitsWithBackendData(hotel._id, hotel);
+      
+      // Helper function to preserve confirmed states
+      const preserveConfirmedStates = (currentItems: any[], newItems: any[]) => {
+        const confirmedMap = new Map();
+        currentItems.forEach(item => {
+          if (item.isConfirmed) {
+            confirmedMap.set(item.id, true);
+          }
+        });
+        
+        return newItems.map(item => ({
+          ...item,
+          isConfirmed: confirmedMap.get(item.id) || item.isConfirmed || false
+        }));
+      };
+      
       // Ensure contact and policies are properly initialized
       const formData = {
-        ...hotel,
+        ...mergedHotelData,
         // Handle the new day/night rate fields with fallbacks
-        dayRate: hotel.dayRate || 0,
-        nightRate: hotel.nightRate || 0,
-        hasDayRate: hotel.hasDayRate !== undefined ? hotel.hasDayRate : false,
-        hasNightRate: hotel.hasNightRate !== undefined ? hotel.hasNightRate : false,
-        dayRateCheckInTime: (hotel as any).dayRateCheckInTime || "08:00 AM",
-        dayRateCheckOutTime: (hotel as any).dayRateCheckOutTime || "05:00 PM",
-        nightRateCheckInTime: (hotel as any).nightRateCheckInTime || "02:00 PM",
-        nightRateCheckOutTime: (hotel as any).nightRateCheckOutTime || "02:00 PM",
-        contact: hotel.contact || {
+        dayRate: mergedHotelData.dayRate || 0,
+        nightRate: mergedHotelData.nightRate || 0,
+        hasDayRate: mergedHotelData.hasDayRate !== undefined ? mergedHotelData.hasDayRate : false,
+        hasNightRate: mergedHotelData.hasNightRate !== undefined ? mergedHotelData.hasNightRate : false,
+        dayRateCheckInTime: (mergedHotelData as any).dayRateCheckInTime || "08:00 AM",
+        dayRateCheckOutTime: (mergedHotelData as any).dayRateCheckOutTime || "05:00 PM",
+        nightRateCheckInTime: (mergedHotelData as any).nightRateCheckInTime || "02:00 PM",
+        nightRateCheckOutTime: (mergedHotelData as any).nightRateCheckOutTime || "02:00 PM",
+        contact: mergedHotelData.contact || {
           phone: "",
           email: "",
           website: "",
@@ -263,47 +261,133 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           instagram: "",
           tiktok: "",
         },
-        policies: hotel.policies || {
-          checkInTime: "",
-          checkOutTime: "",
-          dayCheckInTime: "",
-          dayCheckOutTime: "",
-          nightCheckInTime: "",
-          nightCheckOutTime: "",
-          resortPolicies: [],
+        policies: {
+          ...mergedHotelData.policies,
+          resortPolicies: preserveConfirmedStates(
+            currentValues.policies?.resortPolicies || [],
+            mergedHotelData.policies?.resortPolicies || []
+          )
         },
-        rooms: hotel.rooms || [],
-        cottages: hotel.cottages || [],
-        discounts: hotel.discounts || {
+        amenities: preserveConfirmedStates(
+          currentValues.amenities || [],
+          (mergedHotelData.amenities || []).map(amenity => ({
+            ...amenity,
+            units: parseInt(String(amenity.units)) || 1
+          }))
+        ),
+        rooms: preserveConfirmedStates(
+          currentValues.rooms || [],
+          (mergedHotelData.rooms || []).map(room => ({
+            ...room,
+            units: parseInt(String(room.units)) || 1
+          }))
+        ),
+        cottages: preserveConfirmedStates(
+          currentValues.cottages || [],
+          (mergedHotelData.cottages || []).map(cottage => ({
+            ...cottage,
+            units: parseInt(String(cottage.units)) || 1
+          }))
+        ),
+        discounts: mergedHotelData.discounts || {
           seniorCitizenEnabled: true,
           seniorCitizenPercentage: 20,
           pwdEnabled: true,
           pwdPercentage: 20
         },
-        packages: hotel.packages || [],
-        adultEntranceFee: hotel.adultEntranceFee || {
+        packages: preserveConfirmedStates(
+          currentValues.packages || [],
+          mergedHotelData.packages || []
+        ),
+        adultEntranceFee: mergedHotelData.adultEntranceFee || {
           dayRate: 0,
           nightRate: 0,
           pricingModel: "per_head",
           groupQuantity: 1,
         },
-        childEntranceFee: hotel.childEntranceFee || [],
-        imageUrls: hotel.imageUrls || [],
+        childEntranceFee: preserveConfirmedStates(
+          currentValues.childEntranceFee || [],
+          mergedHotelData.childEntranceFee || []
+        ),
+        imageUrls: mergedHotelData.imageUrls || [],
       };
+      
+      console.log('=== MANAGE HOTEL FORM: Setting form data with merged units', {
+        hotelId: hotel._id,
+        roomsUnits: formData.rooms?.map(r => ({ id: r.id, units: r.units })),
+        cottagesUnits: formData.cottages?.map(c => ({ id: c.id, units: c.units })),
+        amenitiesUnits: formData.amenities?.map(a => ({ id: a.id, units: a.units }))
+      });
+      
       reset(formData);
     }
-  }, [hotel, reset]);
+  }, [hotel, reset, formMethods]);
 
   const handleSave = async (formDataJson: HotelFormData) => {
     console.log('=== FORM SUBMISSION DEBUG ===');
-    console.log('Form data JSON:', formDataJson);
-    console.log('Rooms being sent:', formDataJson.rooms);
-    console.log('Cottages being sent:', formDataJson.cottages);
-    console.log('Packages being sent:', formDataJson.packages);
+    console.log('Complete form data:', JSON.stringify(formDataJson, null, 2));
+    
+    // Extract and save units data to local storage (for persistence when backend doesn't handle it)
+    const hotelId = formDataJson._id || 'new_hotel';
+    extractUnitsFromFormData(formDataJson, hotelId);
+    
+    // Convert units from strings to numbers for cottages and amenities
+    const processedData = {
+      ...formDataJson,
+      amenities: formDataJson.amenities?.map(amenity => ({
+        ...amenity,
+        units: parseInt(String(amenity.units)) || 1
+      })),
+      cottages: formDataJson.cottages?.map(cottage => ({
+        ...cottage,
+        units: parseInt(String(cottage.units)) || 1
+      })),
+      // Rooms units are already numbers, but ensure consistency
+      rooms: formDataJson.rooms?.map(room => ({
+        ...room,
+        units: parseInt(String(room.units)) || 1
+      }))
+    };
+    
+    // Debug units specifically
+    console.log('ROOMS UNITS DEBUG:');
+    processedData.rooms?.forEach((room, index) => {
+      console.log(`Room ${index} (${room.name}):`, {
+        id: room.id,
+        units: room.units,
+        unitsType: typeof room.units,
+        unitsValue: room.units?.toString()
+      });
+    });
+    
+    console.log('COTTAGES UNITS DEBUG:');
+    processedData.cottages?.forEach((cottage, index) => {
+      console.log(`Cottage ${index} (${cottage.name}):`, {
+        id: cottage.id,
+        units: cottage.units,
+        unitsType: typeof cottage.units,
+        unitsValue: cottage.units?.toString()
+      });
+    });
+    
+    console.log('AMENITIES UNITS DEBUG:');
+    processedData.amenities?.forEach((amenity, index) => {
+      console.log(`Amenity ${index} (${amenity.name}):`, {
+        id: amenity.id,
+        units: amenity.units,
+        unitsType: typeof amenity.units,
+        unitsValue: amenity.units?.toString()
+      });
+    });
+    
+    console.log('Form data keys:', Object.keys(processedData));
+    console.log('Rooms being sent:', processedData.rooms);
+    console.log('Cottages being sent:', processedData.cottages);
+    console.log('Packages being sent:', processedData.packages);
 
-    // For JSON endpoint, send the data directly as JSON
+    // For JSON endpoint, send data directly as JSON
     // This bypasses FormData issues and ensures rooms/cottages/packages are preserved
-    onSave(formDataJson);
+    onSave(processedData);
   };
 
   const onSubmit = handleSubmit(handleSave);

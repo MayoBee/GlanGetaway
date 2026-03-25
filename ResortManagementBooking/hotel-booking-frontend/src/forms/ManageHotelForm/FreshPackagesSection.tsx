@@ -1,7 +1,7 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Package, Check, X, Home, Bed, Sparkles } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ImageUpload from "../../components/ImageUpload";
 
 interface PackageItemState {
@@ -25,6 +25,8 @@ const FreshPackagesSection = () => {
   });
   const [confirmedPackages, setConfirmedPackages] = useState<Set<string>>(new Set());
   const [packageStates, setPackageStates] = useState<Map<string, PackageItemState>>(new Map());
+  const isInitializingRef = useRef(false);
+  const confirmedPackagesRef = useRef<Set<string>>(new Set());
 
   const addPackage = () => {
     const newPackageId = `package_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -54,23 +56,38 @@ const FreshPackagesSection = () => {
     }));
   };
 
-  // Load confirmed states from form data
+  // Initialize confirmed states only when component mounts or packages change significantly
   useEffect(() => {
-    if (packages) {
-      const confirmedIds = packages
-        .filter(pkg => pkg.isConfirmed)
-        .map(pkg => pkg.id)
-        .filter(Boolean);
-      setConfirmedPackages(new Set(confirmedIds));
+    if (packages && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+      
+      // Only initialize if we don't have any confirmed states yet
+      if (confirmedPackagesRef.current.size === 0) {
+        const confirmedIds = packages
+          .filter(pkg => pkg.isConfirmed)
+          .map(pkg => pkg.id)
+          .filter(Boolean);
+        
+        const newConfirmedSet = new Set(confirmedIds);
+        setConfirmedPackages(newConfirmedSet);
+        confirmedPackagesRef.current = newConfirmedSet;
+      }
       
       // Initialize package states from existing data
       const newStates = new Map<string, PackageItemState>();
       packages.forEach(pkg => {
-        const state: PackageItemState = {
-          rooms: new Map(),
-          cottages: new Map(),
-          amenities: new Map(),
-          customItems: pkg.customItems || []
+        const existingState = packageStates.get(pkg.id);
+        if (existingState) {
+          newStates.set(pkg.id, existingState);
+        } else {
+          const state: PackageItemState = {
+            rooms: new Map(),
+            cottages: new Map(),
+            amenities: new Map(),
+            customItems: (pkg.customItems || []).map(item => ({
+            ...item,
+            description: item.description || ""
+          }))
         };
         
         // Load existing selections with units
@@ -87,12 +104,17 @@ const FreshPackagesSection = () => {
         });
         
         newStates.set(pkg.id, state);
+        }
       });
       setPackageStates(newStates);
+      
+      setTimeout(() => {
+        isInitializingRef.current = false;
+      }, 100);
     }
-  }, [packages]);
+  }, [packages?.length]); // Only run when packages length changes
 
-  const confirmPackage = (packageId: string) => {
+  const confirmPackage = useCallback((packageId: string) => {
     setConfirmedPackages(prev => {
       const newSet = new Set(prev);
       if (newSet.has(packageId)) {
@@ -100,6 +122,7 @@ const FreshPackagesSection = () => {
       } else {
         newSet.add(packageId);
       }
+      confirmedPackagesRef.current = newSet;
       return newSet;
     });
 
@@ -107,15 +130,19 @@ const FreshPackagesSection = () => {
     if (packages) {
       const packageIndex = packages.findIndex(pkg => pkg.id === packageId);
       if (packageIndex !== -1) {
-        const isCurrentlyConfirmed = confirmedPackages.has(packageId);
+        const isCurrentlyConfirmed = confirmedPackagesRef.current.has(packageId);
         const packageState = packageStates.get(packageId);
         
         if (packageState) {
           // Build the package data from state
+          const allRooms = rooms || [];
+          const allCottages = cottages || [];
+          const allAmenities = amenities || [];
+          
           const includedRooms = Array.from(packageState.rooms.entries())
             .filter(([_, state]) => state.checked)
             .map(([id, state]) => {
-              const room = rooms.find(r => r.id === id);
+              const room = allRooms.find(r => r.id === id);
               return room ? {
                 id: room.id,
                 name: room.name,
@@ -123,15 +150,15 @@ const FreshPackagesSection = () => {
                 pricePerNight: room.pricePerNight,
                 maxOccupancy: room.maxOccupancy,
                 units: state.units,
-                description: room.description
+                description: room.description || ""
               } : null;
             })
-            .filter(Boolean);
+            .filter((item): item is NonNullable<typeof item> => item !== null);
 
           const includedCottages = Array.from(packageState.cottages.entries())
             .filter(([_, state]) => state.checked)
             .map(([id, state]) => {
-              const cottage = cottages.find(c => c.id === id);
+              const cottage = allCottages.find(c => c.id === id);
               return cottage ? {
                 id: cottage.id,
                 name: cottage.name,
@@ -143,37 +170,37 @@ const FreshPackagesSection = () => {
                 hasNightRate: cottage.hasNightRate,
                 maxOccupancy: cottage.maxOccupancy,
                 units: state.units,
-                description: cottage.description
+                description: cottage.description || ""
               } : null;
             })
-            .filter(Boolean);
+            .filter((item): item is NonNullable<typeof item> => item !== null);
 
           const includedAmenities = Array.from(packageState.amenities.entries())
             .filter(([_, state]) => state.checked)
             .map(([id, state]) => {
-              const amenity = amenities.find(a => a.id === id);
+              const amenity = allAmenities.find(a => a.id === id);
               return amenity ? {
                 id: amenity.id,
                 name: amenity.name,
                 price: amenity.price,
                 units: state.units,
-                description: amenity.description
+                description: amenity.description || ""
               } : null;
             })
-            .filter(Boolean);
+            .filter((item): item is NonNullable<typeof item> => item !== null);
 
           update(packageIndex, {
             ...packages[packageIndex],
             isConfirmed: !isCurrentlyConfirmed,
-            includedRooms,
-            includedCottages,
-            includedAmenities,
+            includedRooms: includedRooms.map(r => r.id),
+            includedCottages: includedCottages.map(c => c.id),
+            includedAmenities: includedAmenities.map(a => a.id),
             customItems: packageState.customItems
           });
         }
       }
     }
-  };
+  }, [packages, packageStates, rooms, cottages, amenities, update]);
 
   const updatePackageState = (packageId: string, updates: Partial<PackageItemState>) => {
     setPackageStates(prev => {

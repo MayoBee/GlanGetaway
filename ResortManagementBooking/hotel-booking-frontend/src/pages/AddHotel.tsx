@@ -131,25 +131,50 @@ const AddHotel = () => {
   });
 
   const handleSave = (hotelFormData: HotelFormData) => {
-    // Convert HotelFormData to FormData for API
+    console.log('=== ADD HOTEL FORM DATA ===');
+    console.log('Form data being sent:', JSON.stringify(hotelFormData, null, 2));
+    console.log('Rooms units:', hotelFormData.rooms?.map(r => ({ name: r.name, units: r.units })));
+    console.log('Cottages units:', hotelFormData.cottages?.map(c => ({ name: c.name, units: c.units })));
+    console.log('Amenities units:', hotelFormData.amenities?.map(a => ({ name: a.name, units: a.units })));
+    
+    // Create FormData for file upload support
     const formData = new FormData();
     
-    // Add all basic fields
+    // Add all form fields to FormData
     Object.keys(hotelFormData).forEach(key => {
-      const value = hotelFormData[key as keyof HotelFormData];
-      if (value !== undefined && value !== null) {
-        if (key === 'imageFiles' && value instanceof FileList) {
-          // Handle image files
-          Array.from(value).forEach((file) => {
-            formData.append(`imageFiles`, file);
+      const value = hotelFormData[key];
+      if (key === 'imageFiles') {
+        // Handle files separately
+        if (value && Array.isArray(value)) {
+          Array.from(value).forEach((file: File, index: number) => {
+            formData.append('imageFiles', file);
           });
-        } else if (typeof value === 'object') {
-          // Handle nested objects
-          formData.append(key, JSON.stringify(value));
-        } else {
-          // Handle primitive values
-          formData.append(key, String(value));
         }
+      } else if (key === 'rooms' || key === 'cottages' || key === 'amenities') {
+        // Handle nested objects with images
+        if (Array.isArray(value)) {
+          value.forEach((item: any, itemIndex: number) => {
+            Object.keys(item).forEach(itemKey => {
+              if (itemKey === 'imageUrl' && item.imageUrl && item.imageUrl.startsWith('data:')) {
+                // Convert data URL to file if needed
+                // For now, just add the data URL as string
+                formData.append(`${key}[${itemIndex}][${itemKey}]`, item.imageUrl);
+              } else {
+                formData.append(`${key}[${itemIndex}][${itemKey}]`, item[itemKey]);
+              }
+            });
+          });
+        }
+      } else if (Array.isArray(value)) {
+        // Handle other arrays
+        value.forEach((item: any, index: number) => {
+          Object.keys(item).forEach(itemKey => {
+            formData.append(`${key}[${index}][${itemKey}]`, item[itemKey]);
+          });
+        });
+      } else {
+        // Handle simple fields
+        formData.append(key, value);
       }
     });
     

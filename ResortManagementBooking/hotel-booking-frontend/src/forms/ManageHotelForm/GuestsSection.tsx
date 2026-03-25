@@ -1,7 +1,7 @@
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, X, Users, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, Users, Check, X, DollarSign } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const GuestsSection = () => {
   const {
@@ -18,6 +18,8 @@ const GuestsSection = () => {
 
   const childEntranceFees = useWatch({ control, name: "childEntranceFee" });
   const [confirmedAgeGroups, setConfirmedAgeGroups] = useState<Set<string>>(new Set());
+  const isInitializingRef = useRef(false);
+  const confirmedAgeGroupsRef = useRef<Set<string>>(new Set());
 
   const adultPricingModel = watch("adultEntranceFee.pricingModel");
 
@@ -35,18 +37,30 @@ const GuestsSection = () => {
     });
   };
 
-  // Load confirmed states from form data
+  // Initialize confirmed states only when component mounts or child entrance fees change significantly
   useEffect(() => {
-    if (childEntranceFees) {
-      const confirmedIds = childEntranceFees
-        .filter(ageGroup => ageGroup.isConfirmed)
-        .map(ageGroup => ageGroup.id)
-        .filter(Boolean);
-      setConfirmedAgeGroups(new Set(confirmedIds));
+    if (childEntranceFees && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+      
+      // Only initialize if we don't have any confirmed states yet
+      if (confirmedAgeGroupsRef.current.size === 0) {
+        const confirmedIds = childEntranceFees
+          .filter(ageGroup => ageGroup.isConfirmed)
+          .map(ageGroup => ageGroup.id)
+          .filter(Boolean);
+        
+        const newConfirmedSet = new Set(confirmedIds);
+        setConfirmedAgeGroups(newConfirmedSet);
+        confirmedAgeGroupsRef.current = newConfirmedSet;
+      }
+      
+      setTimeout(() => {
+        isInitializingRef.current = false;
+      }, 100);
     }
-  }, [childEntranceFees]);
+  }, [childEntranceFees?.length]); // Only run when child entrance fees length changes
 
-  const confirmAgeGroup = (ageGroupId: string) => {
+  const confirmAgeGroup = useCallback((ageGroupId: string) => {
     setConfirmedAgeGroups(prev => {
       const newSet = new Set(prev);
       if (newSet.has(ageGroupId)) {
@@ -54,6 +68,7 @@ const GuestsSection = () => {
       } else {
         newSet.add(ageGroupId);
       }
+      confirmedAgeGroupsRef.current = newSet;
       return newSet;
     });
 
@@ -61,14 +76,14 @@ const GuestsSection = () => {
     if (childEntranceFees) {
       const ageGroupIndex = childEntranceFees.findIndex(ageGroup => ageGroup.id === ageGroupId);
       if (ageGroupIndex !== -1) {
-        const isCurrentlyConfirmed = confirmedAgeGroups.has(ageGroupId);
+        const isCurrentlyConfirmed = confirmedAgeGroupsRef.current.has(ageGroupId);
         update(ageGroupIndex, {
           ...childEntranceFees[ageGroupIndex],
           isConfirmed: !isCurrentlyConfirmed,
         });
       }
     }
-  };
+  }, [childEntranceFees, update]);
 
   return (
     <div className="space-y-6">
@@ -336,7 +351,7 @@ const GuestsSection = () => {
                   </select>
                   {errors.childEntranceFee?.[index]?.pricingModel && (
                     <span className="text-red-500 text-sm">
-                      {errors.childEntranceFee[index]?.pricingModel.message}
+                      {errors.childEntranceFee?.[index]?.pricingModel?.message}
                     </span>
                   )}
                 </div>
@@ -364,7 +379,7 @@ const GuestsSection = () => {
                   </div>
                   {errors.childEntranceFee?.[index]?.groupQuantity && (
                     <span className="text-red-500 text-sm">
-                      {errors.childEntranceFee[index]?.groupQuantity.message}
+                      {errors.childEntranceFee?.[index]?.groupQuantity?.message}
                     </span>
                   )}
                 </div>

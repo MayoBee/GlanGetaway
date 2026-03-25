@@ -27,6 +27,8 @@ import {
   validateDiscountInput
 } from "../lib/discountCalculation";
 
+export type { DiscountCalculationResult };
+
 interface GuestDiscountInputProps {
   totalGuests: number;
   pricePerNight: number;

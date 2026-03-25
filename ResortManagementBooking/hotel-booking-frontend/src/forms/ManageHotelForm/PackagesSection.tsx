@@ -25,6 +25,7 @@ const PackagesSection = () => {
       includedAmenities: [],
       includedAdultEntranceFee: false,
       includedChildEntranceFee: false,
+      customItems: [],
     });
   };
 

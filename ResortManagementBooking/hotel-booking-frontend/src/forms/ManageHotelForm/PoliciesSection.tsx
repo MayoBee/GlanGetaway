@@ -1,7 +1,7 @@
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, X, FileText, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { Plus, X, Check, FileText } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const PoliciesSection = () => {
   const { control, register, formState: { errors }, watch } = useFormContext<HotelFormData>();
@@ -11,6 +11,8 @@ const PoliciesSection = () => {
   });
   const resortPolicies = useWatch({ control, name: "policies.resortPolicies" });
   const [confirmedPolicies, setConfirmedPolicies] = useState<Set<string>>(new Set());
+  const isInitializingRef = useRef(false);
+  const confirmedPoliciesRef = useRef<Set<string>>(new Set());
 
   const handleAddPolicy = () => {
     const newPolicyId = `policy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -22,18 +24,30 @@ const PoliciesSection = () => {
     });
   };
 
-  // Load confirmed states from form data
+  // Initialize confirmed states only when component mounts or resort policies change significantly
   useEffect(() => {
-    if (resortPolicies) {
-      const confirmedIds = resortPolicies
-        .filter(policy => policy.isConfirmed)
-        .map(policy => policy.id)
-        .filter(Boolean);
-      setConfirmedPolicies(new Set(confirmedIds));
+    if (resortPolicies && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+      
+      // Only initialize if we don't have any confirmed states yet
+      if (confirmedPoliciesRef.current.size === 0) {
+        const confirmedIds = resortPolicies
+          .filter(policy => policy.isConfirmed)
+          .map(policy => policy.id)
+          .filter(Boolean);
+        
+        const newConfirmedSet = new Set(confirmedIds);
+        setConfirmedPolicies(newConfirmedSet);
+        confirmedPoliciesRef.current = newConfirmedSet;
+      }
+      
+      setTimeout(() => {
+        isInitializingRef.current = false;
+      }, 100);
     }
-  }, [resortPolicies]);
+  }, [resortPolicies?.length]); // Only run when resort policies length changes
 
-  const confirmPolicy = (policyId: string) => {
+  const confirmPolicy = useCallback((policyId: string) => {
     setConfirmedPolicies(prev => {
       const newSet = new Set(prev);
       if (newSet.has(policyId)) {
@@ -41,6 +55,7 @@ const PoliciesSection = () => {
       } else {
         newSet.add(policyId);
       }
+      confirmedPoliciesRef.current = newSet;
       return newSet;
     });
 
@@ -48,14 +63,14 @@ const PoliciesSection = () => {
     if (resortPolicies) {
       const policyIndex = resortPolicies.findIndex(policy => policy.id === policyId);
       if (policyIndex !== -1) {
-        const isCurrentlyConfirmed = confirmedPolicies.has(policyId);
+        const isCurrentlyConfirmed = confirmedPoliciesRef.current.has(policyId);
         update(policyIndex, {
           ...resortPolicies[policyIndex],
           isConfirmed: !isCurrentlyConfirmed,
         });
       }
     }
-  };
+  }, [resortPolicies, update]);
 
   return (
     <div className="flex flex-col gap-4">

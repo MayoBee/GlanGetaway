@@ -31,7 +31,7 @@ const EditHotel = () => {
     }
   );
 
-  const { mutate, isLoading } = useMutation(apiClient.updateMyHotelByIdJson, {
+  const { mutate, isLoading } = useMutation(apiClient.updateMyHotelById, {
     onSuccess: () => {
       showToast({
         title: "Resort Updated Successfully",
@@ -174,7 +174,7 @@ const EditHotel = () => {
   });
 
   const handleSave = (hotelFormData: any) => {
-    // Log the data being sent for debugging
+    // Log data being sent for debugging
     console.log("=== EDIT HOTEL REQUEST DATA ===");
     console.log("Hotel ID:", hotelId);
     console.log("Form Data:", JSON.stringify(hotelFormData, null, 2));
@@ -188,8 +188,195 @@ const EditHotel = () => {
       });
     }
     
-    // Don't add hotelId to the data - it comes from URL parameter
-    mutate(hotelFormData);
+    // Create FormData for file upload support
+    const formData = new FormData();
+    
+    // Add hotel ID first - ensure it's a string and not null/undefined
+    if (hotelId) {
+      formData.append('hotelId', hotelId);
+      console.log("=== HOTEL ID ADDED TO FORM DATA ===");
+      console.log("Hotel ID value:", hotelId);
+      console.log("FormData hotelId:", formData.get('hotelId'));
+    } else {
+      console.error("=== HOTEL ID IS NULL OR UNDEFINED ===");
+      showToast({
+        title: "Error",
+        description: "Hotel ID is missing. Cannot update resort.",
+        type: "ERROR",
+      });
+      return;
+    }
+    
+    // Add room files for upload
+    if (hotelFormData.rooms && Array.isArray(hotelFormData.rooms)) {
+      hotelFormData.rooms.forEach((room: any, roomIndex: number) => {
+        // Check if room has image file data (data URL indicates a new image was selected)
+        if (room.imageUrl && room.imageUrl.startsWith('data:')) {
+          // Convert data URL to File object
+          const dataUrl = room.imageUrl;
+          const base64Data = dataUrl.split(',')[1];
+          const mimeType = dataUrl.split(':')[1].split(';')[0];
+          
+          try {
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+            const file = new File([blob], `room_${roomIndex}_${Date.now()}.jpg`, { type: mimeType });
+            
+            formData.append('roomFiles', file);
+            console.log(`Added room file for room ${roomIndex}:`, file.name);
+          } catch (error) {
+            console.error(`Error converting room ${roomIndex} image to file:`, error);
+          }
+        }
+      });
+    }
+    
+    // Add cottage files for upload
+    if (hotelFormData.cottages && Array.isArray(hotelFormData.cottages)) {
+      hotelFormData.cottages.forEach((cottage: any, cottageIndex: number) => {
+        if (cottage.imageUrl && cottage.imageUrl.startsWith('data:')) {
+          const dataUrl = cottage.imageUrl;
+          const base64Data = dataUrl.split(',')[1];
+          const mimeType = dataUrl.split(':')[1].split(';')[0];
+          
+          try {
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+            const file = new File([blob], `cottage_${cottageIndex}_${Date.now()}.jpg`, { type: mimeType });
+            
+            formData.append('cottageFiles', file);
+            console.log(`Added cottage file for cottage ${cottageIndex}:`, file.name);
+          } catch (error) {
+            console.error(`Error converting cottage ${cottageIndex} image to file:`, error);
+          }
+        }
+      });
+    }
+    
+    // Add amenity files for upload
+    if (hotelFormData.amenities && Array.isArray(hotelFormData.amenities)) {
+      hotelFormData.amenities.forEach((amenity: any, amenityIndex: number) => {
+        if (amenity.imageUrl && amenity.imageUrl.startsWith('data:')) {
+          const dataUrl = amenity.imageUrl;
+          const base64Data = dataUrl.split(',')[1];
+          const mimeType = dataUrl.split(':')[1].split(';')[0];
+          
+          try {
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+              byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeType });
+            const file = new File([blob], `amenity_${amenityIndex}_${Date.now()}.jpg`, { type: mimeType });
+            
+            formData.append('amenityFiles', file);
+            console.log(`Added amenity file for amenity ${amenityIndex}:`, file.name);
+          } catch (error) {
+            console.error(`Error converting amenity ${amenityIndex} image to file:`, error);
+          }
+        }
+      });
+    }
+    
+    // Debug file detection
+    console.log("=== FILE DETECTION DEBUG ===");
+    const roomImageCount = hotelFormData.rooms?.filter((room: any) => room.imageUrl && room.imageUrl.startsWith('data:')).length || 0;
+    const cottageImageCount = hotelFormData.cottages?.filter((cottage: any) => cottage.imageUrl && cottage.imageUrl.startsWith('data:')).length || 0;
+    const amenityImageCount = hotelFormData.amenities?.filter((amenity: any) => amenity.imageUrl && amenity.imageUrl.startsWith('data:')).length || 0;
+    
+    console.log(`Rooms with new images: ${roomImageCount}`);
+    console.log(`Cottages with new images: ${cottageImageCount}`);
+    console.log(`Amenities with new images: ${amenityImageCount}`);
+    
+    // Add all form fields to FormData
+    Object.keys(hotelFormData).forEach(key => {
+      const value = hotelFormData[key];
+      if (key === 'imageFiles') {
+        // Handle files separately - check for FileList or Array
+        if (value) {
+          console.log("=== IMAGE FILES DEBUG ===");
+          console.log("imageFiles value type:", typeof value);
+          console.log("imageFiles value:", value);
+          
+          let files: File[] = [];
+          
+          if (value instanceof FileList) {
+            console.log("Processing FileList with", value.length, "files");
+            files = Array.from(value);
+          } else if (Array.isArray(value)) {
+            console.log("Processing Array with", value.length, "files");
+            files = value;
+          } else if (value && typeof value === 'object' && value[0]) {
+            console.log("Processing object with numeric keys");
+            // Handle DataTransfer files object
+            files = Object.values(value).filter(item => item instanceof File);
+          }
+          
+          console.log("Final files array:", files.length, "files");
+          files.forEach((file: File, index: number) => {
+            console.log(`Appending file ${index}:`, file.name, file.size, file.type);
+            formData.append('imageFiles', file);
+          });
+        }
+      } else if (key === 'rooms' || key === 'cottages' || key === 'amenities') {
+        // Handle nested objects with images
+        if (Array.isArray(value)) {
+          value.forEach((item: any, itemIndex: number) => {
+            Object.keys(item).forEach(itemKey => {
+              const itemValue = item[itemKey];
+              if (itemKey === 'imageUrl' && itemValue && itemValue.startsWith('data:')) {
+                // Convert data URL to file if needed
+                // For now, just add data URL as string
+                formData.append(`${key}[${itemIndex}][${itemKey}]`, itemValue);
+              } else if (Array.isArray(itemValue)) {
+                // Handle nested arrays (like amenities)
+                itemValue.forEach((arrayItem: any, arrayIndex: number) => {
+                  formData.append(`${key}[${itemIndex}][${itemKey}][${arrayIndex}]`, arrayItem);
+                });
+              } else {
+                formData.append(`${key}[${itemIndex}][${itemKey}]`, itemValue);
+              }
+            });
+          });
+        }
+      } else if (Array.isArray(value)) {
+        // Handle other arrays properly
+        value.forEach((item: any) => {
+          if (typeof item === 'object') {
+            // For object arrays, stringify to avoid character-by-character issues
+            formData.append(key, JSON.stringify(item));
+          } else {
+            formData.append(key, item);
+          }
+        });
+      } else if (typeof value === 'object') {
+        // Handle object fields by stringifying
+        formData.append(key, JSON.stringify(value));
+      } else {
+        // Handle simple fields
+        formData.append(key, value);
+      }
+    });
+    
+    // Debug FormData contents
+    console.log("=== FORM DATA CONTENTS BEFORE API CALL ===");
+    console.log("FormData hotelId:", formData.get('hotelId'));
+    console.log("FormData entries count:", formData.entries.length);
+    
+    // Don't add hotelId to data - it comes from URL parameter
+    mutate(formData);
   };
 
   return (

@@ -1,6 +1,8 @@
 import { HotelType } from "../../../shared/types";
+import { useState, useEffect } from "react";
 import { Bed, Home, Users, DollarSign, Plus, Minus, Package, Check } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
+import { mergeUnitsWithBackendData } from "../utils/unitsStorage";
 
 type Props = {
   hotel: HotelType;
@@ -31,11 +33,14 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
     numberOfNights 
   } = useBookingSelection();
 
-  // Get rooms and cottages from hotel data
-  const rooms = hotel?.rooms || [];
-  const cottages = hotel?.cottages || [];
-  const packages = hotel?.packages || [];
-  const amenities = hotel?.amenities || [];
+  // Merge backend data with saved units data
+  const mergedHotel = mergeUnitsWithBackendData(hotel._id, hotel);
+
+  // Get rooms and cottages from merged hotel data
+  const rooms = mergedHotel?.rooms || [];
+  const cottages = mergedHotel?.cottages || [];
+  const packages = mergedHotel?.packages || [];
+  const amenities = mergedHotel?.amenities || [];
 
   // Check if any amenity is included in a selected package
   const isAmenityInPackage = (amenityId: string) => {
@@ -380,24 +385,24 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                           <input
                             type="number"
                             min="1"
-                            max={room.units || 10}
+                            max={room.units || 1}
                             value={currentUnits}
                             onChange={(e) => {
-                              const units = Math.max(1, Math.min(room.units || 10, parseInt(e.target.value) || 1));
+                              const units = Math.max(1, Math.min(room.units || 1, parseInt(e.target.value) || 1));
                               updateRoomUnits(room.id, units);
                             }}
                             className="w-16 text-center border rounded px-2 py-1"
                           />
                           <button
                             type="button"
-                            onClick={() => updateRoomUnits(room.id, Math.min(room.units || 10, currentUnits + 1))}
+                            onClick={() => updateRoomUnits(room.id, Math.min(room.units || 1, currentUnits + 1))}
                             className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
-                            disabled={currentUnits >= (room.units || 10)}
+                            disabled={currentUnits >= (room.units || 1)}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
                           <span className="text-sm text-gray-500 ml-2">
-                            Available: {room.units || 10}
+                            Available: {room.units || 1}
                           </span>
                         </div>
                       </div>
@@ -450,6 +455,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {cottagesToDisplay.map((cottage: any) => {
               const isSelected = isCottageSelected(cottage.id);
+              const selectedCottage = selectedCottages.find(c => c.id === cottage.id);
+              const currentUnits = selectedCottage?.units || 1;
               
               // Always show both day and night rates when available
               let cottagePrice = 0;
@@ -517,7 +524,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                 </div>
               );
 
-              const totalPrice = cottagePrice * numberOfNights;
+              const totalPrice = cottagePrice * currentUnits * numberOfNights;
               
               return (
                 <div 
@@ -562,12 +569,53 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                     {/* Rate Display */}
                     {rateDisplay}
 
+                    {/* Unit Selection */}
+                    {isSelected && (
+                      <div className="border-t pt-3">
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Number of Units
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => updateCottageUnits(cottage.id, Math.max(1, currentUnits - 1))}
+                            className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                            disabled={currentUnits <= 1}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            max={cottage.units || 1}
+                            value={currentUnits}
+                            onChange={(e) => {
+                              const units = Math.max(1, Math.min(cottage.units || 1, parseInt(e.target.value) || 1));
+                              updateCottageUnits(cottage.id, units);
+                            }}
+                            className="w-16 text-center border rounded px-2 py-1"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => updateCottageUnits(cottage.id, Math.min(cottage.units || 1, currentUnits + 1))}
+                            className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                            disabled={currentUnits >= (cottage.units || 1)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
+                          <span className="text-sm text-gray-500 ml-2">
+                            Available: {cottage.units || 1}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Total Price */}
                     {cottagePrice > 0 && (
                       <div className="border-t pt-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-gray-600">Total ({numberOfNights} nights):</span>
-                          <span className="text-xl font-bold text-green-600">₱{totalPrice}</span>
+                          <span className="text-gray-600">Total ({numberOfNights} nights × {currentUnits} units):</span>
+                          <span className="text-xl font-bold text-green-600">₱{cottagePrice * currentUnits * numberOfNights}</span>
                         </div>
                       </div>
                     )}
@@ -595,6 +643,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                               hasDayRate: cottage.hasDayRate,
                               hasNightRate: cottage.hasNightRate,
                               maxOccupancy: cottage.maxOccupancy,
+                              units: 1,
                               description: cottage.description
                             })}
                             className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"
@@ -636,6 +685,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
               const isSelected = isAmenitySelected(amenity.id);
               const isInPackage = isAmenityInPackage(amenity.id);
               const isDisabled = isInPackage && !isSelected;
+              const selectedAmenity = selectedAmenities.find(a => a.id === amenity.id);
+              const currentUnits = selectedAmenity?.units || 1;
               
               return (
                 <div
@@ -680,6 +731,48 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                   {amenity.description && (
                     <p className="text-sm text-gray-600 mb-3">{amenity.description}</p>
                   )}
+                  
+                  {/* Unit Selection */}
+                  {isSelected && (
+                    <div className="mb-3">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Number of Units
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => updateAmenityUnits(amenity.id, Math.max(1, currentUnits - 1))}
+                          className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          disabled={currentUnits <= 1}
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <input
+                          type="number"
+                          min="1"
+                          max={amenity.units || 1}
+                          value={currentUnits}
+                          onChange={(e) => {
+                            const units = Math.max(1, Math.min(amenity.units || 1, parseInt(e.target.value) || 1));
+                            updateAmenityUnits(amenity.id, units);
+                          }}
+                          className="w-16 text-center border rounded px-2 py-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateAmenityUnits(amenity.id, Math.min(amenity.units || 1, currentUnits + 1))}
+                          className="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 flex items-center justify-center"
+                          disabled={currentUnits >= (amenity.units || 1)}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                        <span className="text-sm text-gray-500 ml-2">
+                          Available: {amenity.units || 1}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  
                   <button
                     className={`w-full py-2 px-4 rounded-lg transition-colors duration-200 font-medium text-sm ${
                       isDisabled
@@ -699,6 +792,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                             id: amenity.id,
                             name: amenity.name,
                             price: amenity.price,
+                            units: 1,
                             description: amenity.description
                           });
                         }

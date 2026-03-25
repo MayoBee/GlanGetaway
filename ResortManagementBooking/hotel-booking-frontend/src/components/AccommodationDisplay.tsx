@@ -143,6 +143,7 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                             type: room.type,
                             pricePerNight: room.pricePerNight,
                             maxOccupancy: room.maxOccupancy,
+                            units: 1,
                             description: room.description
                           });
                         }
@@ -295,6 +296,7 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
                             hasDayRate: cottage.hasDayRate,
                             hasNightRate: cottage.hasNightRate,
                             maxOccupancy: cottage.maxOccupancy,
+                            units: 1,
                             description: cottage.description
                           });
                         }

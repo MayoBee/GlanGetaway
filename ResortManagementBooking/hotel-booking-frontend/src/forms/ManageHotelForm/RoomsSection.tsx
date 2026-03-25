@@ -18,6 +18,7 @@ const RoomsSection = () => {
       pricePerNight: 0,
       minOccupancy: 1,
       maxOccupancy: 2,
+      units: 1,
       description: "",
       amenities: [],
     });

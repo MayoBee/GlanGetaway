@@ -63,7 +63,7 @@ const SmartImage: React.FC<SmartImageProps> = ({
     const processedSources = sourcesArray.map((source, index) => {
       if (!source) {
         logImageEvent('EMPTY_SOURCE', { index, message: 'Empty source encountered' });
-        return '';
+        return null; // Return null instead of empty string to filter it out
       }
       
       try {
@@ -92,9 +92,9 @@ const SmartImage: React.FC<SmartImageProps> = ({
           index, 
           error: e instanceof Error ? e.message : 'Unknown error' 
         });
-        return '';
+        return null; // Return null instead of empty string to filter it out
       }
-    }).filter(Boolean);
+    }).filter((source): source is string => source !== null);
     
     logImageEvent('SOURCES_PROCESSED', { 
       originalCount: sourcesArray.length,
@@ -106,6 +106,14 @@ const SmartImage: React.FC<SmartImageProps> = ({
   }, [logImageEvent, fallbackImageUrl]);
 
   useEffect(() => {
+    // Early return if src is empty, undefined, or empty string
+    if (!src || (typeof src === 'string' && src.trim() === '')) {
+      logImageEvent('NO_SRC_PROVIDED', { message: 'No src prop provided or src is empty' });
+      setIsLoading(false);
+      setHasError(true);
+      return;
+    }
+
     const sources = processImageSources(src);
     if (sources.length === 0) {
       logImageEvent('NO_VALID_SOURCES', { message: 'No valid image sources found' });

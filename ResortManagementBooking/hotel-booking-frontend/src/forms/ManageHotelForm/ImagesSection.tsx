@@ -31,35 +31,50 @@ const ImagesSection = () => {
 
   // Initialize with existing images
   useEffect(() => {
+    console.log('=== IMAGES SECTION DEBUG ===');
+    console.log('existingImageUrls:', existingImageUrls);
+    console.log('imagePreviews before:', imagePreviews);
+    
     if (existingImageUrls && existingImageUrls.length > 0) {
       const existingPreviews: ImagePreview[] = existingImageUrls.map(
         (url, index) => {
+          console.log(`Processing existing image ${index}:`, url);
+          
           // Fix port in existing URLs
           let fixedUrl = url;
           try {
             const urlObj = new URL(url);
             if (urlObj.hostname === 'localhost') {
-              // Use the correct API base URL
+              // Use correct API base URL
               const apiUrl = new URL(getApiBaseUrl());
               urlObj.port = apiUrl.port;
               urlObj.hostname = apiUrl.hostname;
               urlObj.protocol = apiUrl.protocol;
               fixedUrl = urlObj.toString();
+              console.log(`Fixed URL from ${url} to ${fixedUrl}`);
             }
           } catch (e) {
             console.warn('Invalid existing URL:', url);
           }
           
-          return {
+          const preview = {
             id: `existing-${index}`,
             url: fixedUrl,
             isExisting: true,
-            isLoading: true,
+            isLoading: false,
             hasError: false,
           };
+          
+          console.log(`Created preview for image ${index}:`, preview);
+          return preview;
         }
       );
+      
+      console.log('Setting image previews:', existingPreviews);
       setImagePreviews(existingPreviews);
+    } else {
+      console.log('No existing images found, clearing previews');
+      setImagePreviews([]);
     }
   }, [existingImageUrls]);
 
@@ -217,13 +232,19 @@ const ImagesSection = () => {
                   className="relative group bg-gray-50 rounded-lg overflow-hidden border"
                 >
                   <div className="w-full h-32">
-                    <SmartImage
-                      src={image.url}
-                      alt="Hotel preview"
-                      className="w-full h-32 object-cover"
-                      fallbackText="Preview"
-                      showLoading={true}
-                    />
+                    {image.url ? (
+                      <SmartImage
+                        src={image.url}
+                        alt="Hotel preview"
+                        className="w-full h-32 object-cover"
+                        fallbackText="Preview"
+                        showLoading={true}
+                      />
+                    ) : (
+                      <div className="w-full h-32 bg-gray-200 flex items-center justify-center text-gray-500">
+                        No image
+                      </div>
+                    )}
                   </div>
                   
                   <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">

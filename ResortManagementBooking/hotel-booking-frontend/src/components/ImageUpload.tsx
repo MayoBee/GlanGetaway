@@ -4,11 +4,12 @@ import { X, Image as ImageIcon } from "lucide-react";
 interface ImageUploadProps {
   value?: string;
   onChange: (url: string) => void;
+  onFileChange?: (file: File) => void;
   label?: string;
   className?: string;
 }
 
-const ImageUpload = ({ value, onChange, label = "Image", className = "" }: ImageUploadProps) => {
+const ImageUpload = ({ value, onChange, onFileChange, label = "Image", className = "" }: ImageUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [preview, setPreview] = useState<string | undefined>(value);
 
@@ -22,9 +23,9 @@ const ImageUpload = ({ value, onChange, label = "Image", className = "" }: Image
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should be less than 5MB');
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Image size should be less than 10MB');
       return;
     }
 
@@ -37,9 +38,9 @@ const ImageUpload = ({ value, onChange, label = "Image", className = "" }: Image
         const result = e.target?.result as string;
         setPreview(result);
         
-        // For now, we'll use the data URL directly
-        // In production, you'd upload to a server and get back a URL
-        onChange(result);
+        // Call both callbacks
+        onChange(result); // Set data URL for preview
+        onFileChange?.(file); // Pass actual file to parent for upload
       };
       reader.readAsDataURL(file);
     } catch (error) {
@@ -89,7 +90,7 @@ const ImageUpload = ({ value, onChange, label = "Image", className = "" }: Image
             >
               <span className="font-medium">Click to upload</span> or drag and drop
               <br />
-              <span className="text-xs">PNG, JPG, GIF up to 5MB</span>
+              <span className="text-xs">PNG, JPG, GIF up to 10MB</span>
             </label>
             <input
               id={`file-input-${label}`}

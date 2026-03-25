@@ -120,7 +120,7 @@ const SimpleAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) 
                         </button>
                       ) : (
                         <button
-                          onClick={() => addRoom(room)}
+                          onClick={() => addRoom({...room, units: 1})}
                           className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center"
                         >
                           <Plus className="w-4 h-4 mr-1" />
@@ -237,6 +237,7 @@ const SimpleAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) 
                               hasDayRate: cottage.hasDayRate,
                               hasNightRate: cottage.hasNightRate,
                               maxOccupancy: cottage.maxOccupancy,
+                              units: 1,
                               description: cottage.description
                             })}
                             className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center"

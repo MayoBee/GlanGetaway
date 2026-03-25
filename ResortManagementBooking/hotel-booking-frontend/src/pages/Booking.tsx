@@ -65,7 +65,8 @@ const Booking = () => {
     selectedAmenities,
     selectedPackages,
     setBasePrice,
-    setNumberOfNights
+    setNumberOfNights,
+    selectedRateType
   } = useBookingSelection();
 
   console.log("Booking selection data:", { 
@@ -125,7 +126,7 @@ const Booking = () => {
     if (hotel && numberOfNights > 0) {
       // Calculate entrance fees instead of using day/night rates
       let entranceFeeTotal = 0;
-      const rateType = 'nightRate'; // Default to night rate for booking
+      const rateType = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
       
       // Check if any selected packages include entrance fees (making them free)
       const hasAdultEntranceFeeInPackage = selectedPackages.some(pkg => pkg.includedAdultEntranceFee);
@@ -148,15 +149,37 @@ const Booking = () => {
             (group) => age >= group.minAge && age <= group.maxAge
           );
           
-          if (ageGroup && ageGroup[rateType] > 0) {
-            if (ageGroup.pricingModel === 'per_group') {
-              const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
-              entranceFeeTotal += groupsNeeded * ageGroup[rateType];
-            } else {
-              entranceFeeTotal += ageGroup[rateType];
+          if (ageGroup) {
+            // Child falls within a defined age group
+            if (ageGroup[rateType] > 0) {
+              if (ageGroup.pricingModel === 'per_group') {
+                const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
+                entranceFeeTotal += groupsNeeded * ageGroup[rateType];
+              } else {
+                entranceFeeTotal += ageGroup[rateType];
+              }
+            }
+            // If ageGroup[rateType] is 0, it means free entrance for this age group
+          } else {
+            // Child does not fall within any defined age group - charge adult rate
+            if (!hasAdultEntranceFeeInPackage && hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
+              if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+                const groupsNeeded = Math.ceil(1 / (hotel.adultEntranceFee.groupQuantity || 1));
+                entranceFeeTotal += groupsNeeded * hotel.adultEntranceFee[rateType];
+              } else {
+                entranceFeeTotal += hotel.adultEntranceFee[rateType];
+              }
             }
           }
         });
+      } else if (!hasChildEntranceFeeInPackage && search.childCount > 0 && hotel.adultEntranceFee && hotel.adultEntranceFee[rateType] > 0) {
+        // No child age groups defined but there are children - charge all children adult rates
+        if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+          const groupsNeeded = Math.ceil(search.childCount / (hotel.adultEntranceFee.groupQuantity || 1));
+          entranceFeeTotal += groupsNeeded * hotel.adultEntranceFee[rateType];
+        } else {
+          entranceFeeTotal += search.childCount * hotel.adultEntranceFee[rateType];
+        }
       }
 
       const basePrice = entranceFeeTotal;
@@ -170,7 +193,7 @@ const Booking = () => {
       }
       console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "using entrance fees");
     }
-  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages]);
+  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages, selectedRateType]);
 
   if (isLoadingHotel || isLoadingUser) {
     return (
@@ -385,17 +408,33 @@ const Booking = () => {
                       ₱{hotel.hasNightRate ? hotel.nightRate : hotel.dayRate}/night
                     </Badge>
                   </div>
-                  {hotel.type && hotel.type.length > 0 && (
+                  {hotel.type && (
                     <div className="flex flex-wrap gap-1">
-                      {hotel.type.map((type, index) => (
-                        <Badge
-                          key={index}
-                          variant="outline"
-                          className="text-xs"
-                        >
-                          {type}
-                        </Badge>
-                      ))}
+                      {(() => {
+                        let types = [];
+                        if (Array.isArray(hotel.type)) {
+                          types = hotel.type;
+                        } else if (typeof hotel.type === 'string') {
+                          try {
+                            // Try to parse as JSON string
+                            const parsed = JSON.parse(hotel.type);
+                            types = Array.isArray(parsed) ? parsed : [hotel.type];
+                          } catch {
+                            // If parsing fails, treat as single type
+                            types = [hotel.type];
+                          }
+                        }
+                        
+                        return types.map((type, index) => (
+                          <Badge
+                            key={index}
+                            variant="outline"
+                            className="text-xs"
+                          >
+                            {type}
+                          </Badge>
+                        ));
+                      })()}
                     </div>
                   )}
                 </div>

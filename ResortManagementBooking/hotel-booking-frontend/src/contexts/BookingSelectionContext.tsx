@@ -131,13 +131,13 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
 
   const calculateTotal = () => {
     const accommodationTotal = 
-      selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * room.units * numberOfNights), 0) +
+      selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * (room.units ?? 1) * numberOfNights), 0) +
       selectedCottages.reduce((sum, cottage) => {
         const rate = selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate;
-        return sum + (rate * cottage.units * numberOfNights);
+        return sum + (rate * (cottage.units ?? 1) * numberOfNights);
       }, 0);
     
-    const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * amenity.units), 0);
+    const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * (amenity.units ?? 1)), 0);
     const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
     
     const total = basePrice + accommodationTotal + amenitiesTotal + packagesTotal;
@@ -152,13 +152,13 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   };
 
   const accommodationTotal = 
-    selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * room.units * numberOfNights), 0) +
+    selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * (room.units ?? 1) * numberOfNights), 0) +
     selectedCottages.reduce((sum, cottage) => {
       const rate = selectedRateType === 'day' ? cottage.dayRate : cottage.nightRate;
-      return sum + (rate * cottage.units * numberOfNights);
+      return sum + (rate * (cottage.units ?? 1) * numberOfNights);
     }, 0);
 
-  const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * amenity.units), 0);
+  const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * (amenity.units ?? 1)), 0);
   const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
 
   const totalCalculation = calculateTotal();

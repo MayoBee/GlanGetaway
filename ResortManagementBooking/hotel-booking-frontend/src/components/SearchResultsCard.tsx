@@ -89,8 +89,22 @@ const SearchResultsCard = ({ hotel }: Props) => {
                     ))}
                   </span>
                   <div className="flex flex-wrap gap-1">
-                    {Array.isArray(hotel.type) ? (
-                      hotel.type.slice(0, 4).map((type) => (
+                    {(() => {
+                      let types = [];
+                      if (Array.isArray(hotel.type)) {
+                        types = hotel.type;
+                      } else if (typeof hotel.type === 'string') {
+                        try {
+                          // Try to parse as JSON string
+                          const parsed = JSON.parse(hotel.type);
+                          types = Array.isArray(parsed) ? parsed : [hotel.type];
+                        } catch {
+                          // If parsing fails, treat as single type
+                          types = [hotel.type];
+                        }
+                      }
+                      
+                      return types.slice(0, 4).map((type) => (
                         <Badge
                           key={type}
                           variant="default"
@@ -98,12 +112,8 @@ const SearchResultsCard = ({ hotel }: Props) => {
                         >
                           {type}
                         </Badge>
-                      ))
-                    ) : (
-                      <Badge variant="default" className="text-xs px-2 py-1">
-                        {hotel.type}
-                      </Badge>
-                    )}
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>

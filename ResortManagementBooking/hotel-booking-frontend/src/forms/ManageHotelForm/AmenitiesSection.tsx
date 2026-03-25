@@ -1,7 +1,7 @@
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, X, Check } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ImageUpload from "../../components/ImageUpload";
 
 const AmenitiesSection = () => {
@@ -12,6 +12,8 @@ const AmenitiesSection = () => {
   });
   const amenities = useWatch({ control, name: "amenities" });
   const [confirmedAmenities, setConfirmedAmenities] = useState<Set<string>>(new Set());
+  const isInitializingRef = useRef(false);
+  const confirmedAmenitiesRef = useRef<Set<string>>(new Set());
 
   const handleAddAmenity = () => {
     const newAmenityId = Math.random().toString(36).substr(2, 9);
@@ -26,18 +28,30 @@ const AmenitiesSection = () => {
     });
   };
 
-  // Load confirmed states from form data
+  // Initialize confirmed states only when component mounts or amenities change significantly
   useEffect(() => {
-    if (amenities) {
-      const confirmedIds = amenities
-        .filter(amenity => amenity.isConfirmed)
-        .map(amenity => amenity.id)
-        .filter(Boolean);
-      setConfirmedAmenities(new Set(confirmedIds));
+    if (amenities && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+      
+      // Only initialize if we don't have any confirmed states yet
+      if (confirmedAmenitiesRef.current.size === 0) {
+        const confirmedIds = amenities
+          .filter(amenity => amenity.isConfirmed)
+          .map(amenity => amenity.id)
+          .filter(Boolean);
+        
+        const newConfirmedSet = new Set(confirmedIds);
+        setConfirmedAmenities(newConfirmedSet);
+        confirmedAmenitiesRef.current = newConfirmedSet;
+      }
+      
+      setTimeout(() => {
+        isInitializingRef.current = false;
+      }, 100);
     }
-  }, [amenities]);
+  }, [amenities?.length]); // Only run when amenities length changes
 
-  const confirmAmenity = (amenityId: string) => {
+  const confirmAmenity = useCallback((amenityId: string) => {
     setConfirmedAmenities(prev => {
       const newSet = new Set(prev);
       if (newSet.has(amenityId)) {
@@ -45,6 +59,7 @@ const AmenitiesSection = () => {
       } else {
         newSet.add(amenityId);
       }
+      confirmedAmenitiesRef.current = newSet;
       return newSet;
     });
 
@@ -52,14 +67,14 @@ const AmenitiesSection = () => {
     if (amenities) {
       const amenityIndex = amenities.findIndex(amenity => amenity.id === amenityId);
       if (amenityIndex !== -1) {
-        const isCurrentlyConfirmed = confirmedAmenities.has(amenityId);
+        const isCurrentlyConfirmed = confirmedAmenitiesRef.current.has(amenityId);
         update(amenityIndex, {
           ...amenities[amenityIndex],
           isConfirmed: !isCurrentlyConfirmed,
         });
       }
     }
-  };
+  }, [amenities, update]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -133,6 +148,23 @@ const AmenitiesSection = () => {
                 {...register(`amenities.${index}.units`, {
                   required: "Units is required",
                   min: { value: 1, message: "Units must be at least 1" },
+                  onChange: (e) => {
+                    console.log(`=== AMENITY UNITS INPUT CHANGE ===`);
+                    console.log(`Amenity index: ${index}`);
+                    console.log(`New value:`, e.target.value);
+                    console.log(`Current amenity data:`, amenities?.[index]);
+                    console.log(`Parsed value:`, parseInt(e.target.value) || 1);
+                    
+                    // Update the form value to ensure it's stored as a number
+                    const numericValue = parseInt(e.target.value) || 1;
+                    const currentAmenity = amenities?.[index];
+                    if (currentAmenity) {
+                      update(index, {
+                        ...currentAmenity,
+                        units: numericValue
+                      });
+                    }
+                  }
                 })}
               />
               {errors.amenities?.[index]?.units && (

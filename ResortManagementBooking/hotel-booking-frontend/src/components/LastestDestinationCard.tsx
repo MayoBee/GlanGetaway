@@ -69,8 +69,22 @@ const LatestDestinationCard = ({ hotel }: Props) => {
             <div className="flex flex-col space-y-2">
               {/* Resort Types */}
               <div className="flex flex-wrap gap-1">
-                {Array.isArray(hotel.type) ? (
-                  hotel.type.slice(0, 3).map((type) => (
+                {(() => {
+                  let types = [];
+                  if (Array.isArray(hotel.type)) {
+                    types = hotel.type;
+                  } else if (typeof hotel.type === 'string') {
+                    try {
+                      // Try to parse as JSON string
+                      const parsed = JSON.parse(hotel.type);
+                      types = Array.isArray(parsed) ? parsed : [hotel.type];
+                    } catch {
+                      // If parsing fails, treat as single type
+                      types = [hotel.type];
+                    }
+                  }
+                  
+                  return types.slice(0, 3).map((type) => (
                     <Badge
                       key={type}
                       variant="outline"
@@ -78,15 +92,8 @@ const LatestDestinationCard = ({ hotel }: Props) => {
                     >
                       {type}
                     </Badge>
-                  ))
-                ) : (
-                  <Badge
-                    variant="outline"
-                    className="text-xs px-2 py-1 bg-white/20 backdrop-blur-sm border-white/30 text-white"
-                  >
-                    {hotel.type}
-                  </Badge>
-                )}
+                  ));
+                })()}
               </div>
             </div>
 

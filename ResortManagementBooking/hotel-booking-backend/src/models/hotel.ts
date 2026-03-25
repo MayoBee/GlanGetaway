@@ -11,6 +11,7 @@ const RoomSchema = new mongoose.Schema({
   maxOccupancy: { type: Number, required: true },
   description: { type: String, default: '' },
   amenities: [{ type: String }],
+  imageUrl: { type: String, default: '' },
 }, { _id: false });
 
 const CottageSchema = new mongoose.Schema({
@@ -26,6 +27,7 @@ const CottageSchema = new mongoose.Schema({
   maxOccupancy: { type: Number, required: true },
   description: { type: String, default: '' },
   amenities: [{ type: String }],
+  imageUrl: { type: String, default: '' },
 }, { _id: false });
 
 const AmenitySchema = new mongoose.Schema({
@@ -33,6 +35,7 @@ const AmenitySchema = new mongoose.Schema({
   name: { type: String, required: true },
   price: { type: Number, default: 0 },
   description: { type: String, default: '' },
+  imageUrl: { type: String, default: '' },
 }, { _id: false });
 
 const PackageSchema = new mongoose.Schema({
@@ -40,6 +43,7 @@ const PackageSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, default: '' },
   price: { type: Number, default: 0 },
+  imageUrl: { type: String, default: '' },
   includedCottages: [{ type: String }],
   includedRooms: [{ type: String }],
   includedAmenities: [{ type: String }],

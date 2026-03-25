@@ -1,7 +1,7 @@
 import { useFieldArray, useFormContext, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
 import { Plus, Users, Home, Check, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import ImageUpload from "../../components/ImageUpload";
 
 const FreshCottagesSection = () => {
@@ -12,6 +12,8 @@ const FreshCottagesSection = () => {
   });
   const cottages = useWatch({ control, name: "cottages" });
   const [confirmedCottages, setConfirmedCottages] = useState<Set<string>>(new Set());
+  const isInitializingRef = useRef(false);
+  const confirmedCottagesRef = useRef<Set<string>>(new Set());
 
   const addCottage = () => {
     const newCottageId = `cottage_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -34,18 +36,30 @@ const FreshCottagesSection = () => {
     });
   };
 
-  // Load confirmed states from form data
+  // Initialize confirmed states only when component mounts or cottages change significantly
   useEffect(() => {
-    if (cottages) {
-      const confirmedIds = cottages
-        .filter(cottage => cottage.isConfirmed)
-        .map(cottage => cottage.id)
-        .filter(Boolean);
-      setConfirmedCottages(new Set(confirmedIds));
+    if (cottages && !isInitializingRef.current) {
+      isInitializingRef.current = true;
+      
+      // Only initialize if we don't have any confirmed states yet
+      if (confirmedCottagesRef.current.size === 0) {
+        const confirmedIds = cottages
+          .filter(cottage => cottage.isConfirmed)
+          .map(cottage => cottage.id)
+          .filter(Boolean);
+        
+        const newConfirmedSet = new Set(confirmedIds);
+        setConfirmedCottages(newConfirmedSet);
+        confirmedCottagesRef.current = newConfirmedSet;
+      }
+      
+      setTimeout(() => {
+        isInitializingRef.current = false;
+      }, 100);
     }
-  }, [cottages]);
+  }, [cottages?.length]); // Only run when cottages length changes
 
-  const confirmCottage = (cottageId: string) => {
+  const confirmCottage = useCallback((cottageId: string) => {
     setConfirmedCottages(prev => {
       const newSet = new Set(prev);
       if (newSet.has(cottageId)) {
@@ -53,6 +67,7 @@ const FreshCottagesSection = () => {
       } else {
         newSet.add(cottageId);
       }
+      confirmedCottagesRef.current = newSet;
       return newSet;
     });
 
@@ -60,14 +75,14 @@ const FreshCottagesSection = () => {
     if (cottages) {
       const cottageIndex = cottages.findIndex(cottage => cottage.id === cottageId);
       if (cottageIndex !== -1) {
-        const isCurrentlyConfirmed = confirmedCottages.has(cottageId);
+        const isCurrentlyConfirmed = confirmedCottagesRef.current.has(cottageId);
         update(cottageIndex, {
           ...cottages[cottageIndex],
           isConfirmed: !isCurrentlyConfirmed,
         });
       }
     }
-  };
+  }, [cottages, update]);
 
   return (
     <div className="space-y-4">
@@ -210,7 +225,25 @@ const FreshCottagesSection = () => {
                     Available Units
                   </label>
                   <input
-                    {...control.register(`cottages.${index}.units` as const)}
+                    {...control.register(`cottages.${index}.units` as const, {
+                      onChange: (e) => {
+                        console.log(`=== COTTAGE UNITS INPUT CHANGE ===`);
+                        console.log(`Cottage index: ${index}`);
+                        console.log(`New value:`, e.target.value);
+                        console.log(`Current cottage data:`, cottages?.[index]);
+                        console.log(`Parsed value:`, parseInt(e.target.value) || 1);
+                        
+                        // Update the form value to ensure it's stored as a number
+                        const numericValue = parseInt(e.target.value) || 1;
+                        const currentCottage = cottages?.[index];
+                        if (currentCottage) {
+                          update(index, {
+                            ...currentCottage,
+                            units: numericValue
+                          });
+                        }
+                      }
+                    })}
                     type="number"
                     min="1"
                     max="100"

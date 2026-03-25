@@ -123,6 +123,9 @@ export type HotelType = {
     dayCheckOutTime: string;
     nightCheckInTime: string;
     nightCheckOutTime: string;
+    cancellationPolicy?: string;
+    petPolicy?: string;
+    smokingPolicy?: string;
     resortPolicies?: Array<{
       id: string;
       title: string;

@@ -58,7 +58,9 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
     selectedRooms, 
     selectedCottages, 
     selectedAmenities,
-    clearSelections 
+    clearSelections,
+    selectedRateType,
+    setRateType
   } = useBookingSelection();
 
   // Time state variables
@@ -75,8 +77,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
   // Verification files state
   const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
 
-  // Rate type state
-  const [rateType, setRateType] = useState<'day' | 'night'>(initialRateType);
+  // Rate type state - use from context instead of local state
   const [selectedNights, setSelectedNights] = useState<number>(1);
 
   // Calculate entrance fee total based on adults, children, and their ages
@@ -84,7 +85,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
     if (!hotel) return 0;
 
     let total = 0;
-    const rate = rateType === 'day' ? 'dayRate' : 'nightRate';
+    const rate = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
 
     // Adult entrance fees
     if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
@@ -106,17 +107,43 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
           (group) => age >= group.minAge && age <= group.maxAge
         );
         
-        if (ageGroup && ageGroup[rate] > 0) {
-          if (ageGroup.pricingModel === 'per_group') {
-            // Per group pricing - one charge covers groupQuantity people
-            const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
-            total += groupsNeeded * ageGroup[rate];
-          } else {
-            // Per head pricing
-            total += ageGroup[rate];
+        if (ageGroup) {
+          // Child falls within a defined age group
+          if (ageGroup[rate] > 0) {
+            if (ageGroup.pricingModel === 'per_group') {
+              // Per group pricing - one charge covers groupQuantity people
+              const groupsNeeded = Math.ceil(1 / (ageGroup.groupQuantity || 1));
+              total += groupsNeeded * ageGroup[rate];
+            } else {
+              // Per head pricing
+              total += ageGroup[rate];
+            }
+          }
+          // If ageGroup[rate] is 0, it means free entrance for this age group
+        } else {
+          // Child does not fall within any defined age group - charge adult rate
+          if (hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
+            if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+              // Per group pricing - one charge covers groupQuantity people
+              const groupsNeeded = Math.ceil(1 / (hotel.adultEntranceFee.groupQuantity || 1));
+              total += groupsNeeded * hotel.adultEntranceFee[rate];
+            } else {
+              // Per head pricing
+              total += hotel.adultEntranceFee[rate];
+            }
           }
         }
       });
+    } else if (childCount > 0 && hotel.adultEntranceFee && hotel.adultEntranceFee[rate] > 0) {
+      // No child age groups defined but there are children - charge all children adult rates
+      if (hotel.adultEntranceFee.pricingModel === 'per_group') {
+        // Per group pricing - one charge covers groupQuantity people
+        const groupsNeeded = Math.ceil(childCount / (hotel.adultEntranceFee.groupQuantity || 1));
+        total += groupsNeeded * hotel.adultEntranceFee[rate];
+      } else {
+        // Per head pricing
+        total += childCount * hotel.adultEntranceFee[rate];
+      }
     }
 
     return total;
@@ -168,7 +195,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
     const basePrice = entranceFeeTotal;
     setBasePrice(basePrice);
     setNumberOfNights(nights);
-  }, [checkIn, checkOut, adultCount, childCount, childAges, rateType, hotel, setBasePrice, setNumberOfNights]);
+  }, [checkIn, checkOut, adultCount, childCount, childAges, selectedRateType, hotel, setBasePrice, setNumberOfNights]);
 
   // Update child ages when child count changes
   useEffect(() => {
@@ -181,6 +208,13 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
       setChildAges((prev) => prev.slice(0, childCount));
     }
   }, [childCount, childAges.length]);
+
+  // Update local rate type when context changes
+  useEffect(() => {
+    if (selectedRateType !== undefined) {
+      // Context rate type takes precedence
+    }
+  }, [selectedRateType]);
 
   const minDate = new Date();
   const maxDate = new Date();
@@ -287,7 +321,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
               <span>Booking Summary</span>
             </div>
             <Badge variant="outline" className="text-sm">
-              {rateType === 'day' ? 'Day Rate' : 'Night Rate'}
+              {selectedRateType === 'day' ? 'Day Rate' : 'Night Rate'}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -297,7 +331,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
           <div className="flex justify-between items-center p-4 bg-white rounded-lg border border-gray-100 shadow-sm">
             <div className="flex items-center gap-2">
               <span className="text-gray-600">
-                Entrance Fees ({rateType === 'day' ? 'Day' : 'Night'})
+                Entrance Fees ({selectedRateType === 'day' ? 'Day' : 'Night'})
                 {totalCost > calculateEntranceFeeTotal() && (
                   <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-200 ml-2">
                     + Extras
@@ -326,10 +360,10 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
             <div className="space-y-3">
               <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
                 <Calendar className="h-4 w-4" />
-                {rateType === 'day' ? 'Select Check-in Date' : 'Select Dates'}
+                {selectedRateType === 'day' ? 'Select Check-in Date' : 'Select Dates'}
               </Label>
 
-              {rateType === 'day' ? (
+              {selectedRateType === 'day' ? (
                 // Day Rate: Check-in only, checkout fixed at 5PM
                 <div className="grid grid-cols-1 gap-3">
                   <div className="relative">
@@ -472,79 +506,6 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
               )}
             </div>
 
-            {/* Rate Type Selection */}
-            {(hasDayRate || hasNightRate) && (
-              <div className="space-y-3 pt-4 border-t border-gray-200">
-                <Label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <CreditCard className="h-4 w-4" />
-                  Select Rate Type (Choose One)
-                </Label>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {hasDayRate && (
-                    <div className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      rateType === 'day' 
-                        ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                        : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300'
-                    }`}
-                      onClick={() => setRateType('day')}
-                    >
-                      <input
-                        type="radio"
-                        name="rateType"
-                        checked={rateType === 'day'}
-                        onChange={() => setRateType('day')}
-                        className="sr-only"
-                      />
-                      <div>
-                        <div className="font-medium">Day Rate</div>
-                        <div className="text-xs text-gray-500">Flexible check-in, check-out at 5PM</div>
-                        <div className="text-xs text-blue-600 mt-1">
-                          Adults: ₱{hotel?.adultEntranceFee?.dayRate || 0}/person
-                          {hotel?.childEntranceFee && hotel.childEntranceFee.length > 0 && (
-                            <span> • Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.dayRate))}/person</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {hasNightRate && (
-                    <div className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                      rateType === 'night' 
-                        ? 'bg-green-50 border-green-200 text-green-700' 
-                        : 'bg-white border-gray-200 text-gray-700 hover:border-green-300'
-                    }`}
-                      onClick={() => setRateType('night')}
-                    >
-                      <input
-                        type="radio"
-                        name="rateType"
-                        checked={rateType === 'night'}
-                        onChange={() => setRateType('night')}
-                        className="sr-only"
-                      />
-                      <div>
-                        <div className="font-medium">Night Rate</div>
-                        <div className="text-xs text-gray-500">Overnight stay (24 hours)</div>
-                        <div className="text-xs text-green-600 mt-1">
-                          Adults: ₱{hotel?.adultEntranceFee?.nightRate || 0}/person
-                          {hotel?.childEntranceFee && hotel.childEntranceFee.length > 0 && (
-                            <span> • Children: From ₱{Math.min(...hotel.childEntranceFee.map(child => child.nightRate))}/person</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-                  <p className="text-xs text-amber-700">
-                    <strong>Note:</strong> Once you select a rate type, the total cost will be automatically calculated based on the entrance fees for adults and children according to your selection.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Guest Count */}
             <div className="space-y-3">

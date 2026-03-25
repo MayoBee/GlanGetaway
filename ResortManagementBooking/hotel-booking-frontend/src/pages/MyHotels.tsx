@@ -21,6 +21,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { Badge } from "../components/ui/badge";
+import SmartImage from "../components/SmartImage";
 import { Button } from "../components/ui/button";
 import {
   Card,
@@ -248,10 +249,11 @@ const MyHotels = () => {
           >
             {/* Hotel Image */}
             <div className="relative h-48 overflow-hidden">
-              <img
+              <SmartImage
                 src={hotel.imageUrls[0]}
                 alt={hotel.name}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                fallbackText="Hotel Image"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
@@ -308,8 +310,22 @@ const MyHotels = () => {
                 <div className="flex items-center space-x-2 text-sm text-gray-600">
                   <BsBuilding className="w-4 h-4 text-primary-600 flex-shrink-0" />
                   <div className="flex flex-wrap gap-1 min-h-[24px]">
-                    {Array.isArray(hotel.type) ? (
-                      hotel.type.map((type, index) => (
+                    {(() => {
+                      let types = [];
+                      if (Array.isArray(hotel.type)) {
+                        types = hotel.type;
+                      } else if (typeof hotel.type === 'string') {
+                        try {
+                          // Try to parse as JSON string
+                          const parsed = JSON.parse(hotel.type);
+                          types = Array.isArray(parsed) ? parsed : [hotel.type];
+                        } catch {
+                          // If parsing fails, treat as single type
+                          types = [hotel.type];
+                        }
+                      }
+                      
+                      return types.map((type, index) => (
                         <Badge
                           key={index}
                           variant="outline"
@@ -317,15 +333,8 @@ const MyHotels = () => {
                         >
                           {type}
                         </Badge>
-                      ))
-                    ) : (
-                      <Badge
-                        variant="outline"
-                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 border-blue-200"
-                      >
-                        {hotel.type}
-                      </Badge>
-                    )}
+                      ));
+                    })()}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 text-sm text-gray-600">

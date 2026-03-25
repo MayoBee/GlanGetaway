@@ -160,6 +160,16 @@ const hotelSchema = new mongoose.Schema<HotelType>(
         isConfirmed: { type: Boolean, default: false },
       },
     ],
+    downPaymentPercentage: { type: Number, default: 50, min: 10, max: 100 },
+    gcashNumber: { 
+      type: String, 
+      validate: {
+        validator: function(v: string) {
+          return !v || /^09\d{9}$/.test(v);
+        },
+        message: 'GCash number must be 11 digits starting with 09 (e.g., 09XXXXXXXXX)'
+      }
+    },
     // Audit fields
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

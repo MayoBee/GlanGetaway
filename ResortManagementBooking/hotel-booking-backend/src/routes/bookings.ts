@@ -7,6 +7,41 @@ import { body, param, validationResult } from "express-validator";
 
 const router = express.Router();
 
+// Function to check and update booking status based on 8-hour window
+async function checkAndUpdateBookingStatus(booking: any) {
+  const now = new Date();
+  
+  // If booking is still pending and 8-hour window has passed, auto-confirm
+  if (booking.status === "pending" && booking.changeWindowDeadline && now > booking.changeWindowDeadline) {
+    booking.status = "confirmed";
+    booking.canModify = false;
+    await booking.save();
+    console.log(`Booking ${booking._id} automatically confirmed after 8-hour window`);
+  }
+}
+
+// Function to check if booking can be modified
+function canModifyBooking(booking: any): { canModify: boolean; reason?: string; changeWindowDeadline?: Date; currentTime?: Date } {
+  const now = new Date();
+  
+  // Cannot modify cancelled or completed bookings
+  if (booking.status === "cancelled" || booking.status === "completed") {
+    return { canModify: false, reason: "Cannot modify a cancelled or completed booking" };
+  }
+  
+  // Check if within 8-hour change window
+  if (!booking.canModify || (booking.changeWindowDeadline && now > booking.changeWindowDeadline)) {
+    return { 
+      canModify: false, 
+      reason: "Cannot modify booking after 8-hour window. The change window has expired.",
+      changeWindowDeadline: booking.changeWindowDeadline,
+      currentTime: now
+    };
+  }
+  
+  return { canModify: true };
+}
+
 // Get all bookings (admin only)
 router.get("/", verifyToken, async (req: Request, res: Response) => {
   try {
@@ -62,6 +97,9 @@ router.get("/:id", verifyToken, async (req: Request, res: Response) => {
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
     }
+
+    // Check and update booking status based on 8-hour window
+    await checkAndUpdateBookingStatus(booking);
 
     res.status(200).json(booking);
   } catch (error) {
@@ -260,17 +298,16 @@ router.patch(
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // Check if booking can be rescheduled (not cancelled or completed)
-      if (booking.status === "cancelled" || booking.status === "completed") {
-        return res.status(400).json({ message: "Cannot reschedule a cancelled or completed booking" });
-      }
+      // Check and update booking status based on 8-hour window
+      await checkAndUpdateBookingStatus(booking);
       
-      // Check if within 8-hour change window
-      if (!booking.canModify || (booking.changeWindowDeadline && new Date() > booking.changeWindowDeadline)) {
+      // Check if booking can be modified using the new logic
+      const modificationCheck = canModifyBooking(booking);
+      if (!modificationCheck.canModify) {
         return res.status(400).json({ 
-          message: "Cannot modify booking after 8-hour window. The change window has expired.",
-          changeWindowDeadline: booking.changeWindowDeadline,
-          currentTime: new Date()
+          message: modificationCheck.reason,
+          changeWindowDeadline: modificationCheck.changeWindowDeadline,
+          currentTime: modificationCheck.currentTime
         });
       }
       
@@ -325,17 +362,16 @@ router.patch(
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // Check if booking can be modified (not cancelled or completed)
-      if (booking.status === "cancelled" || booking.status === "completed") {
-        return res.status(400).json({ message: "Cannot modify a cancelled or completed booking" });
-      }
+      // Check and update booking status based on 8-hour window
+      await checkAndUpdateBookingStatus(booking);
       
-      // Check if within 8-hour change window
-      if (!booking.canModify || (booking.changeWindowDeadline && new Date() > booking.changeWindowDeadline)) {
+      // Check if booking can be modified using the new logic
+      const modificationCheck = canModifyBooking(booking);
+      if (!modificationCheck.canModify) {
         return res.status(400).json({ 
-          message: "Cannot modify booking after 8-hour window. The change window has expired.",
-          changeWindowDeadline: booking.changeWindowDeadline,
-          currentTime: new Date()
+          message: modificationCheck.reason,
+          changeWindowDeadline: modificationCheck.changeWindowDeadline,
+          currentTime: modificationCheck.currentTime
         });
       }
       
@@ -412,17 +448,16 @@ router.patch(
         return res.status(403).json({ message: "Access denied" });
       }
       
-      // Check if booking can be modified (not cancelled or completed)
-      if (booking.status === "cancelled" || booking.status === "completed") {
-        return res.status(400).json({ message: "Cannot modify a cancelled or completed booking" });
-      }
+      // Check and update booking status based on 8-hour window
+      await checkAndUpdateBookingStatus(booking);
       
-      // Check if within 8-hour change window
-      if (!booking.canModify || (booking.changeWindowDeadline && new Date() > booking.changeWindowDeadline)) {
+      // Check if booking can be modified using the new logic
+      const modificationCheck = canModifyBooking(booking);
+      if (!modificationCheck.canModify) {
         return res.status(400).json({ 
-          message: "Cannot modify booking after 8-hour window. The change window has expired.",
-          changeWindowDeadline: booking.changeWindowDeadline,
-          currentTime: new Date()
+          message: modificationCheck.reason,
+          changeWindowDeadline: modificationCheck.changeWindowDeadline,
+          currentTime: modificationCheck.currentTime
         });
       }
       

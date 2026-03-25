@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { HotelType } from "../../../shared/types";
 
 export interface SelectedRoom {
   id: string;
@@ -103,6 +104,7 @@ interface BookingSelectionContextType {
   isCottageSelected: (cottageId: string) => boolean;
   isAmenitySelected: (amenityId: string) => boolean;
   isPackageSelected: (packageId: string) => boolean;
+  updateDepositPercentageFromHotel: (hotel: HotelType) => void;
 }
 
 const BookingSelectionContext = createContext<BookingSelectionContextType | undefined>(undefined);
@@ -265,6 +267,12 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     setSelectedRateType(rateType);
   };
 
+  const updateDepositPercentageFromHotel = (hotel: HotelType) => {
+    if (hotel.downPaymentPercentage) {
+      setDepositPercentage(hotel.downPaymentPercentage);
+    }
+  };
+
   const value: BookingSelectionContextType = {
     selectedRooms,
     selectedCottages,
@@ -301,6 +309,7 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     isCottageSelected,
     isAmenitySelected,
     isPackageSelected,
+    updateDepositPercentageFromHotel,
   };
 
   return (

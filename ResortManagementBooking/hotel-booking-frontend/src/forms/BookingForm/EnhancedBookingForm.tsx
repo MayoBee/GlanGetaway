@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { PaymentIntentResponse, UserType } from "../../../../shared/types";
+import { PaymentIntentResponse, UserType, HotelType } from "../../../../shared/types";
 import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { StripeCardElement } from "@stripe/stripe-js";
 import useSearchContext from "../../hooks/useSearchContext";
@@ -28,6 +28,7 @@ type Props = {
   selectedRooms: SelectedRoom[];
   selectedCottages: SelectedCottage[];
   selectedAmenities: SelectedAmenity[];
+  hotel: HotelType;
 };
 
 export type BookingFormData = {
@@ -58,7 +59,8 @@ const EnhancedBookingForm = ({
   calculatedTotal,
   selectedRooms,
   selectedCottages,
-  selectedAmenities
+  selectedAmenities,
+  hotel
 }: Props) => {
   console.log("EnhancedBookingForm received:", {
     calculatedTotal,
@@ -569,6 +571,7 @@ MM/YY: 12/35 CVC: 123`;
                   remainingAmount={finalRemaining}
                   onPaymentSubmit={onGCashSubmit}
                   isLoading={isGCashLoading}
+                  hotel={hotel}
                 />
               )}
             </div>

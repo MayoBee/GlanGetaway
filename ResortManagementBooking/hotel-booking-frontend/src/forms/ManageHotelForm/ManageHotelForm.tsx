@@ -11,6 +11,7 @@ import FreshPackagesSection from "./FreshPackagesSection";
 import ContactSection from "./ContactSection";
 import PoliciesSection from "./PoliciesSection";
 import ImagesSection from "./ImagesSection";
+import PaymentModuleSection from "./PaymentModuleSection";
 import { mergeUnitsWithBackendData, extractUnitsFromFormData } from "../../utils/unitsStorage";
 import { HotelType } from "../../../../shared/types";
 
@@ -148,6 +149,8 @@ export type HotelFormData = {
     includedChildEntranceFee: boolean;
     isConfirmed?: boolean;
   }>;
+  downPaymentPercentage: number;
+  gcashNumber?: string;
 };
 
 type Props = {
@@ -212,6 +215,8 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         groupQuantity: 1,
       },
       childEntranceFee: [],
+      downPaymentPercentage: 50,
+      gcashNumber: "",
     },
   });
   const { handleSubmit, reset } = formMethods;
@@ -310,6 +315,8 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
           mergedHotelData.childEntranceFee || []
         ),
         imageUrls: mergedHotelData.imageUrls || [],
+        downPaymentPercentage: mergedHotelData.downPaymentPercentage || 50,
+        gcashNumber: mergedHotelData.gcashNumber || "",
       };
       
       console.log('=== MANAGE HOTEL FORM: Setting form data with merged units', {
@@ -405,6 +412,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         <FreshPackagesSection />
         <ContactSection />
         <PoliciesSection />
+        <PaymentModuleSection />
         <ImagesSection />
         <span className="flex justify-end">
           <button

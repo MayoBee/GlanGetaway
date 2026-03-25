@@ -66,7 +66,8 @@ const Booking = () => {
     selectedPackages,
     setBasePrice,
     setNumberOfNights,
-    selectedRateType
+    selectedRateType,
+    updateDepositPercentageFromHotel
   } = useBookingSelection();
 
   console.log("Booking selection data:", { 
@@ -124,6 +125,9 @@ const Booking = () => {
   // Update base price when hotel is loaded
   useEffect(() => {
     if (hotel && numberOfNights > 0) {
+      // Update deposit percentage from hotel
+      updateDepositPercentageFromHotel(hotel);
+      
       // Calculate entrance fees instead of using day/night rates
       let entranceFeeTotal = 0;
       const rateType = selectedRateType === 'day' ? 'dayRate' : 'nightRate';
@@ -193,7 +197,7 @@ const Booking = () => {
       }
       console.log("Updated base price:", basePrice, "for hotel:", hotel.name, "using entrance fees");
     }
-  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages, selectedRateType]);
+  }, [hotel, numberOfNights, setBasePrice, search.adultCount, search.childCount, search.childAges, selectedPackages, selectedRateType, updateDepositPercentageFromHotel]);
 
   if (isLoadingHotel || isLoadingUser) {
     return (
@@ -472,6 +476,7 @@ const Booking = () => {
                       selectedRooms={selectedRooms}
                       selectedCottages={selectedCottages}
                       selectedAmenities={selectedAmenities}
+                      hotel={hotel}
                     />
                   </Elements>
                 </CardContent>

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, X, Smartphone } from "lucide-react";
+import { HotelType } from "../../shared/types";
 
 type Props = {
   totalCost: number;
@@ -7,6 +8,7 @@ type Props = {
   remainingAmount: number;
   onPaymentSubmit: (paymentData: GCashPaymentData) => void;
   isLoading?: boolean;
+  hotel: HotelType;
 };
 
 export type GCashPaymentData = {
@@ -17,7 +19,7 @@ export type GCashPaymentData = {
   paymentTime: Date;
 };
 
-const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPaymentSubmit, isLoading }: Props) => {
+const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPaymentSubmit, isLoading, hotel }: Props) => {
   const [gcashNumber, setGcashNumber] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [amountPaid, setAmountPaid] = useState(downPaymentAmount);
@@ -208,7 +210,7 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
               <div className="text-xs text-gray-500">This is 50% down payment of total cost (₱{totalCost.toFixed(2)})</div>
             </div>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Send <strong>₱{downPaymentAmount.toFixed(2)}</strong> to the resort's GCash number</li>
+              <li>Send <strong>₱{downPaymentAmount.toFixed(2)}</strong> to the resort's GCash number <strong>{hotel.gcashNumber || "09XXXXXXXXX"}</strong></li>
               <li>Take a screenshot of the successful transaction</li>
               <li>Upload the screenshot with your GCash details above</li>
               <li>Wait for the resort owner to verify your payment</li>

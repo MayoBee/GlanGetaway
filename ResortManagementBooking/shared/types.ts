@@ -224,6 +224,8 @@ export type HotelType = {
     groupQuantity?: number;
     isConfirmed?: boolean;
   }>;
+  downPaymentPercentage?: number;
+  gcashNumber?: string;
   createdAt?: Date;
   updatedAt?: Date;
 };

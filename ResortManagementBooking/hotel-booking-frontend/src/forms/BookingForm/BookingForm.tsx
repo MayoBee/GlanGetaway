@@ -99,6 +99,13 @@ export type BookingFormData = {
     }>;
   }>;
   specialRequests?: string;
+  isPwdBooking?: boolean;
+  isSeniorCitizenBooking?: boolean;
+  discountInfo?: {
+    type: "pwd" | "senior_citizen" | null;
+    percentage: number;
+    amount: number;
+  };
 };
 
 const BookingForm = ({ currentUser, paymentIntent }: Props) => {
@@ -123,6 +130,8 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const [phone, setPhone] = useState<string>("");
   const [specialRequests, setSpecialRequests] = useState<string>("");
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [isPwdBooking, setIsPwdBooking] = useState<boolean>(false);
+  const [isSeniorCitizenBooking, setIsSeniorCitizenBooking] = useState<boolean>(false);
 
   const { mutate: bookRoom, isLoading } = useMutation(
     apiClient.createRoomBooking,
@@ -202,6 +211,11 @@ MM/YY: 12/35 CVC: 123`;
       ...formData,
       phone,
       specialRequests,
+      isPwdBooking,
+      isSeniorCitizenBooking,
+      discountInfo: isPwdBooking ? { type: "pwd" as const, percentage: 20, amount: 0 } : 
+                 isSeniorCitizenBooking ? { type: "senior_citizen" as const, percentage: 20, amount: 0 } : 
+                 undefined
     };
 
     const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
@@ -311,6 +325,62 @@ MM/YY: 12/35 CVC: 123`;
               {/* Hidden fields for time data */}
               <input type="hidden" {...register("checkInTime")} />
               <input type="hidden" {...register("checkOutTime")} />
+            </div>
+          </div>
+
+          {/* Discount Eligibility */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-blue-600" />
+              Discount Eligibility (Optional)
+            </h3>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800 mb-3">
+                If you qualify for special discounts, please select the applicable option below. 
+                This will affect your payment processing requirements.
+              </p>
+              
+              <div className="space-y-3">
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isPwdBooking}
+                    onChange={(e) => {
+                      setIsPwdBooking(e.target.checked);
+                      if (e.target.checked) setIsSeniorCitizenBooking(false);
+                    }}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    PWD (Person with Disability) Discount
+                  </span>
+                </label>
+
+                <label className="flex items-center space-x-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isSeniorCitizenBooking}
+                    onChange={(e) => {
+                      setIsSeniorCitizenBooking(e.target.checked);
+                      if (e.target.checked) setIsPwdBooking(false);
+                    }}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Senior Citizen Discount
+                  </span>
+                </label>
+              </div>
+
+              {(isPwdBooking || isSeniorCitizenBooking) && (
+                <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-xs text-yellow-800">
+                    <strong>Note:</strong> Bookings with special discounts will require manual verification. 
+                    Payment status will remain pending until resort staff verify your eligibility.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

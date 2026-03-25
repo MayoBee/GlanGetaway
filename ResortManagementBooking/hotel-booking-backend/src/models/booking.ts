@@ -44,6 +44,14 @@ export interface IBooking extends Document {
   specialRequests: string;
   cancellationReason: string;
   refundAmount: number;
+  // PWD/Senior Citizen tracking
+  isPwdBooking: boolean;
+  isSeniorCitizenBooking: boolean;
+  discountApplied?: {
+    type: "pwd" | "senior_citizen" | null;
+    percentage: number;
+    amount: number;
+  };
   // 8-hour change window
   changeWindowDeadline?: Date;
   canModify?: boolean;
@@ -129,6 +137,18 @@ const bookingSchema = new mongoose.Schema(
     specialRequests: { type: String },
     cancellationReason: { type: String },
     refundAmount: { type: Number, default: 0 },
+    // PWD/Senior Citizen tracking
+    isPwdBooking: { type: Boolean, default: false },
+    isSeniorCitizenBooking: { type: Boolean, default: false },
+    discountApplied: {
+      type: {
+        type: String,
+        enum: ["pwd", "senior_citizen", null],
+        default: null
+      },
+      percentage: { type: Number, default: 0 },
+      amount: { type: Number, default: 0 }
+    },
     // 8-hour change window
     changeWindowDeadline: { type: Date },
     canModify: { type: Boolean, default: true },

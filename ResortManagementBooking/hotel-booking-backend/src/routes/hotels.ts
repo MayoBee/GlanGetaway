@@ -12,6 +12,27 @@ const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
 
 const router = express.Router();
 
+// Helper function to determine if payment should remain pending based on business rules
+function shouldPaymentRemainPending(paymentMethod: string, isPwdBooking: boolean, isSeniorCitizenBooking: boolean): boolean {
+  // Rule 1: GCash payments remain pending
+  if (paymentMethod.toLowerCase() === "gcash") {
+    return true;
+  }
+  
+  // Rule 2: PWD bookings remain pending
+  if (isPwdBooking) {
+    return true;
+  }
+  
+  // Rule 3: Senior Citizen bookings remain pending
+  if (isSeniorCitizenBooking) {
+    return true;
+  }
+  
+  // Otherwise, payment can be processed immediately
+  return false;
+}
+
 router.get("/search", async (req: Request, res: Response) => {
   try {
     let query = constructSearchQuery(req.query);
@@ -196,7 +217,10 @@ router.post(
         selectedCottages,
         selectedAmenities,
         paymentMethod,
-        specialRequests
+        specialRequests,
+        isPwdBooking,
+        isSeniorCitizenBooking,
+        discountInfo
       } = req.body;
       
       // Verify hotel exists
@@ -227,7 +251,12 @@ router.post(
         paymentMethod: paymentMethod || "card",
         specialRequests: specialRequests || "",
         status: "pending",
-        paymentStatus: "pending",
+        // PWD/Senior Citizen tracking from frontend
+        isPwdBooking: isPwdBooking || false,
+        isSeniorCitizenBooking: isSeniorCitizenBooking || false,
+        discountApplied: discountInfo,
+        // Apply business rules for payment status
+        paymentStatus: shouldPaymentRemainPending(paymentMethod, isPwdBooking || false, isSeniorCitizenBooking || false) ? "pending" : "paid",
         // Set 8-hour change window
         changeWindowDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
         canModify: true
@@ -256,6 +285,108 @@ router.post(
       console.error("Booking error:", error);
       res.status(500).json({ 
         message: "Booking failed",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  }
+);
+
+// GCash Booking Endpoint
+router.post(
+  "/:hotelId/bookings/gcash",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const { hotelId } = req.params;
+      const userId = req.userId;
+      
+      console.log("GCash Booking request received:", req.body);
+      console.log("User ID:", userId);
+      console.log("Hotel ID:", hotelId);
+      
+      // Validate required fields
+      const { 
+        firstName, 
+        lastName, 
+        email, 
+        phone, 
+        adultCount, 
+        childCount, 
+        checkIn, 
+        checkOut, 
+        checkInTime, 
+        checkOutTime,
+        totalCost,
+        basePrice,
+        selectedRooms,
+        selectedCottages,
+        selectedAmenities,
+        specialRequests,
+        gcashPayment
+      } = req.body;
+      
+      // Verify hotel exists
+      const hotel = await Hotel.findById(hotelId);
+      if (!hotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+      
+      // Create the booking with GCash payment
+      const booking = new Booking({
+        userId,
+        hotelId,
+        firstName,
+        lastName,
+        email,
+        phone: phone || "",
+        adultCount: adultCount || 1,
+        childCount: childCount || 0,
+        checkIn: new Date(checkIn),
+        checkOut: new Date(checkOut),
+        checkInTime: checkInTime || "12:00",
+        checkOutTime: checkOutTime || "11:00",
+        totalCost: totalCost || basePrice || 0,
+        basePrice: basePrice || totalCost || 0,
+        selectedRooms: selectedRooms || [],
+        selectedCottages: selectedCottages || [],
+        selectedAmenities: selectedAmenities || [],
+        paymentMethod: "gcash",
+        specialRequests: specialRequests || "",
+        status: "pending",
+        // PWD/Senior Citizen tracking (default to false for now, will be updated in future)
+        isPwdBooking: false,
+        isSeniorCitizenBooking: false,
+        discountApplied: undefined,
+        // GCash payments always remain pending per business rules
+        paymentStatus: "pending",
+        // Set 8-hour change window
+        changeWindowDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
+        canModify: true
+      });
+      
+      await booking.save();
+      
+      // Update hotel booking count
+      await Hotel.findByIdAndUpdate(hotelId, {
+        $inc: { totalBookings: 1 }
+      });
+      
+      // Update user booking count
+      await User.findByIdAndUpdate(userId, {
+        $inc: { totalBookings: 1 }
+      });
+      
+      console.log("GCash Booking created successfully:", booking._id);
+      
+      res.status(201).json({
+        message: "GCash booking created successfully. Payment is pending verification.",
+        bookingId: booking._id,
+        booking
+      });
+    } catch (error) {
+      console.error("GCash Booking error:", error);
+      res.status(500).json({ 
+        message: "GCash booking failed",
         error: error instanceof Error ? error.message : "Unknown error"
       });
     }

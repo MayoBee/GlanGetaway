@@ -7,6 +7,8 @@ import Maintenance from "../models/maintenance";
 import Housekeeping from "../models/housekeeping";
 import AmenityBooking from "../models/amenity-booking";
 import ActivityBooking from "../models/activity-booking";
+import PaymentTransaction from "../models/payment";
+import VerificationDocument from "../models/verification-document";
 import { verifyToken, requireRole } from "../middleware/role-based-auth";
 
 const router = express.Router();
@@ -550,6 +552,208 @@ router.get("/amenity-usage", verifyToken, requireRole(["admin"]), async (req: Re
     });
   } catch (error) {
     console.error("Error generating amenity usage report:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// ==================== PENDING BOOKINGS MANAGEMENT ====================
+
+// Get pending bookings with full details - ADMIN/RESORT OWNER ONLY
+router.get("/pending-bookings", verifyToken, requireRole(["admin", "resort_owner"]), async (req: Request, res: Response) => {
+  try {
+    const { hotelId, page = 1, limit = 20 } = req.query;
+    
+    const filter: any = { status: "pending" };
+    if (hotelId) filter.hotelId = hotelId;
+
+    const pendingBookings = await Booking.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(Number(limit) * Number(page))
+      .skip((Number(page) - 1) * Number(page));
+
+    const total = await Booking.countDocuments(filter);
+
+    // Get payment and document details for each booking
+    const bookingsWithDetails = await Promise.all(
+      pendingBookings.map(async (booking) => {
+        const payment = await PaymentTransaction.findOne({ bookingId: booking._id });
+        const documents = await VerificationDocument.find({ bookingId: booking._id });
+        
+        return {
+          ...booking.toObject(),
+          payment,
+          documents,
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data: bookingsWithDetails,
+      pagination: {
+        page: Number(page),
+        limit: Number(limit),
+        total,
+        pages: Math.ceil(total / Number(limit)),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching pending bookings:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Get booking details with payment and documents - ADMIN/RESORT OWNER ONLY
+router.get("/booking-details/:bookingId", verifyToken, requireRole(["admin", "resort_owner"]), async (req: Request, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    const payment = await PaymentTransaction.findOne({ bookingId });
+    const documents = await VerificationDocument.find({ bookingId });
+    const user = await User.findById(booking.userId).select("firstName lastName email phone");
+
+    res.json({
+      success: true,
+      data: {
+        booking,
+        payment,
+        documents,
+        user,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching booking details:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Confirm pending booking - ADMIN/RESORT OWNER ONLY
+router.patch("/confirm-booking/:bookingId", verifyToken, requireRole(["admin", "resort_owner"]), async (req: Request, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+    const { notes } = req.body;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    if (booking.status !== "pending") {
+      return res.status(400).json({ success: false, message: "Booking is not pending" });
+    }
+
+    // Update booking status
+    booking.status = "confirmed";
+    booking.verifiedByOwner = true;
+    booking.ownerVerificationNote = notes || "Booking confirmed by resort owner";
+    booking.ownerVerifiedAt = new Date();
+    await booking.save();
+
+    // Update payment status if exists
+    const payment = await PaymentTransaction.findOne({ bookingId });
+    if (payment && payment.status === "pending") {
+      payment.status = "succeeded";
+      payment.verifiedBy = req.user?.id;
+      payment.verifiedAt = new Date();
+      payment.verificationNote = "Auto-verified with booking confirmation";
+      await payment.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Booking confirmed successfully",
+      data: booking,
+    });
+  } catch (error) {
+    console.error("Error confirming booking:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Cancel pending booking - ADMIN/RESORT OWNER ONLY
+router.patch("/cancel-booking/:bookingId", verifyToken, requireRole(["admin", "resort_owner"]), async (req: Request, res: Response) => {
+  try {
+    const { bookingId } = req.params;
+    const { reason, refundAmount } = req.body;
+
+    if (!reason) {
+      return res.status(400).json({ success: false, message: "Cancellation reason is required" });
+    }
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Booking not found" });
+    }
+
+    if (booking.status !== "pending") {
+      return res.status(400).json({ success: false, message: "Booking is not pending" });
+    }
+
+    // Update booking status
+    booking.status = "cancelled";
+    booking.cancellationReason = reason;
+    booking.refundAmount = refundAmount || 0;
+    await booking.save();
+
+    // Update payment status if exists
+    const payment = await PaymentTransaction.findOne({ bookingId });
+    if (payment) {
+      payment.status = "refunded";
+      payment.refundAmount = refundAmount || payment.amount;
+      payment.refundedAt = new Date();
+      payment.refundMethod = "manual";
+      await payment.save();
+    }
+
+    res.json({
+      success: true,
+      message: "Booking cancelled successfully",
+      data: booking,
+    });
+  } catch (error) {
+    console.error("Error cancelling booking:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// Verify document - ADMIN/RESORT OWNER ONLY
+router.patch("/verify-document/:documentId", verifyToken, requireRole(["admin", "resort_owner"]), async (req: Request, res: Response) => {
+  try {
+    const { documentId } = req.params;
+    const { status, rejectionReason, notes } = req.body;
+
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({ success: false, message: "Invalid status" });
+    }
+
+    if (status === "rejected" && !rejectionReason) {
+      return res.status(400).json({ success: false, message: "Rejection reason is required" });
+    }
+
+    const document = await VerificationDocument.findById(documentId);
+    if (!document) {
+      return res.status(404).json({ success: false, message: "Document not found" });
+    }
+
+    document.status = status;
+    document.verifiedBy = req.user?.id;
+    document.verifiedAt = new Date();
+    document.rejectionReason = rejectionReason;
+    document.notes = notes;
+    await document.save();
+
+    res.json({
+      success: true,
+      message: `Document ${status} successfully`,
+      data: document,
+    });
+  } catch (error) {
+    console.error("Error verifying document:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });

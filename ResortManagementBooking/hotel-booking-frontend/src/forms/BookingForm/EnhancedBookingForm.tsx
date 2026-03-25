@@ -13,7 +13,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { User, Phone, MessageSquare, CreditCard, Shield, CheckCircle, Copy, Smartphone } from "lucide-react";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import GCashPaymentForm, { GCashPaymentData } from "../../components/GCashPaymentForm";
 import { SelectedRoom, SelectedCottage, SelectedAmenity } from "../../contexts/BookingSelectionContext";
 import GuestDiscountInputComponent from "../../components/GuestDiscountInput";
@@ -83,6 +83,23 @@ const EnhancedBookingForm = ({
   const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">("card");
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
   const [discountVerified, setDiscountVerified] = useState<boolean>(false);
+
+  // DEBUG: Log payment method changes
+  const handlePaymentMethodChange = (method: "card" | "gcash") => {
+    console.log("[DEBUG] Payment method changing from:", paymentMethod, "to:", method);
+    setPaymentMethod(method);
+  };
+
+  // DEBUG: Log when GCash submit is triggered
+  const debugGCashSubmit = (paymentData: GCashPaymentData) => {
+    console.log("[DEBUG] GCash submit triggered with data:", {
+      gcashNumber: paymentData.gcashNumber,
+      referenceNumber: paymentData.referenceNumber,
+      amountPaid: paymentData.amountPaid,
+      hasScreenshot: !!paymentData.screenshotFile
+    });
+    onGCashSubmit(paymentData);
+  };
 
   const { mutate: bookRoom, isLoading: isCardLoading } = useMutation(
     apiClient.createRoomBooking,
@@ -154,7 +171,7 @@ const EnhancedBookingForm = ({
       selectedCottages,
       selectedAmenities,
     },
-    mode: "onChange",
+    mode: paymentMethod === "card" ? "onChange" : "onSubmit", // Only validate in onChange mode for card
     shouldUnregister: false,
   });
 
@@ -193,12 +210,17 @@ MM/YY: 12/35 CVC: 123`;
   const finalDownPayment = Math.round(finalPricing.discountedTotal * 0.5);
   const finalRemaining = finalPricing.discountedTotal - finalDownPayment;
 
-  const handleDiscountChange = (result: DiscountCalculationResult) => {
+  const handleDiscountChange = useCallback((result: DiscountCalculationResult) => {
+    console.log("[DEBUG] handleDiscountChange called with result:", result);
     setDiscountResult(result);
     setDiscountVerified(false); // Reset verification when discount changes
-  };
+  }, []);
 
   const onCardSubmit = async (formData: BookingFormData) => {
+    // Prevent this from being called when GCash is selected
+    if (paymentMethod === "gcash") {
+      return;
+    }
     if (!stripe || !elements) {
       showToast({
         title: "Payment System Error",
@@ -298,7 +320,18 @@ MM/YY: 12/35 CVC: 123`;
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-8">
       {/* Booking Form */}
-      <form onSubmit={handleSubmit(onCardSubmit)} className="space-y-6">
+      <form 
+        onSubmit={(e) => {
+          if (paymentMethod === "gcash") {
+            e.preventDefault();
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            return false;
+          }
+          return handleSubmit(onCardSubmit)(e);
+        }} 
+        className="space-y-6"
+      >
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -483,7 +516,7 @@ MM/YY: 12/35 CVC: 123`;
                 <button
                   type="button"
                   onClick={() => {
-                    setPaymentMethod("card");
+                    handlePaymentMethodChange("card");
                   }}
                   className={`p-4 rounded-lg border-2 font-medium transition-all ${
                     paymentMethod === "card"
@@ -498,7 +531,7 @@ MM/YY: 12/35 CVC: 123`;
                 <button
                   type="button"
                   onClick={() => {
-                    setPaymentMethod("gcash");
+                    handlePaymentMethodChange("gcash");
                   }}
                   className={`p-4 rounded-lg border-2 font-medium transition-all ${
                     paymentMethod === "gcash"
@@ -565,14 +598,23 @@ MM/YY: 12/35 CVC: 123`;
 
               {/* GCash Payment Form */}
               {paymentMethod === "gcash" && (
-                <GCashPaymentForm
-                  totalCost={finalPricing.discountedTotal}
-                  downPaymentAmount={finalDownPayment}
-                  remainingAmount={finalRemaining}
-                  onPaymentSubmit={onGCashSubmit}
-                  isLoading={isGCashLoading}
-                  hotel={hotel}
-                />
+                <div 
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onMouseUp={(e) => e.stopPropagation()}
+                  onSubmit={(e) => e.stopPropagation()}
+                  onReset={(e) => e.stopPropagation()}
+                  style={{ isolation: 'isolate' }}
+                >
+                  <GCashPaymentForm
+                    totalCost={finalPricing.discountedTotal}
+                    downPaymentAmount={finalDownPayment}
+                    remainingAmount={finalRemaining}
+                    onPaymentSubmit={debugGCashSubmit}
+                    isLoading={isGCashLoading}
+                    hotel={hotel}
+                  />
+                </div>
               )}
             </div>
           </CardContent>

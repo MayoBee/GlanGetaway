@@ -44,6 +44,8 @@ const AdminManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<any>(null);
   const [recentPromotions, setRecentPromotions] = useState<any[]>([]);
 
   // Add to recent promotions when promotion succeeds
@@ -135,8 +137,8 @@ const AdminManagement = () => {
         type: "SUCCESS",
       });
       
-      setIsDialogOpen(false);
-      setSelectedUser(null);
+      setIsDeleteDialogOpen(false);
+      setUserToDelete(null);
     },
     onError: (error: Error) => {
       showToast({
@@ -185,8 +187,8 @@ const AdminManagement = () => {
   };
 
   const confirmDelete = () => {
-    if (selectedUser) {
-      deleteMutation.mutate(selectedUser._id);
+    if (userToDelete) {
+      deleteMutation.mutate(userToDelete._id);
     }
   };
 
@@ -536,7 +538,7 @@ const AdminManagement = () => {
                     )}
                     
                     {/* Delete Confirmation Dialog */}
-                    <Dialog open={isDialogOpen && selectedUser && !selectedUser.role} onOpenChange={setIsDialogOpen}>
+                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle className="flex items-center">
@@ -544,14 +546,14 @@ const AdminManagement = () => {
                             Delete User Account
                           </DialogTitle>
                           <DialogDescription>
-                            Are you sure you want to permanently delete <strong>{selectedUser?.firstName} {selectedUser?.lastName}</strong> 
-                            ({selectedUser?.email})? This action cannot be undone and will remove all their data.
+                            Are you sure you want to permanently delete <strong>{userToDelete?.firstName} {userToDelete?.lastName}</strong> 
+                            ({userToDelete?.email})? This action cannot be undone and will remove all their data.
                           </DialogDescription>
                         </DialogHeader>
                         <DialogFooter>
                           <Button
                             variant="outline"
-                            onClick={() => setIsDialogOpen(false)}
+                            onClick={() => setIsDeleteDialogOpen(false)}
                             disabled={deleteMutation.isLoading}
                           >
                             Cancel
@@ -604,8 +606,8 @@ const AdminManagement = () => {
                       
                       <Button
                         onClick={() => {
-                          setSelectedUser(user);
-                          setIsDialogOpen(true);
+                          setUserToDelete(user);
+                          setIsDeleteDialogOpen(true);
                         }}
                         variant="outline"
                         size="sm"

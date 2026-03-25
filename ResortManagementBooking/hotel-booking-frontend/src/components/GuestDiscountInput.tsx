@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { 
   Card, 
   CardContent, 
@@ -86,8 +86,33 @@ const GuestDiscountInputComponent = ({
 
     setValidationError(null);
     setDiscountResult(result);
-    onDiscountChange(result);
-  }, [hasDiscount, seniorCitizens, pwdGuests, totalGuests, pricePerNight, numberOfNights, discountConfig, onDiscountChange]);
+    // Removed direct call to onDiscountChange to prevent infinite loop
+    // The separate useEffect below handles calling the stable callback
+  }, [hasDiscount, seniorCitizens, pwdGuests, totalGuests, pricePerNight, numberOfNights, discountConfig]);
+
+  // Use ref to store the callback - this won't cause re-renders or infinite loops
+  const onDiscountChangeRef = useRef(onDiscountChange);
+  onDiscountChangeRef.current = onDiscountChange;
+
+  // Stable callback for parent component - avoids infinite loop
+  // Using empty deps ensures this function is only created once
+  const stableOnDiscountChange = useCallback((result: DiscountCalculationResult) => {
+    onDiscountChangeRef.current(result);
+  }, []);
+  
+  // Track if we've already notified parent to prevent multiple calls
+  const hasNotifiedParent = useRef(false);
+
+  // Call stable callback when result changes - only once per result
+  useEffect(() => {
+    if (discountResult && !hasNotifiedParent.current) {
+      hasNotifiedParent.current = true;
+      stableOnDiscountChange(discountResult);
+    } else if (!discountResult) {
+      // Reset the ref when discountResult becomes null
+      hasNotifiedParent.current = false;
+    }
+  }, [discountResult, stableOnDiscountChange]);
 
   const handleSeniorCitizensChange = (value: string) => {
     const count = parseInt(value) || 0;

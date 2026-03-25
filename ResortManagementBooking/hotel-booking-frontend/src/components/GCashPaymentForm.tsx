@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Camera, Upload, X, Smartphone } from "lucide-react";
-import { HotelType } from "../../shared/types";
+import { HotelType } from "../../../shared/types";
 
 type Props = {
   totalCost: number;
@@ -26,6 +26,7 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileReaderRef = useRef<FileReader | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Abort FileReader on component unmount
   useEffect(() => {
@@ -36,9 +37,20 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
     };
   }, []);
 
+  const handleFileUpload = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
+    
     const file = e.target.files?.[0];
     if (file) {
+      console.log("[DEBUG] File selected:", file.name, file.size, file.type);
       setScreenshotFile(file);
       
       // Abort any existing FileReader
@@ -64,6 +76,11 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log("[DEBUG] GCashPaymentForm handleSubmit called");
+    console.log("[DEBUG] screenshotFile:", screenshotFile);
+    console.log("[DEBUG] amountPaid:", amountPaid, "downPaymentAmount:", downPaymentAmount);
     
     if (!screenshotFile) {
       alert("Please upload a payment screenshot");
@@ -83,6 +100,13 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
       paymentTime: new Date(),
     };
 
+    console.log("[DEBUG] Calling onPaymentSubmit with paymentData:", {
+      gcashNumber: paymentData.gcashNumber,
+      referenceNumber: paymentData.referenceNumber,
+      amountPaid: paymentData.amountPaid,
+      hasFile: !!paymentData.screenshotFile
+    });
+    
     onPaymentSubmit(paymentData);
   };
 
@@ -92,7 +116,7 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm" style={{ isolation: 'isolate' }}>
       <div className="flex items-center gap-3 mb-6">
         <div className="p-3 bg-blue-100 rounded-full">
           <Smartphone className="w-6 h-6 text-blue-600" />
@@ -103,7 +127,15 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form 
+        onSubmit={handleSubmit} 
+        className="space-y-4"
+        noValidate
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onMouseUp={(e) => e.stopPropagation()}
+        style={{ isolation: 'isolate' }}
+      >
         {/* GCash Number */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -112,7 +144,11 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
           <input
             type="tel"
             value={gcashNumber}
-            onChange={(e) => setGcashNumber(e.target.value)}
+            onChange={(e) => {
+              e.stopPropagation();
+              setGcashNumber(e.target.value);
+            }}
+            onFocus={(e) => e.stopPropagation()}
             placeholder="09XXXXXXXXX"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
@@ -127,7 +163,11 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
           <input
             type="text"
             value={referenceNumber}
-            onChange={(e) => setReferenceNumber(e.target.value)}
+            onChange={(e) => {
+              e.stopPropagation();
+              setReferenceNumber(e.target.value);
+            }}
+            onFocus={(e) => e.stopPropagation()}
             placeholder="Enter GCash reference number"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
@@ -142,7 +182,11 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
           <input
             type="number"
             value={amountPaid}
-            onChange={(e) => setAmountPaid(Number(e.target.value))}
+            onChange={(e) => {
+              e.stopPropagation();
+              setAmountPaid(Number(e.target.value));
+            }}
+            onFocus={(e) => e.stopPropagation()}
             min={downPaymentAmount}
             step="0.01"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -170,7 +214,10 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
                 />
                 <button
                   type="button"
-                  onClick={clearFile}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFile();
+                  }}
                   className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
                 >
                   <X className="w-4 h-4" />
@@ -179,19 +226,22 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
             ) : (
               <div className="py-8">
                 <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <label className="cursor-pointer">
-                  <span className="text-blue-600 font-medium hover:text-blue-700">
-                    <Upload className="w-5 h-5 inline mr-2" />
-                    Upload Screenshot
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    required
-                  />
-                </label>
+                <button
+                  type="button"
+                  onClick={handleFileUpload}
+                  className="text-blue-600 font-medium hover:text-blue-700"
+                >
+                  <Upload className="w-5 h-5 inline mr-2" />
+                  Upload Screenshot
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                  required
+                />
                 <p className="text-sm text-gray-500 mt-2">
                   PNG, JPG, GIF up to 10MB
                 </p>

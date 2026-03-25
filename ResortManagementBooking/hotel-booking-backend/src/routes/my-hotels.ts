@@ -174,16 +174,49 @@ router.post(
         isConfirmed?: boolean;
       }> = [];
       let policyIndex = 0;
-      while (req.body[`policies.resortPolicies[${policyIndex}][id]`]) {
+      
+      // Try multiple key formats
+      while (req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+             req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+             req.body[`resortPolicies[${policyIndex}][id]`]) {
+        
+        const policyId = req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+                        req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+                        req.body[`resortPolicies[${policyIndex}][id]`];
+        
+        if (!policyId) break;
+        
         resortPolicies.push({
-          id: req.body[`policies.resortPolicies[${policyIndex}][id]`],
-          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || "",
-          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || "",
-          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true,
+          id: policyId,
+          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || 
+                 req.body[`policies.resortPolicies.${policyIndex}.title`] ||
+                 req.body[`resortPolicies[${policyIndex}][title]`] || "",
+          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || 
+                      req.body[`policies.resortPolicies.${policyIndex}.description`] ||
+                      req.body[`resortPolicies[${policyIndex}][description]`] || "",
+          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || 
+                       req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === "true" ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === true,
         });
         policyIndex++;
       }
-      if (resortPolicies.length > 0) {
+      
+      // Try JSON parsing as fallback
+      if (resortPolicies.length === 0) {
+        const policiesJson = req.body["policies.resortPolicies"];
+        if (policiesJson) {
+          try {
+            const parsed = JSON.parse(policiesJson);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log("Found resortPolicies as JSON string in POST:", parsed);
+              newHotel.policies.resortPolicies = parsed;
+            }
+          } catch (e) {
+            console.log("Failed to parse policies.resortPolicies JSON in POST:", e);
+          }
+        }
+      } else if (resortPolicies.length > 0) {
         newHotel.policies.resortPolicies = resortPolicies;
       }
 
@@ -552,6 +585,7 @@ router.put(
       // Explicitly handle array fields to ensure they remain as arrays
       // These fields are sent as proper object arrays from frontend and should not be stringified
       const arrayFields = ['rooms', 'cottages', 'packages', 'amenities', 'childEntranceFee'];
+      console.log("Processing arrayFields:", arrayFields);
       for (const field of arrayFields) {
         if (updateData[field]) {
           // If it's a string, try to parse it as JSON
@@ -655,6 +689,37 @@ router.put(
         }
       }
 
+      // Handle policies specially - it might come as a stringified JSON object
+      if (updateData.policies) {
+        console.log("Processing policies field:", typeof updateData.policies);
+        if (typeof updateData.policies === 'string') {
+          try {
+            updateData.policies = JSON.parse(updateData.policies);
+            console.log("Parsed policies from string:", updateData.policies);
+          } catch (e) {
+            console.log("Failed to parse policies:", e);
+            updateData.policies = {};
+          }
+        }
+        
+        // Now process resortPolicies if it exists
+        if (updateData.policies && updateData.policies.resortPolicies) {
+          if (typeof updateData.policies.resortPolicies === 'string') {
+            try {
+              updateData.policies.resortPolicies = JSON.parse(updateData.policies.resortPolicies);
+              console.log("Parsed resortPolicies from string:", updateData.policies.resortPolicies);
+            } catch (e) {
+              console.log("Failed to parse resortPolicies:", e);
+              updateData.policies.resortPolicies = [];
+            }
+          }
+          if (!Array.isArray(updateData.policies.resortPolicies)) {
+            updateData.policies.resortPolicies = [];
+          }
+          console.log("Final resortPolicies:", updateData.policies.resortPolicies);
+        }
+      }
+
       // Parse stringified JSON fields that might come from frontend
       const stringifiedFields = ['facilities', 'type', 'imageUrls', 'childEntranceFee'];
       for (const field of stringifiedFields) {
@@ -666,6 +731,11 @@ router.put(
           }
         }
       }
+
+      // Log policies after processing
+      console.log("=== POLICIES AFTER ARRAY PROCESSING ===");
+      console.log("updateData.policies:", updateData.policies);
+      console.log("updateData.policies.resortPolicies:", updateData.policies?.resortPolicies);
 
       // Convert string numbers to actual numbers
       if (updateData.dayRate !== undefined) updateData.dayRate = Number(updateData.dayRate);
@@ -701,6 +771,10 @@ router.put(
       // Deep clone and sanitize the update data to ensure nested arrays are proper objects
       const sanitizedData = JSON.parse(JSON.stringify(updateData));
 
+      console.log("=== FINAL UPDATE DATA DEBUG ===");
+      console.log("sanitizedData.policies:", JSON.stringify(sanitizedData.policies, null, 2));
+      console.log("sanitizedData.policies.resortPolicies:", sanitizedData.policies?.resortPolicies);
+
       // Update the hotel using set to properly handle nested arrays
       hotel.set({
         ...sanitizedData,
@@ -709,10 +783,19 @@ router.put(
         cottages: Array.isArray(sanitizedData.cottages) ? [...sanitizedData.cottages] : [],
         amenities: Array.isArray(sanitizedData.amenities) ? [...sanitizedData.amenities] : [],
         packages: Array.isArray(sanitizedData.packages) ? [...sanitizedData.packages] : [],
+        // Also explicitly handle policies to ensure resortPolicies are saved
+        policies: {
+          ...sanitizedData.policies,
+          resortPolicies: Array.isArray(sanitizedData.policies?.resortPolicies) 
+            ? [...sanitizedData.policies.resortPolicies] 
+            : []
+        }
       });
       
       const updatedHotel = await hotel.save();
 
+      console.log("=== HOTEL SAVE DEBUG ===");
+      console.log("Saved policies.resortPolicies:", updatedHotel.policies?.resortPolicies);
       console.log("Hotel updated successfully with rooms:", updatedHotel.rooms?.length || 0);
       console.log("Hotel updated successfully with cottages:", updatedHotel.cottages?.length || 0);
       console.log("Hotel updated successfully with packages:", updatedHotel.packages?.length || 0);
@@ -833,7 +916,12 @@ router.put(
         tiktok: req.body["contact.tiktok"] || "",
       };
 
-      // Handle policies
+      // Handle policies - log what we receive
+      console.log("=== POLICIES PARSING START ===");
+      console.log("req.body policies.checkInTime:", req.body["policies.checkInTime"]);
+      console.log("req.body policies.dayCheckInTime:", req.body["policies.dayCheckInTime"]);
+      console.log("req.body policies.resortPolicies (raw):", req.body["policies.resortPolicies"]);
+      
       updateData.policies = {
         checkInTime: req.body["policies.checkInTime"] || "",
         checkOutTime: req.body["policies.checkOutTime"] || "",
@@ -852,17 +940,80 @@ router.put(
         isConfirmed?: boolean;
       }> = [];
       let policyIndex = 0;
-      while (req.body[`policies.resortPolicies[${policyIndex}][id]`]) {
-        resortPolicies.push({
-          id: req.body[`policies.resortPolicies[${policyIndex}][id]`],
-          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || "",
-          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || "",
-          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true,
-        });
+      
+      console.log("=== RESORT POLICIES DEBUG ===");
+      console.log("All req.body keys containing 'policies':", Object.keys(req.body).filter(k => k.includes('policies')));
+      console.log("Checking for resort policies in FormData...");
+      
+      // First, let's try to find any keys that might contain resort policy data
+      const allKeys = Object.keys(req.body);
+      const policyKeys = allKeys.filter(k => k.includes('resortPolicies'));
+      console.log("Keys containing 'resortPolicies':", policyKeys);
+      
+      // Also try to find keys that start with just '[' - for array format
+      const arrayFormatKeys = allKeys.filter(k => k.startsWith('[') || k.match(/^\d+\./));
+      console.log("Keys in array format:", arrayFormatKeys);
+      
+      // Try multiple key formats that might be used
+      while (req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+             req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+             req.body[`resortPolicies[${policyIndex}][id]`] ||
+             req.body[`resortPolicies.${policyIndex}.id`]) {
+        
+        const policyId = req.body[`policies.resortPolicies[${policyIndex}][id]`] || 
+                        req.body[`policies.resortPolicies.${policyIndex}.id`] ||
+                        req.body[`resortPolicies[${policyIndex}][id]`];
+        
+        if (!policyId) break;
+        
+        const policy = {
+          id: policyId,
+          title: req.body[`policies.resortPolicies[${policyIndex}][title]`] || 
+                 req.body[`policies.resortPolicies.${policyIndex}.title`] ||
+                 req.body[`resortPolicies[${policyIndex}][title]`] || "",
+          description: req.body[`policies.resortPolicies[${policyIndex}][description]`] || 
+                      req.body[`policies.resortPolicies.${policyIndex}.description`] ||
+                      req.body[`resortPolicies[${policyIndex}][description]`] || "",
+          isConfirmed: req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === "true" || 
+                       req.body[`policies.resortPolicies[${policyIndex}][isConfirmed]`] === true ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === "true" ||
+                       req.body[`policies.resortPolicies.${policyIndex}.isConfirmed`] === true,
+        };
+        
+        console.log(`Found policy ${policyIndex}:`, policy);
+        resortPolicies.push(policy);
         policyIndex++;
       }
+      
+      console.log(`Total resort policies found: ${resortPolicies.length}`);
+      
       if (resortPolicies.length > 0) {
         updateData.policies.resortPolicies = resortPolicies;
+        console.log("Resort policies added to updateData:", updateData.policies.resortPolicies);
+      } else {
+        console.log("No resort policies found in FormData - will try JSON parsing");
+        
+        // Try parsing resortPolicies from a JSON string field as fallback
+        const policiesJson = req.body["policies.resortPolicies"];
+        console.log("Found policies.resortPolicies in body:", policiesJson);
+        if (policiesJson) {
+          try {
+            const parsed = typeof policiesJson === 'string' ? JSON.parse(policiesJson) : policiesJson;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              console.log("Found resortPolicies as JSON string:", parsed);
+              updateData.policies.resortPolicies = parsed;
+              console.log("Resort policies added to updateData from JSON string:", updateData.policies.resortPolicies);
+            } else {
+              console.log("Parsed policies is not an array or is empty:", parsed);
+            }
+          } catch (e) {
+            console.log("Failed to parse policies.resortPolicies JSON:", e);
+          }
+        } else {
+          console.log("No policies.resortPolicies field found in req.body");
+          // Log all keys to help debug
+          console.log("All req.body keys:", Object.keys(req.body));
+        }
       }
 
       // Parse amenities from FormData
@@ -1085,6 +1236,10 @@ router.put(
       
       // Update the hotel with all image URLs
       updateData.imageUrls = finalImageUrls;
+      
+      // Debug: Log the full updateData before updating
+      console.log("=== FINAL UPDATE DATA ===");
+      console.log("updateData.policies:", JSON.stringify(updateData.policies, null, 2));
       
       const updatedHotel = await Hotel.findByIdAndUpdate(
         req.params.hotelId,

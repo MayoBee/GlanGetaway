@@ -29,7 +29,6 @@ const CottagesSection = () => {
   };
 
   const cottageTypes = ["Beach Cottage", "Garden Cottage", "Luxury Villa", "Family Cottage", "Romantic Cottage", "Tree House"];
-  const commonAmenities = ["Kitchen", "Living Room", "Private Pool", "Garden", "BBQ Grill", "Ocean View", "WiFi", "Air Conditioning"];
 
   return (
     <div className="flex flex-col gap-4">

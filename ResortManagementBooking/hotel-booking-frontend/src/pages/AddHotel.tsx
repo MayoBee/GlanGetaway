@@ -165,6 +165,24 @@ const AddHotel = () => {
             });
           });
         }
+      } else if (key === 'policies' && typeof value === 'object') {
+        // Handle policies object by appending individual fields
+        Object.keys(value).forEach(policyKey => {
+          const policyValue = (value as any)[policyKey];
+          if (policyKey === 'resortPolicies' && Array.isArray(policyValue)) {
+            // Handle resort policies array - send both individual fields AND JSON string
+            policyValue.forEach((policy, policyIndex) => {
+              Object.keys(policy).forEach(policyField => {
+                const fieldValue = policy[policyField];
+                if (fieldValue !== undefined && fieldValue !== null) {
+                  formData.append(`policies.resortPolicies[${policyIndex}][${policyField}]`, String(fieldValue));
+                }
+              });
+            });
+          } else if (policyValue !== undefined && policyValue !== null) {
+            formData.append(`policies.${policyKey}`, policyValue);
+          }
+        });
       } else if (Array.isArray(value)) {
         // Handle other arrays
         value.forEach((item: any, index: number) => {

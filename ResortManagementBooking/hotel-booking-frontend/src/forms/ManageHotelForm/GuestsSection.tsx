@@ -1,6 +1,6 @@
 import { useFormContext, useFieldArray, useWatch } from "react-hook-form";
 import { HotelFormData } from "./ManageHotelForm";
-import { Plus, Users, Check, X, DollarSign } from "lucide-react";
+import { Plus, Users, Check, X } from "lucide-react";
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const GuestsSection = () => {

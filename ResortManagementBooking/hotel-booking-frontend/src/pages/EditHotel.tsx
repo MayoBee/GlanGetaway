@@ -301,8 +301,12 @@ const EditHotel = () => {
     console.log(`Amenities with new images: ${amenityImageCount}`);
     
     // Add all form fields to FormData
+    console.log("=== FORM DATA ITERATION DEBUG ===");
+    console.log("hotelFormData keys:", Object.keys(hotelFormData));
+    
     Object.keys(hotelFormData).forEach(key => {
       const value = hotelFormData[key];
+      console.log("Processing key: " + key + ", value type: " + typeof value + ", is policies: " + (key === 'policies'));
       if (key === 'imageFiles') {
         // Handle files separately - check for FileList or Array
         if (value) {
@@ -351,6 +355,29 @@ const EditHotel = () => {
             });
           });
         }
+      } else if (key === 'policies' && typeof value === 'object') {
+        console.log("=== POLICIES HANDLING ===");
+        console.log("Policies value:", value);
+        // Handle policies object by appending individual fields
+        Object.keys(value).forEach(policyKey => {
+          const policyValue = (value as any)[policyKey];
+          console.log("Processing policyKey:", policyKey, ", is resortPolicies:", policyKey === 'resortPolicies');
+          if (policyKey === 'resortPolicies' && Array.isArray(policyValue)) {
+            console.log("Found resortPolicies array:", policyValue);
+            // Handle resort policies array - send both individual fields AND JSON string
+            policyValue.forEach((policy, policyIndex) => {
+              console.log("Processing policy index:", policyIndex, "policy:", policy);
+              Object.keys(policy).forEach(policyField => {
+                const fieldValue = policy[policyField];
+                if (fieldValue !== undefined && fieldValue !== null) {
+                  formData.append(`policies.resortPolicies[${policyIndex}][${policyField}]`, String(fieldValue));
+                }
+              });
+            });
+          } else if (policyValue !== undefined && policyValue !== null) {
+            formData.append(`policies.${policyKey}`, policyValue);
+          }
+        });
       } else if (Array.isArray(value)) {
         // Handle other arrays properly
         value.forEach((item: any) => {
@@ -361,8 +388,16 @@ const EditHotel = () => {
             formData.append(key, item);
           }
         });
-      } else if (typeof value === 'object') {
-        // Handle object fields by stringifying
+      } else if (key === 'contact' && typeof value === 'object') {
+        // Handle contact object by appending individual fields
+        Object.keys(value).forEach(contactKey => {
+          const contactValue = (value as any)[contactKey];
+          if (contactValue !== undefined && contactValue !== null) {
+            formData.append(`contact.${contactKey}`, contactValue);
+          }
+        });
+      } else if (typeof value === 'object' && key !== 'policies') {
+        // Handle other object fields by stringifying (excluding policies which is handled above)
         formData.append(key, JSON.stringify(value));
       } else {
         // Handle simple fields
@@ -373,9 +408,46 @@ const EditHotel = () => {
     // Debug FormData contents
     console.log("=== FORM DATA CONTENTS BEFORE API CALL ===");
     console.log("FormData hotelId:", formData.get('hotelId'));
-    console.log("FormData entries count:", formData.entries.length);
+    console.log("FormData contact.phone:", formData.get('contact.phone'));
+    console.log("FormData contact.email:", formData.get('contact.email'));
+    console.log("FormData policies.checkInTime:", formData.get('policies.checkInTime'));
+    console.log("FormData policies.dayCheckInTime:", formData.get('policies.dayCheckInTime'));
+    
+    // Debug resort policies being added to FormData
+    console.log("=== RESORT POLICIES BEING ADDED TO FORM DATA ===");
+    if (hotelFormData.policies && hotelFormData.policies.resortPolicies) {
+      console.log("Original resortPolicies from form:", hotelFormData.policies.resortPolicies);
+      hotelFormData.policies.resortPolicies.forEach((policy: any, index: number) => {
+        console.log(`Policy ${index} from form:`, policy);
+      });
+    } else {
+      console.log("No resortPolicies found in form data");
+    }
+    
+    // Debug resort policies
+    let policyIndex = 0;
+    while (formData.get(`policies.resortPolicies[${policyIndex}][id]`)) {
+      console.log(`Policy ${policyIndex} in FormData:`, {
+        id: formData.get(`policies.resortPolicies[${policyIndex}][id]`),
+        title: formData.get(`policies.resortPolicies[${policyIndex}][title]`),
+        description: formData.get(`policies.resortPolicies[${policyIndex}][description]`)
+      });
+      policyIndex++;
+    }
+    
+    console.log("FormData entries count:", Array.from(formData.entries()).length);
+    
+    // Log all FormData entries for debugging
+    console.log("=== ALL FORM DATA ENTRIES ===");
+    for (let [key, value] of formData.entries()) {
+      if (key.startsWith('policies.resortPolicies')) {
+        console.log(`${key}:`, value);
+      }
+    }
     
     // Don't add hotelId to data - it comes from URL parameter
+    console.log("=== ABOUT TO CALL MUTATE ===");
+    console.log("FormData being sent:", Array.from(formData.entries()));
     mutate(formData);
   };
 

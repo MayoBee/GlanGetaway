@@ -176,10 +176,9 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
   const childCount = watch("childCount");
 
   // Calculate number of nights for display
-  let numberOfNights = 1;
   if (checkIn && checkOut) {
     const diff = checkOut.getTime() - checkIn.getTime();
-    numberOfNights = Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+    Math.max(1, Math.ceil(diff / (1000 * 60 * 60 * 24)));
   }
 
   // Calculate number of nights and update booking context

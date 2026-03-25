@@ -22,7 +22,7 @@ export type DiscountsFormData = {
 };
 
 const DiscountsSection = () => {
-  const { control, register, watch } = useFormContext<{
+  const { register, watch } = useFormContext<{
     discounts: DiscountsFormData;
   }>();
   

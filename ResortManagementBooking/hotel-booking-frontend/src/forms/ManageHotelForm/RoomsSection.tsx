@@ -25,7 +25,6 @@ const RoomsSection = () => {
   };
 
   const roomTypes = ["Standard", "Deluxe", "Suite", "Ocean View", "Garden View", "Beach Front"];
-  const commonAmenities = ["Air Conditioning", "Mini Bar", "Balcony", "Ocean View", "TV", "WiFi", "Safe", "Bath Tub"];
 
   return (
     <div className="flex flex-col gap-4">

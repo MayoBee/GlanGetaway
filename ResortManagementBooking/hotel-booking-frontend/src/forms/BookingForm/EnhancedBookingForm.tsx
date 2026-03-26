@@ -57,6 +57,8 @@ const EnhancedBookingForm = ({
   currentUser, 
   paymentIntent, 
   calculatedTotal,
+  downPaymentAmount,
+  remainingAmount,
   selectedRooms,
   selectedCottages,
   selectedAmenities,
@@ -64,10 +66,10 @@ const EnhancedBookingForm = ({
 }: Props) => {
   console.log("EnhancedBookingForm received:", {
     calculatedTotal,
-    selectedRooms,
-    selectedCottages,
-    selectedAmenities,
-    paymentIntentTotal: paymentIntent.totalCost
+    downPaymentAmount,
+    remainingAmount,
+    hotel,
+    hotelGcashNumber: hotel?.gcashNumber
   });
   const stripe = useStripe();
   const elements = useElements();
@@ -240,8 +242,8 @@ MM/YY: 12/35 CVC: 123`;
   };
 
   const finalPricing = getFinalPricing();
-  const finalDownPayment = Math.round(finalPricing.discountedTotal * 0.5);
-  const finalRemaining = finalPricing.discountedTotal - finalDownPayment;
+  const finalDownPayment = downPaymentAmount;
+  const finalRemaining = remainingAmount;
 
   const handleDiscountChange = useCallback((result: DiscountCalculationResult) => {
     console.log("[DEBUG] handleDiscountChange called with result:", result);
@@ -263,23 +265,13 @@ MM/YY: 12/35 CVC: 123`;
       return;
     }
 
-    // Check if discount requires verification
-    if (finalPricing.hasDiscount && !discountVerified) {
-      showToast({
-        title: "Discount Verification Required",
-        description: "Please verify your discount documents before proceeding with payment.",
-        type: "ERROR",
-      });
-      return;
-    }
-
     const completeFormData = {
       ...formData,
       phone,
       specialRequests,
       paymentMethod: "card",
       totalCost: finalDownPayment, // Use final down payment amount
-      basePrice: finalPricing.discountedTotal, // Keep discounted total as base
+      basePrice: calculatedTotal, // Use calculated total as base
       checkInTime: "12:00 PM",
       checkOutTime: "11:00 AM",
       selectedRooms,
@@ -306,16 +298,6 @@ MM/YY: 12/35 CVC: 123`;
   };
 
   const onGCashSubmit = (paymentData: GCashPaymentData) => {
-    // Check if discount requires verification
-    if (finalPricing.hasDiscount && !discountVerified) {
-      showToast({
-        title: "Discount Verification Required",
-        description: "Please verify your discount documents before proceeding with payment.",
-        type: "ERROR",
-      });
-      return;
-    }
-
     const formData = {
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
@@ -329,7 +311,7 @@ MM/YY: 12/35 CVC: 123`;
       checkOutTime: "11:00 AM",
       hotelId: hotelId || "",
       totalCost: finalDownPayment, // Use final down payment amount
-      basePrice: finalPricing.discountedTotal, // Keep discounted total as base
+      basePrice: calculatedTotal, // Use calculated total as base
       paymentIntentId: paymentIntent.paymentIntentId,
       specialRequests,
       paymentMethod: "gcash" as const,
@@ -496,10 +478,10 @@ MM/YY: 12/35 CVC: 123`;
               
               <div className="flex justify-between items-center mb-3">
                 <span className="text-gray-700 font-medium">
-                  {finalPricing.hasDiscount ? "Discounted Total" : "Total Estimated Cost"}
+                  Total Estimated Cost
                 </span>
                 <span className="text-2xl font-bold text-blue-600">
-                  ₱{finalPricing.discountedTotal.toFixed(2)}
+                  ₱{calculatedTotal.toFixed(2)}
                 </span>
               </div>
               
@@ -640,7 +622,7 @@ MM/YY: 12/35 CVC: 123`;
                   style={{ isolation: 'isolate' }}
                 >
                   <GCashPaymentForm
-                    totalCost={finalPricing.discountedTotal}
+                    totalCost={calculatedTotal}
                     downPaymentAmount={finalDownPayment}
                     remainingAmount={finalRemaining}
                     onPaymentSubmit={debugGCashSubmit}

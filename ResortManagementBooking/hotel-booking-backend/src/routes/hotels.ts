@@ -1,5 +1,7 @@
 import express, { Request, Response } from "express";
 import mongoose from "mongoose";
+import multer from "multer";
+import path from "path";
 import Hotel from "../models/hotel";
 import Booking from "../models/booking";
 import User from "../models/user";
@@ -9,6 +11,30 @@ import Stripe from "stripe";
 import verifyToken from "../middleware/auth";
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'gcash-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    // Accept only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
 
 const router = express.Router();
 
@@ -105,9 +131,16 @@ router.get(
       console.log("=== FETCH HOTEL BY ID DEBUG ===");
       console.log("Hotel ID requested:", id);
       
-      const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities');
+      // First, fetch without field selection to see all available fields
+      const fullHotel = await Hotel.findById(id);
+      console.log("Full hotel data (all fields):", fullHotel);
+      console.log("Full hotel gcashNumber:", fullHotel?.gcashNumber);
       
-      console.log("Hotel data found:", hotel);
+      const hotel = await Hotel.findById(id).select('nightRate dayRate hasNightRate hasDayRate name rooms cottages packages adultEntranceFee childEntranceFee starRating adultCount childCount facilities contact policies imageUrls type city country description amenities gcashNumber downPaymentPercentage');
+      
+      console.log("Hotel data found (with selection):", hotel);
+      console.log("Hotel gcashNumber specifically:", hotel?.gcashNumber);
+      console.log("Hotel has gcashNumber field:", 'gcashNumber' in hotel);
       console.log("Cottages data:", hotel?.cottages);
       
       if (hotel?.cottages) {
@@ -295,6 +328,7 @@ router.post(
 router.post(
   "/:hotelId/bookings/gcash",
   verifyToken,
+  upload.single('gcashPayment.screenshotFile'),
   async (req: Request, res: Response) => {
     try {
       const { hotelId } = req.params;
@@ -303,6 +337,7 @@ router.post(
       console.log("GCash Booking request received:", req.body);
       console.log("User ID:", userId);
       console.log("Hotel ID:", hotelId);
+      console.log("File uploaded:", req.file ? req.file.filename : "No file");
       
       // Validate required fields
       const { 
@@ -321,15 +356,31 @@ router.post(
         selectedRooms,
         selectedCottages,
         selectedAmenities,
-        specialRequests,
-        gcashPayment
+        specialRequests
       } = req.body;
+      
+      // Get GCash payment fields (multer flattens nested form data)
+      const gcashNumber = req.body['gcashPayment.gcashNumber'];
+      const referenceNumber = req.body['gcashPayment.referenceNumber'];
+      const amountPaid = req.body['gcashPayment.amountPaid'];
+      const gcashStatus = req.body['gcashPayment.status'];
+      const paymentTime = req.body['gcashPayment.paymentTime'];
       
       // Verify hotel exists
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
         return res.status(404).json({ message: "Hotel not found" });
       }
+      
+      // Create GCash payment details
+      const gcashPaymentDetails = {
+        gcashNumber: gcashNumber || '',
+        referenceNumber: referenceNumber || '',
+        amountPaid: parseFloat(amountPaid) || 0,
+        paymentTime: new Date(),
+        status: gcashStatus || 'pending',
+        screenshotFile: req.file ? `/uploads/${req.file.filename}` : undefined
+      };
       
       // Create the booking with GCash payment
       const booking = new Booking({
@@ -339,17 +390,17 @@ router.post(
         lastName,
         email,
         phone: phone || "",
-        adultCount: adultCount || 1,
-        childCount: childCount || 0,
+        adultCount: parseInt(adultCount) || 1,
+        childCount: parseInt(childCount) || 0,
         checkIn: new Date(checkIn),
         checkOut: new Date(checkOut),
         checkInTime: checkInTime || "12:00",
         checkOutTime: checkOutTime || "11:00",
-        totalCost: totalCost || basePrice || 0,
-        basePrice: basePrice || totalCost || 0,
-        selectedRooms: selectedRooms || [],
-        selectedCottages: selectedCottages || [],
-        selectedAmenities: selectedAmenities || [],
+        totalCost: parseFloat(totalCost) || parseFloat(basePrice) || 0,
+        basePrice: parseFloat(basePrice) || parseFloat(totalCost) || 0,
+        selectedRooms: selectedRooms ? JSON.parse(selectedRooms) : [],
+        selectedCottages: selectedCottages ? JSON.parse(selectedCottages) : [],
+        selectedAmenities: selectedAmenities ? JSON.parse(selectedAmenities) : [],
         paymentMethod: "gcash",
         specialRequests: specialRequests || "",
         status: "pending",
@@ -361,7 +412,9 @@ router.post(
         paymentStatus: "pending",
         // Set 8-hour change window
         changeWindowDeadline: new Date(Date.now() + 8 * 60 * 60 * 1000), // 8 hours from now
-        canModify: true
+        canModify: true,
+        // Store GCash payment details
+        gcashPayment: gcashPaymentDetails
       });
       
       await booking.save();

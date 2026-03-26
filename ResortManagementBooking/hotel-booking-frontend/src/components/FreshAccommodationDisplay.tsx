@@ -1,6 +1,5 @@
 import { HotelType } from "../../../shared/types";
-import { useState, useEffect } from "react";
-import { Bed, Home, Users, DollarSign, Plus, Minus, Package, Check } from "lucide-react";
+import { Bed, Home, Users, Plus, Minus, Package, Check } from "lucide-react";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
 import { mergeUnitsWithBackendData } from "../utils/unitsStorage";
 
@@ -9,7 +8,7 @@ type Props = {
   selectedRateType?: 'day' | 'night';
 };
 
-const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) => {
+const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
   const { 
     addRoom, 
     removeRoom, 
@@ -121,7 +120,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {packages.map((pkg) => {
+            {packages.map((pkg: any) => {
               const isSelected = isPackageSelected(pkg.id);
               const totalPrice = pkg.price * numberOfNights;
               
@@ -164,8 +163,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                         <div className="text-sm">
                           <span className="font-medium text-gray-700">Rooms:</span>
                           <div className="ml-2">
-                            {pkg.includedRooms.map(roomId => {
-                              const room = rooms.find(r => r.id === roomId);
+                            {pkg.includedRooms.map((roomId: string) => {
+                              const room = rooms.find((r: any) => r.id === roomId);
                               return room ? (
                                 <div key={roomId} className="flex items-center text-gray-600">
                                   <Check className="w-3 h-3 mr-1 text-green-500" />
@@ -181,8 +180,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                         <div className="text-sm">
                           <span className="font-medium text-gray-700">Cottages:</span>
                           <div className="ml-2">
-                            {pkg.includedCottages.map(cottageId => {
-                              const cottage = cottages.find(c => c.id === cottageId);
+                            {pkg.includedCottages.map((cottageId: string) => {
+                              const cottage = cottages.find((c: any) => c.id === cottageId);
                               return cottage ? (
                                 <div key={cottageId} className="flex items-center text-gray-600">
                                   <Check className="w-3 h-3 mr-1 text-green-500" />
@@ -198,8 +197,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                         <div className="text-sm">
                           <span className="font-medium text-gray-700">Amenities:</span>
                           <div className="ml-2">
-                            {pkg.includedAmenities.map(amenityId => {
-                              const amenity = hotel.amenities?.find(a => a.id === amenityId);
+                            {pkg.includedAmenities.map((amenityId: string) => {
+                              const amenity = hotel.amenities?.find((a: any) => a.id === amenityId);
                               return amenity ? (
                                 <div key={amenityId} className="flex items-center text-gray-600">
                                   <Check className="w-3 h-3 mr-1 text-green-500" />
@@ -258,8 +257,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                             name: pkg.name,
                             description: pkg.description,
                             price: pkg.price,
-                            includedCottages: pkg.includedCottages.map(cottageId => {
-                              const cottage = cottages.find(c => c.id === cottageId);
+                            includedCottages: pkg.includedCottages.map((cottageId: string) => {
+                              const cottage = cottages.find((c: any) => c.id === cottageId);
                               return cottage || {
                                 id: cottageId,
                                 name: cottageId,
@@ -272,8 +271,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                                 maxOccupancy: 1
                               };
                             }),
-                            includedRooms: pkg.includedRooms.map(roomId => {
-                              const room = rooms.find(r => r.id === roomId);
+                            includedRooms: pkg.includedRooms.map((roomId: string) => {
+                              const room = rooms.find((r: any) => r.id === roomId);
                               return room || {
                                 id: roomId,
                                 name: roomId,
@@ -282,8 +281,8 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                                 maxOccupancy: 1
                               };
                             }),
-                            includedAmenities: pkg.includedAmenities.map(amenityId => {
-                              const amenity = hotel.amenities?.find(a => a.id === amenityId);
+                            includedAmenities: pkg.includedAmenities.map((amenityId: string) => {
+                              const amenity = hotel.amenities?.find((a: any) => a.id === amenityId);
                               return amenity || {
                                 id: amenityId,
                                 name: amenityId,
@@ -317,7 +316,7 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {rooms.map((room) => {
+            {rooms.map((room: any) => {
               const isSelected = isRoomSelected(room.id);
               const selectedRoom = selectedRooms.find(r => r.id === room.id);
               const currentUnits = selectedRoom?.units || 1;
@@ -523,8 +522,6 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: any) =
                   )}
                 </div>
               );
-
-              const totalPrice = cottagePrice * currentUnits * numberOfNights;
               
               return (
                 <div 

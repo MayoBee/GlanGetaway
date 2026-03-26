@@ -10,9 +10,9 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";
 import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { useMutation } from "react-query";
+import { useMutation, useQuery } from "react-query";
 import * as apiClient from "../../api-client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   User,
   Phone,
@@ -121,10 +121,28 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
     selectedAmenities,
     selectedPackages,
     basePrice, 
-    totalCost 
+    totalCost,
+    discountInfo,
+    hotelDiscounts,
+    setDiscountInfo,
+    setHotelDiscounts
   } = useBookingSelection();
 
   const { showToast } = useAppContext();
+
+  // Load hotel data to get discount settings
+  const { data: hotel } = useQuery(
+    "fetchHotelByID",
+    () => apiClient.fetchHotelById(hotelId || ""),
+    {
+      enabled: !!hotelId,
+      onSuccess: (data) => {
+        if (data.discounts) {
+          setHotelDiscounts(data.discounts);
+        }
+      }
+    }
+  );
 
   // Use local state for form fields to prevent losing data
   const [phone, setPhone] = useState<string>("");
@@ -132,6 +150,35 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isPwdBooking, setIsPwdBooking] = useState<boolean>(false);
   const [isSeniorCitizenBooking, setIsSeniorCitizenBooking] = useState<boolean>(false);
+
+  // Update discount info when checkboxes change
+  const handlePwdChange = (checked: boolean) => {
+    setIsPwdBooking(checked);
+    if (checked) {
+      setIsSeniorCitizenBooking(false);
+      setDiscountInfo({
+        type: "pwd",
+        percentage: hotelDiscounts?.pwdPercentage || 20,
+        amount: 0
+      });
+    } else {
+      setDiscountInfo(null);
+    }
+  };
+
+  const handleSeniorCitizenChange = (checked: boolean) => {
+    setIsSeniorCitizenBooking(checked);
+    if (checked) {
+      setIsPwdBooking(false);
+      setDiscountInfo({
+        type: "senior_citizen",
+        percentage: hotelDiscounts?.seniorCitizenPercentage || 20,
+        amount: 0
+      });
+    } else {
+      setDiscountInfo(null);
+    }
+  };
 
   const { mutate: bookRoom, isLoading } = useMutation(
     apiClient.createRoomBooking,
@@ -213,9 +260,8 @@ MM/YY: 12/35 CVC: 123`;
       specialRequests,
       isPwdBooking,
       isSeniorCitizenBooking,
-      discountInfo: isPwdBooking ? { type: "pwd" as const, percentage: 20, amount: 0 } : 
-                 isSeniorCitizenBooking ? { type: "senior_citizen" as const, percentage: 20, amount: 0 } : 
-                 undefined
+      discountInfo,
+      totalCost: totalCost, // Use the calculated total cost with discounts
     };
 
     const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
@@ -346,14 +392,15 @@ MM/YY: 12/35 CVC: 123`;
                   <input
                     type="checkbox"
                     checked={isPwdBooking}
-                    onChange={(e) => {
-                      setIsPwdBooking(e.target.checked);
-                      if (e.target.checked) setIsSeniorCitizenBooking(false);
-                    }}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    onChange={(e) => handlePwdChange(e.target.checked)}
+                    disabled={!hotelDiscounts?.pwdEnabled}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
                   />
                   <span className="text-sm font-medium text-gray-700">
                     PWD (Person with Disability) Discount
+                    {hotelDiscounts?.pwdEnabled && (
+                      <span className="text-blue-600 ml-2">({hotelDiscounts.pwdPercentage}% off)</span>
+                    )}
                   </span>
                 </label>
 
@@ -361,14 +408,15 @@ MM/YY: 12/35 CVC: 123`;
                   <input
                     type="checkbox"
                     checked={isSeniorCitizenBooking}
-                    onChange={(e) => {
-                      setIsSeniorCitizenBooking(e.target.checked);
-                      if (e.target.checked) setIsPwdBooking(false);
-                    }}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    onChange={(e) => handleSeniorCitizenChange(e.target.checked)}
+                    disabled={!hotelDiscounts?.seniorCitizenEnabled}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
                   />
                   <span className="text-sm font-medium text-gray-700">
                     Senior Citizen Discount
+                    {hotelDiscounts?.seniorCitizenEnabled && (
+                      <span className="text-blue-600 ml-2">({hotelDiscounts.seniorCitizenPercentage}% off)</span>
+                    )}
                   </span>
                 </label>
               </div>
@@ -414,15 +462,26 @@ MM/YY: 12/35 CVC: 123`;
             </h3>
 
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-100">
+              {discountInfo && (
+                <div className="mb-3 p-2 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex justify-between items-center">
+                    <span className="text-green-700 font-medium">Discount Applied</span>
+                    <span className="text-green-600 font-semibold">
+                      -{discountInfo.percentage}% ({discountInfo.type === 'pwd' ? 'PWD' : 'Senior Citizen'})
+                    </span>
+                  </div>
+                </div>
+              )}
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-700 font-medium">Total Cost</span>
                 <span className="text-2xl font-bold text-blue-600">
-                  ₱{paymentIntent.totalCost.toFixed(2)}
+                  ₱{totalCost.toFixed(2)}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-gray-500">
                 <CheckCircle className="h-3 w-3 text-green-500" />
                 Includes taxes and charges
+                {discountInfo && <span className="text-green-600">• Discount applied</span>}
               </div>
             </div>
           </div>

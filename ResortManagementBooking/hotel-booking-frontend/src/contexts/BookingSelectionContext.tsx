@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
 import { HotelType } from "../../../shared/types";
 
 export interface SelectedRoom {
@@ -68,6 +68,12 @@ export interface SelectedPackage {
   includedChildEntranceFee: boolean;
 }
 
+export interface DiscountInfo {
+  type: "pwd" | "senior_citizen" | null;
+  percentage: number;
+  amount: number;
+}
+
 interface BookingSelectionContextType {
   selectedRooms: SelectedRoom[];
   selectedCottages: SelectedCottage[];
@@ -83,6 +89,13 @@ interface BookingSelectionContextType {
   numberOfNights: number;
   depositPercentage: number;
   selectedRateType: 'day' | 'night';
+  discountInfo: DiscountInfo | null;
+  hotelDiscounts: {
+    seniorCitizenEnabled: boolean;
+    seniorCitizenPercentage: number;
+    pwdEnabled: boolean;
+    pwdPercentage: number;
+  } | null;
   addRoom: (room: SelectedRoom) => void;
   removeRoom: (roomId: string) => void;
   addCottage: (cottage: SelectedCottage) => void;
@@ -105,6 +118,13 @@ interface BookingSelectionContextType {
   isAmenitySelected: (amenityId: string) => boolean;
   isPackageSelected: (packageId: string) => boolean;
   updateDepositPercentageFromHotel: (hotel: HotelType) => void;
+  setDiscountInfo: (discountInfo: DiscountInfo | null) => void;
+  setHotelDiscounts: (discounts: {
+    seniorCitizenEnabled: boolean;
+    seniorCitizenPercentage: number;
+    pwdEnabled: boolean;
+    pwdPercentage: number;
+  } | null) => void;
 }
 
 const BookingSelectionContext = createContext<BookingSelectionContextType | undefined>(undefined);
@@ -130,8 +150,27 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   const [numberOfNights, setNumberOfNights] = useState<number>(1);
   const [depositPercentage, setDepositPercentage] = useState<number>(50); // Default 50% down payment
   const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
+  const [discountInfo, setDiscountInfo] = useState<DiscountInfo | null>(null);
+  const [hotelDiscounts, setHotelDiscounts] = useState<{
+    seniorCitizenEnabled: boolean;
+    seniorCitizenPercentage: number;
+    pwdEnabled: boolean;
+    pwdPercentage: number;
+  } | null>(null);
+  const [calculatedTotals, setCalculatedTotals] = useState<{
+    total: number;
+    downPayment: number;
+    remaining: number;
+    discountAmount: number;
+  }>({
+    total: 0,
+    downPayment: 0,
+    remaining: 0,
+    discountAmount: 0
+  });
 
-  const calculateTotal = () => {
+  // Trigger recalculation when dependencies change
+  const calculateTotal = useCallback(() => {
     const accommodationTotal = 
       selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * (room.units ?? 1) * numberOfNights), 0) +
       selectedCottages.reduce((sum, cottage) => {
@@ -142,16 +181,37 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * (amenity.units ?? 1)), 0);
     const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
     
-    const total = basePrice + accommodationTotal + amenitiesTotal + packagesTotal;
+    let total = basePrice + accommodationTotal + amenitiesTotal + packagesTotal;
+    let discountAmount = 0;
+    
+    // Apply discount if applicable
+    if (discountInfo && hotelDiscounts) {
+      const { type } = discountInfo;
+      
+      if (type === "pwd" && hotelDiscounts.pwdEnabled) {
+        discountAmount = Math.round(total * (hotelDiscounts.pwdPercentage / 100));
+      } else if (type === "senior_citizen" && hotelDiscounts.seniorCitizenEnabled) {
+        discountAmount = Math.round(total * (hotelDiscounts.seniorCitizenPercentage / 100));
+      }
+      
+      total = total - discountAmount;
+    }
+    
     const downPayment = Math.round(total * (depositPercentage / 100));
     const remaining = total - downPayment;
     
     return {
       total,
       downPayment,
-      remaining
+      remaining,
+      discountAmount
     };
-  };
+  }, [selectedRooms, selectedCottages, selectedAmenities, selectedPackages, basePrice, numberOfNights, depositPercentage, selectedRateType, discountInfo, hotelDiscounts]);
+
+  useEffect(() => {
+    const result = calculateTotal();
+    setCalculatedTotals(result);
+  }, [calculateTotal]);
 
   const accommodationTotal = 
     selectedRooms.reduce((sum, room) => sum + (room.pricePerNight * (room.units ?? 1) * numberOfNights), 0) +
@@ -163,10 +223,9 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
   const amenitiesTotal = selectedAmenities.reduce((sum, amenity) => sum + (amenity.price * (amenity.units ?? 1)), 0);
   const packagesTotal = selectedPackages.reduce((sum, pkg) => sum + pkg.price, 0);
 
-  const totalCalculation = calculateTotal();
-  const totalCost = totalCalculation.total;
-  const downPaymentAmount = totalCalculation.downPayment;
-  const remainingAmount = totalCalculation.remaining;
+  const totalCost = calculatedTotals.total;
+  const downPaymentAmount = calculatedTotals.downPayment;
+  const remainingAmount = calculatedTotals.remaining;
 
   const addRoom = (room: SelectedRoom) => {
     setSelectedRooms(prev => {
@@ -288,6 +347,8 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     numberOfNights,
     depositPercentage,
     selectedRateType,
+    discountInfo,
+    hotelDiscounts,
     addRoom,
     removeRoom,
     addCottage,
@@ -310,6 +371,8 @@ export const BookingSelectionProvider: React.FC<BookingSelectionProviderProps> =
     isAmenitySelected,
     isPackageSelected,
     updateDepositPercentageFromHotel,
+    setDiscountInfo,
+    setHotelDiscounts,
   };
 
   return (

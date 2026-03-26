@@ -94,12 +94,22 @@ router.post(
       .notEmpty()
       .isArray()
       .withMessage("Facilities are required"),
+    body("gcashNumber")
+      .optional()
+      .matches(/^09\d{9}$/)
+      .withMessage("GCash number must be 11 digits starting with 09 (e.g., 09XXXXXXXXX)"),
+    body("downPaymentPercentage")
+      .optional()
+      .isInt({ min: 10, max: 100 })
+      .withMessage("Down payment percentage must be between 10 and 100"),
   ],
   upload.array("imageFiles", 6),
   async (req: Request, res: Response) => {
     console.log("=== POST /api/my-hotels called ===");
     console.log("Request body:", req.body);
     console.log("Files:", req.files);
+    console.log("gcashNumber received:", req.body.gcashNumber);
+    console.log("downPaymentPercentage received:", req.body.downPaymentPercentage);
     
     try {
       const imageFiles = (req as any).files as any[];
@@ -477,8 +487,18 @@ router.post(
       // Set approval status - resorts need admin approval
       newHotel.isApproved = false;
 
+      // Handle payment fields
+      newHotel.gcashNumber = req.body.gcashNumber || "";
+      newHotel.downPaymentPercentage = Number(req.body.downPaymentPercentage) || 50;
+      
+      console.log("gcashNumber set to:", newHotel.gcashNumber);
+      console.log("downPaymentPercentage set to:", newHotel.downPaymentPercentage);
+
       const hotel = new Hotel(newHotel as HotelType);
       await hotel.save();
+      
+      console.log("Saved hotel gcashNumber:", hotel.gcashNumber);
+      console.log("Saved hotel downPaymentPercentage:", hotel.downPaymentPercentage);
 
       res.status(201).json({
         ...hotel.toObject(),
@@ -789,7 +809,10 @@ router.put(
           resortPolicies: Array.isArray(sanitizedData.policies?.resortPolicies) 
             ? [...sanitizedData.policies.resortPolicies] 
             : []
-        }
+        },
+        // Explicitly include gcashNumber and downPaymentPercentage
+        gcashNumber: sanitizedData.gcashNumber,
+        downPaymentPercentage: sanitizedData.downPaymentPercentage
       });
       
       const updatedHotel = await hotel.save();
@@ -799,6 +822,8 @@ router.put(
       console.log("Hotel updated successfully with rooms:", updatedHotel.rooms?.length || 0);
       console.log("Hotel updated successfully with cottages:", updatedHotel.cottages?.length || 0);
       console.log("Hotel updated successfully with packages:", updatedHotel.packages?.length || 0);
+      console.log("Saved gcashNumber:", updatedHotel.gcashNumber);
+      console.log("Saved downPaymentPercentage:", updatedHotel.downPaymentPercentage);
 
       res.status(200).json(updatedHotel);
     } catch (error: any) {
@@ -837,6 +862,8 @@ router.put(
       console.log("User ID:", req.userId);
       console.log("Files:", (req as any).files);
       console.log("Files length:", (req as any).files?.length);
+      console.log("gcashNumber received in FormData PUT:", req.body.gcashNumber);
+      console.log("downPaymentPercentage received in FormData PUT:", req.body.downPaymentPercentage);
       
       // Debug rooms data
       console.log("=== ROOMS DEBUG ===");
@@ -1240,6 +1267,13 @@ router.put(
       // Debug: Log the full updateData before updating
       console.log("=== FINAL UPDATE DATA ===");
       console.log("updateData.policies:", JSON.stringify(updateData.policies, null, 2));
+      
+      // Add payment fields to updateData
+      updateData.gcashNumber = req.body.gcashNumber || "";
+      updateData.downPaymentPercentage = Number(req.body.downPaymentPercentage) || 50;
+      
+      console.log("gcashNumber in FormData PUT:", updateData.gcashNumber);
+      console.log("downPaymentPercentage in FormData PUT:", updateData.downPaymentPercentage);
       
       const updatedHotel = await Hotel.findByIdAndUpdate(
         req.params.hotelId,

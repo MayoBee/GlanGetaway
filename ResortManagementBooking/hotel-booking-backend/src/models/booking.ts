@@ -81,6 +81,16 @@ export interface IBooking extends Document {
     refundAmount?: number;
     modifiedAt: Date;
   }>;
+  // GCash payment details
+  gcashPayment?: {
+    gcashNumber?: string;
+    referenceNumber?: string;
+    amountPaid?: number;
+    paymentTime?: Date;
+    status?: string;
+    screenshotFile?: string;
+    rejectionReason?: string;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -178,6 +188,16 @@ const bookingSchema = new mongoose.Schema(
       refundAmount: { type: Number, default: 0 },
       modifiedAt: { type: Date }
     }],
+    // GCash payment details
+    gcashPayment: {
+      gcashNumber: { type: String },
+      referenceNumber: { type: String },
+      amountPaid: { type: Number, default: 0 },
+      paymentTime: { type: Date },
+      status: { type: String, default: 'pending' },
+      screenshotFile: { type: String },
+      rejectionReason: { type: String }
+    },
     // Audit fields
     // createdAt and updatedAt are automatically handled by timestamps: true
   },

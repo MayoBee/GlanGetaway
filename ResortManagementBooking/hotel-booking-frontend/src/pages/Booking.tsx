@@ -117,6 +117,8 @@ const Booking = () => {
     }
   );
 
+  console.log("Hotel data fetched:", hotel);
+
   const { data: currentUser, isLoading: isLoadingUser } = useQuery(
     "fetchCurrentUser",
     apiClient.fetchCurrentUser
@@ -465,7 +467,6 @@ const Booking = () => {
                     options={{
                       clientSecret: paymentIntentData.clientSecret,
                     }}
-                    key={paymentIntentData.clientSecret}
                   >
                     <EnhancedBookingForm
                       currentUser={currentUser}

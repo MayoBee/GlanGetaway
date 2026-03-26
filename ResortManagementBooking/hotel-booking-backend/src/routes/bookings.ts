@@ -511,4 +511,60 @@ router.patch(
   }
 );
 
+// Verify GCash payment endpoint
+router.patch(
+  "/:id/gcash/verify",
+  verifyToken,
+  async (req: Request, res: Response) => {
+    try {
+      const bookingId = req.params.id;
+      const { status, rejectionReason } = req.body;
+
+      if (!["verified", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const booking = await Booking.findById(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      if (booking.paymentMethod !== "gcash") {
+        return res.status(400).json({ message: "This is not a GCash booking" });
+      }
+
+      // Update GCash payment status
+      if (booking.gcashPayment) {
+        booking.gcashPayment.status = status === "verified" ? "verified" : "rejected";
+        if (rejectionReason) {
+          booking.gcashPayment.rejectionReason = rejectionReason;
+        }
+      }
+
+      // Update booking and payment status
+      if (status === "verified") {
+        booking.paymentStatus = "paid";
+        booking.status = "confirmed";
+        booking.verifiedByOwner = true;
+        booking.ownerVerificationNote = "GCash payment verified";
+        booking.ownerVerifiedAt = new Date();
+      } else {
+        booking.paymentStatus = "failed";
+        booking.status = "cancelled";
+        booking.cancellationReason = rejectionReason || "GCash payment rejected";
+      }
+
+      await booking.save();
+
+      res.status(200).json({
+        message: `GCash payment ${status} successfully`,
+        booking
+      });
+    } catch (error) {
+      console.error("Error verifying GCash payment:", error);
+      res.status(500).json({ message: "Unable to verify GCash payment" });
+    }
+  }
+);
+
 export default router;

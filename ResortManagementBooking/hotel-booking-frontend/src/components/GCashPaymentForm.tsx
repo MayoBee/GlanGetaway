@@ -20,6 +20,44 @@ export type GCashPaymentData = {
 };
 
 const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPaymentSubmit, isLoading, hotel }: Props) => {
+  // State for resort GCash number
+  const [resortGcashNumber, setResortGcashNumber] = useState<string>("09XXXXXXXXX");
+  const [isLoadingGcash, setIsLoadingGcash] = useState<boolean>(false);
+  
+  // Fetch resort GCash number directly
+  useEffect(() => {
+    const fetchResortGcash = async () => {
+      if (!hotel._id) return;
+      
+      setIsLoadingGcash(true);
+      try {
+        console.log("Fetching resort GCash for hotel ID:", hotel._id);
+        
+        // Direct API call to get hotel data with all fields
+        const response = await fetch(`http://localhost:7002/api/hotels/${hotel._id}`);
+        const hotelData = await response.json();
+        
+        console.log("Full hotel data received:", hotelData);
+        console.log("GCash number from API:", hotelData.gcashNumber);
+        
+        if (hotelData.gcashNumber && hotelData.gcashNumber.trim() !== "") {
+          setResortGcashNumber(hotelData.gcashNumber);
+          console.log("Set resort GCash number to:", hotelData.gcashNumber);
+        } else {
+          console.log("No GCash number found, using fallback");
+        }
+      } catch (error) {
+        console.error("Error fetching resort GCash:", error);
+      } finally {
+        setIsLoadingGcash(false);
+      }
+    };
+    
+    fetchResortGcash();
+  }, [hotel._id]);
+  
+  console.log("Current resort GCash number:", resortGcashNumber);
+  
   const [gcashNumber, setGcashNumber] = useState("");
   const [referenceNumber, setReferenceNumber] = useState("");
   const [amountPaid, setAmountPaid] = useState(downPaymentAmount);
@@ -83,6 +121,16 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
     console.log("[DEBUG] screenshotFile:", screenshotFile);
     console.log("[DEBUG] amountPaid:", amountPaid, "downPaymentAmount:", downPaymentAmount);
     
+    if (!gcashNumber || gcashNumber.trim() === '') {
+      alert("Please enter your GCash number");
+      return;
+    }
+
+    if (!referenceNumber || referenceNumber.trim() === '') {
+      alert("Please enter your GCash reference number");
+      return;
+    }
+
     if (!screenshotFile) {
       alert("Please upload a payment screenshot");
       return;
@@ -259,7 +307,7 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
               <div className="text-xs text-gray-500">This is 50% down payment of total cost (₱{totalCost.toFixed(2)})</div>
             </div>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Send <strong>₱{downPaymentAmount.toFixed(2)}</strong> to the resort's GCash number <strong>{hotel.gcashNumber || "09XXXXXXXXX"}</strong></li>
+              <li>Send <strong>₱{downPaymentAmount.toFixed(2)}</strong> to the resort's GCash number <strong>{resortGcashNumber}</strong></li>
               <li>Take a screenshot of the successful transaction</li>
               <li>Upload the screenshot with your GCash details above</li>
               <li>Wait for the resort owner to verify your payment</li>

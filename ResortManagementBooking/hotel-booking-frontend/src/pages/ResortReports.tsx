@@ -55,6 +55,12 @@ const confirmBooking = (params: { bookingId: string; notes?: string }) =>
 const cancelBooking = (params: { bookingId: string; reason: string; refundAmount?: number }) =>
   axiosInstance.patch(`/api/resort-reports/cancel-booking/${params.bookingId}`, { reason: params.reason, refundAmount: params.refundAmount }).then(r => r.data);
 
+const verifyGCashPayment = (params: { bookingId: string; status: "verified" | "rejected"; rejectionReason?: string }) =>
+  axiosInstance.patch(`/api/bookings/${params.bookingId}/gcash/verify`, { 
+    status: params.status,
+    rejectionReason: params.rejectionReason
+  }).then(r => r.data);
+
 const verifyDocument = (params: { documentId: string; status: "approved" | "rejected"; rejectionReason?: string; notes?: string }) =>
   axiosInstance.patch(`/api/resort-reports/verify-document/${params.documentId}`, { status: params.status, rejectionReason: params.rejectionReason, notes: params.notes }).then(r => r.data);
 
@@ -542,19 +548,28 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ bookingId, isOp
                   <p><strong>Payment Method:</strong> {data.data.payment.paymentMethod}</p>
                   <p><strong>Amount:</strong> {fmt(data.data.payment.amount)}</p>
                   <p><strong>Status:</strong> <span className={`px-2 py-1 rounded-full text-sm ${
-                    data.data.payment.status === "succeeded" ? "bg-green-100 text-green-800" :
+                    data.data.payment.status === "succeeded" || data.data.payment.status === "verified" ? "bg-green-100 text-green-800" :
                     data.data.payment.status === "pending" ? "bg-yellow-100 text-yellow-800" :
                     "bg-red-100 text-red-800"
                   }`}>{data.data.payment.status}</span></p>
                   {data.data.payment.referenceNumber && (
                     <p><strong>Reference Number:</strong> {data.data.payment.referenceNumber}</p>
                   )}
+                  {data.data.payment.gcashNumber && (
+                    <p><strong>GCash Number:</strong> {data.data.payment.gcashNumber}</p>
+                  )}
                   {data.data.payment.screenshotUrl && (
                     <div className="mt-2">
                       <strong>Payment Screenshot:</strong>
-                      <a href={data.data.payment.screenshotUrl} target="_blank" rel="noopener noreferrer" className="ml-2 text-blue-600 hover:underline">
-                        <Eye className="w-4 h-4 inline" /> View Screenshot
-                      </a>
+                      <div className="mt-2">
+                        <img 
+                          src={data.data.payment.screenshotUrl} 
+                          alt="GCash Payment Screenshot" 
+                          className="max-w-xs rounded-lg border border-gray-300"
+                          onClick={() => window.open(data.data.payment.screenshotUrl, '_blank')}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </div>
                     </div>
                   )}
                   {data.data.payment.stripePaymentIntentId && (
@@ -671,6 +686,21 @@ const PendingBookingsSection: React.FC = () => {
     }
   });
 
+  const gcashVerificationMutation = useMutation(verifyGCashPayment, {
+    onSuccess: () => {
+      // Invalidate all booking-related queries to update both resort owner and user views
+      queryClient.invalidateQueries("pending-bookings");
+      queryClient.invalidateQueries("booking-details");
+      queryClient.invalidateQueries(["booking-details", selectedBookingId]);
+      queryClient.invalidateQueries("report-booking-summary");
+      queryClient.invalidateQueries("report-occupancy");
+      alert("GCash payment verification updated successfully!");
+    },
+    onError: (error: any) => {
+      alert(`Failed to verify GCash payment: ${error.response?.data?.message || error.message}`);
+    }
+  });
+
   const handleConfirmBooking = (bookingId: string) => {
     if (confirm("Are you sure you want to confirm this booking?")) {
       confirmBookingMutation.mutate({ bookingId, notes: "Booking confirmed by resort owner" });
@@ -682,6 +712,23 @@ const PendingBookingsSection: React.FC = () => {
     if (reason) {
       cancelBookingMutation.mutate({ bookingId, reason, refundAmount: 0 });
     }
+  };
+
+  const handleVerifyGCashPayment = (bookingId: string, status: "verified" | "rejected") => {
+    if (status === "rejected") {
+      const reason = prompt("Please provide rejection reason:");
+      if (reason) {
+        gcashVerificationMutation.mutate({ bookingId, status, rejectionReason: reason });
+      }
+    } else {
+      if (confirm("Are you sure you want to verify this GCash payment?")) {
+        gcashVerificationMutation.mutate({ bookingId, status });
+      }
+    }
+  };
+
+  const handleRejectGCashPayment = (bookingId: string) => {
+    handleVerifyGCashPayment(bookingId, 'rejected');
   };
 
   const handleViewDetails = (bookingId: string) => {
@@ -696,7 +743,7 @@ const PendingBookingsSection: React.FC = () => {
     new Date(booking.checkOut).toLocaleDateString(),
     fmt(booking.totalCost),
     booking.payment?.status || "pending",
-    booking.documents?.length || 0,
+    booking.documentCount || 0,
   ]);
 
   return (
@@ -756,22 +803,45 @@ const PendingBookingsSection: React.FC = () => {
                           >
                             <Eye className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => handleConfirmBooking(booking._id)}
-                            className="text-green-600 hover:text-green-800"
-                            title="Confirm Booking"
-                            disabled={confirmBookingMutation.isLoading}
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleCancelBooking(booking._id)}
-                            className="text-red-600 hover:text-red-800"
-                            title="Cancel Booking"
-                            disabled={cancelBookingMutation.isLoading}
-                          >
-                            <XCircle className="w-4 h-4" />
-                          </button>
+                          {booking.paymentMethod === 'gcash' ? (
+                            <>
+                              <button
+                                onClick={() => handleVerifyGCashPayment(booking._id, 'verified')}
+                                className="text-green-600 hover:text-green-800"
+                                title="Verify GCash Payment"
+                                disabled={gcashVerificationMutation.isLoading}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleRejectGCashPayment(booking._id)}
+                                className="text-red-600 hover:text-red-800"
+                                title="Reject GCash Payment"
+                                disabled={gcashVerificationMutation.isLoading}
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleConfirmBooking(booking._id)}
+                                className="text-green-600 hover:text-green-800"
+                                title="Confirm Booking"
+                                disabled={confirmBookingMutation.isLoading}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleCancelBooking(booking._id)}
+                                className="text-red-600 hover:text-red-800"
+                                title="Cancel Booking"
+                                disabled={cancelBookingMutation.isLoading}
+                              >
+                                <XCircle className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </tr>

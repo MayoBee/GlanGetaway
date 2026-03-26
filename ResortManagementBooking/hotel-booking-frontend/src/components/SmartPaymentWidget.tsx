@@ -67,7 +67,7 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
       // Set default deposit settings if API fails
       setDepositSettings({
         defaultDepositPercentage: 50,
-        minimumDeposit: 1000,
+        minimumDeposit: 0, // No minimum - use calculated down payment
         allowFullPayment: true,
         allowInstallment: false,
         paymentMethods: ["gcash", "bank_transfer", "stripe"],

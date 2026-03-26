@@ -68,6 +68,15 @@ const TermsOfServiceModal: React.FC<TermsOfServiceModalProps> = ({
                     be presented with valid identification upon arrival.
                   </p>
                 </div>
+
+                <div>
+                  <h4 className="font-medium text-gray-800">2.4 Ecological Fee</h4>
+                  <p className="text-gray-700 leading-relaxed mt-1">
+                    An ecological fee is required for all bookings and must be paid directly at the resort front desk upon arrival. 
+                    Guests are required to present an Official Receipt (OR) for the ecological fee payment at check-in. This fee is 
+                    separate from the down payment and remaining balance and cannot be paid through our online platform.
+                  </p>
+                </div>
               </div>
             </section>
 

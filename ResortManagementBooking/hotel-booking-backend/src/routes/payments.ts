@@ -51,7 +51,7 @@ router.get("/hotel/:hotelId/deposit-settings", verifyToken, async (req: Request,
     // Return deposit settings (can be customized per resort)
     const depositSettings = {
       defaultDepositPercentage: 50, // Default 50%
-      minimumDeposit: 1000, // PHP 1000 minimum
+      minimumDeposit: 0, // No minimum - use calculated down payment
       allowFullPayment: true,
       allowInstallment: false,
       paymentMethods: ["gcash", "bank_transfer", "stripe"],

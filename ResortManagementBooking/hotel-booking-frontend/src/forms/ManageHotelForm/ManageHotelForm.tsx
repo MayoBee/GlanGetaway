@@ -12,6 +12,7 @@ import ContactSection from "./ContactSection";
 import PoliciesSection from "./PoliciesSection";
 import ImagesSection from "./ImagesSection";
 import PaymentModuleSection from "./PaymentModuleSection";
+import DiscountsSection from "./DiscountsSection";
 import { mergeUnitsWithBackendData, extractUnitsFromFormData } from "../../utils/unitsStorage";
 import { HotelType } from "../../../../shared/types";
 
@@ -413,6 +414,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         <ContactSection />
         <PoliciesSection />
         <PaymentModuleSection />
+        <DiscountsSection />
         <ImagesSection />
         <span className="flex justify-end">
           <button

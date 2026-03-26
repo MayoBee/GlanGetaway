@@ -92,7 +92,7 @@ const PaymentModuleSection = () => {
       <div className="space-y-3">
         <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
           <Smartphone className="w-4 h-4" />
-          GCash Number (Optional)
+          GCash Number
         </label>
         <input
           type="text"
@@ -112,7 +112,7 @@ const PaymentModuleSection = () => {
         )}
         <p className="text-xs text-gray-500">
           Enter your GCash number for guests to send payments to. 
-          Format: 09XXXXXXXXX (11 digits starting with 09). Optional field.
+          Format: 09XXXXXXXXX (11 digits starting with 09).
         </p>
       </div>
 

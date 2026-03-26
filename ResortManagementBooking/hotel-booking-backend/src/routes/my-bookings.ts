@@ -80,10 +80,10 @@ router.delete("/:bookingId", verifyToken, async (req: Request, res: Response) =>
       return res.status(403).json({ message: "You can only delete your own bookings" });
     }
     
-    // Check if the booking is confirmed by resort owner
-    if (booking.status !== "confirmed") {
+    // Check if the booking is confirmed by resort owner or cancelled
+    if (booking.status !== "confirmed" && booking.status !== "cancelled") {
       return res.status(400).json({ 
-        message: "You can only delete bookings that have been confirmed by the resort owner" 
+        message: "You can only delete bookings that have been confirmed by the resort owner or have been cancelled" 
       });
     }
     

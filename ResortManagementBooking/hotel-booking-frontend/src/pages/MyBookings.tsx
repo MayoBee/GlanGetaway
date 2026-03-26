@@ -369,8 +369,8 @@ const MyBookings = () => {
                                 </Badge>
                               )}
                             </div>
-                            {/* Delete button - only show for confirmed bookings */}
-                            {(booking.status === "confirmed") && (
+                            {/* Delete button - only show for confirmed or cancelled bookings */}
+                            {(booking.status === "confirmed" || booking.status === "cancelled") && (
                               <Button
                                 variant="destructive"
                                 size="sm"

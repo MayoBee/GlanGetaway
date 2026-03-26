@@ -579,10 +579,29 @@ router.get("/pending-bookings", verifyToken, requireRole(["admin", "resort_owner
         const payment = await PaymentTransaction.findOne({ bookingId: booking._id });
         const documents = await VerificationDocument.find({ bookingId: booking._id });
         
+        // For GCash payments, create a simple payment info object
+        let paymentInfo = payment;
+        if (!payment && booking.paymentMethod === 'gcash' && booking.gcashPayment) {
+          paymentInfo = {
+            paymentMethod: 'gcash',
+            amount: booking.gcashPayment.amountPaid,
+            status: (booking.gcashPayment.status as "pending" | "processing" | "succeeded" | "failed" | "refunded" | "cancelled") || 'pending',
+            referenceNumber: booking.gcashPayment.referenceNumber,
+            screenshotUrl: booking.gcashPayment.screenshotFile ? `${process.env.BACKEND_URL || 'http://localhost:7002'}${booking.gcashPayment.screenshotFile}` : undefined
+          } as any;
+        }
+        
+        // Count documents including GCash screenshot
+        let documentCount = documents.length;
+        if (booking.paymentMethod === 'gcash' && booking.gcashPayment?.screenshotFile) {
+          documentCount += 1; // Count GCash screenshot as a document
+        }
+        
         return {
           ...booking.toObject(),
-          payment,
+          payment: paymentInfo,
           documents,
+          documentCount
         };
       })
     );
@@ -617,12 +636,39 @@ router.get("/booking-details/:bookingId", verifyToken, requireRole(["admin", "re
     const documents = await VerificationDocument.find({ bookingId });
     const user = await User.findById(booking.userId).select("firstName lastName email phone");
 
+    // For GCash payments, create a simple payment info object
+    let paymentInfo = payment;
+    if (!payment && booking.paymentMethod === 'gcash' && booking.gcashPayment) {
+      paymentInfo = {
+        paymentMethod: 'gcash',
+        amount: booking.gcashPayment.amountPaid,
+        status: (booking.gcashPayment.status as "pending" | "processing" | "succeeded" | "failed" | "refunded" | "cancelled") || 'pending',
+        referenceNumber: booking.gcashPayment.referenceNumber,
+        screenshotUrl: booking.gcashPayment.screenshotFile ? `${process.env.BACKEND_URL || 'http://localhost:7002'}${booking.gcashPayment.screenshotFile}` : undefined
+      } as any;
+    }
+
+    // Create a documents array that includes GCash screenshot if present
+    let allDocuments = documents;
+    if (booking.paymentMethod === 'gcash' && booking.gcashPayment?.screenshotFile) {
+      allDocuments = [
+        ...documents,
+        {
+          _id: 'gcash-screenshot',
+          documentType: 'other',
+          originalName: 'GCash Payment Screenshot',
+          fileUrl: `${process.env.BACKEND_URL || 'http://localhost:7002'}${booking.gcashPayment.screenshotFile}`,
+          status: booking.paymentStatus === 'paid' ? 'approved' : 'pending'
+        } as any
+      ];
+    }
+
     res.json({
       success: true,
       data: {
         booking,
-        payment,
-        documents,
+        payment: paymentInfo,
+        documents: allDocuments,
         user,
       },
     });

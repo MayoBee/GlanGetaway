@@ -80,6 +80,13 @@ cloudinary.config({
 
 console.log("☁️  Cloudinary configured successfully");
 
+// Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log("📁 Created uploads directory");
+}
+
 // MongoDB Connection with Error Handling
 const connectDB = async () => {
   try {

@@ -314,13 +314,17 @@ export const createGCashBooking = async (formData: any) => {
       // Handle GCash payment object separately
       const gcashPayment = formData[key];
       Object.keys(gcashPayment).forEach(gcashKey => {
-        if (gcashKey === 'screenshotFile' && gcashPayment[gcashKey] instanceof File) {
-          // Append the actual file
-          formDataToSubmit.append('gcashPayment.screenshotFile', gcashPayment[gcashKey]);
+        if (gcashKey === 'paymentTime') {
+          formDataToSubmit.append(`gcashPayment.${gcashKey}`, new Date(gcashPayment[gcashKey]).toISOString());
         } else {
           formDataToSubmit.append(`gcashPayment.${gcashKey}`, gcashPayment[gcashKey]);
         }
       });
+    } else if (key === 'screenshotFile') {
+      // Add the screenshot file directly - this is the key fix
+      if (formData[key] instanceof File) {
+        formDataToSubmit.append('gcashPayment.screenshotFile', formData[key]);
+      }
     } else if (key === 'paymentTime') {
       formDataToSubmit.append(key, new Date(formData[key]).toISOString());
     } else {

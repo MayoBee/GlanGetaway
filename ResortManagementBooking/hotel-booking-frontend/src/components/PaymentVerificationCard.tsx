@@ -4,11 +4,12 @@ import { BookingType } from "../../../shared/types";
 
 type Props = {
   booking: BookingType;
-  onVerifyPayment: (bookingId: string, status: "verified" | "rejected", reason?: string) => void;
+  onVerifyPayment?: (bookingId: string, status: "verified" | "rejected", reason?: string) => void;
   isLoading?: boolean;
+  showActions?: boolean;
 };
 
-const PaymentVerificationCard = ({ booking, onVerifyPayment, isLoading }: Props) => {
+const PaymentVerificationCard = ({ booking, onVerifyPayment, isLoading, showActions = true }: Props) => {
   const [showFullImage, setShowFullImage] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [showRejectionForm, setShowRejectionForm] = useState(false);
@@ -19,7 +20,9 @@ const PaymentVerificationCard = ({ booking, onVerifyPayment, isLoading }: Props)
   }
 
   const handleVerify = () => {
-    onVerifyPayment(booking._id, "verified");
+    if (onVerifyPayment) {
+      onVerifyPayment(booking._id, "verified");
+    }
   };
 
   const handleReject = () => {
@@ -27,7 +30,9 @@ const PaymentVerificationCard = ({ booking, onVerifyPayment, isLoading }: Props)
       alert("Please provide a reason for rejection");
       return;
     }
-    onVerifyPayment(booking._id, "rejected", rejectionReason);
+    if (onVerifyPayment) {
+      onVerifyPayment(booking._id, "rejected", rejectionReason);
+    }
     setShowRejectionForm(false);
     setRejectionReason("");
   };
@@ -155,7 +160,7 @@ const PaymentVerificationCard = ({ booking, onVerifyPayment, isLoading }: Props)
         )}
 
         {/* Action Buttons */}
-        {gcashPayment.status === "pending" && (
+        {gcashPayment.status === "pending" && showActions && (
           <div className="flex gap-3 pt-4 border-t border-gray-200">
             <button
               onClick={handleVerify}
@@ -189,7 +194,7 @@ const PaymentVerificationCard = ({ booking, onVerifyPayment, isLoading }: Props)
         )}
 
         {/* Rejection Form */}
-        {showRejectionForm && (
+        {showRejectionForm && showActions && (
           <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
             <h4 className="font-medium text-red-900 mb-3">Rejection Reason</h4>
             <textarea

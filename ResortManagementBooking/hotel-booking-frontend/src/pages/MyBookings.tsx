@@ -521,14 +521,7 @@ const MyBookings = () => {
                           <div className="mt-6">
                             <PaymentVerificationCard
                               booking={booking}
-                              onVerifyPayment={async (bookingId, status, reason) => {
-                                try {
-                                  await apiClient.verifyGCashPayment(bookingId, status, reason);
-                                  alert(`Payment ${status} successfully!`);
-                                } catch (error) {
-                                  alert("Failed to verify payment. Please try again.");
-                                }
-                              }}
+                              showActions={false}
                             />
                           </div>
                         )}

@@ -318,6 +318,8 @@ MM/YY: 12/35 CVC: 123`;
       selectedRooms,
       selectedCottages,
       selectedAmenities,
+      // Pass the screenshot file separately
+      screenshotFile: paymentData.screenshotFile,
       gcashPayment: {
         gcashNumber: paymentData.gcashNumber,
         referenceNumber: paymentData.referenceNumber,

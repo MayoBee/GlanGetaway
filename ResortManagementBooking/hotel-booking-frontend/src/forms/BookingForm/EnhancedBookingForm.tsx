@@ -13,7 +13,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { User, Phone, MessageSquare, CreditCard, Shield, CheckCircle, Copy, Smartphone } from "lucide-react";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import GCashPaymentForm, { GCashPaymentData } from "../../components/GCashPaymentForm";
 import { SelectedRoom, SelectedCottage, SelectedAmenity } from "../../contexts/BookingSelectionContext";
 import GuestDiscountInputComponent from "../../components/GuestDiscountInput";
@@ -79,14 +79,47 @@ const EnhancedBookingForm = ({
   // Use local state for form fields to prevent losing data
   const [phone, setPhone] = useState<string>("");
   const [specialRequests, setSpecialRequests] = useState<string>("");
+  // Helper to get initial payment method from localStorage
+  const getInitialPaymentMethod = (): "card" | "gcash" => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem("booking_paymentMethod");
+      if (saved === "gcash" || saved === "card") {
+        console.log("[DEBUG] Restored payment method from localStorage:", saved);
+        return saved;
+      }
+    }
+    return "card";
+  };
+
   const [isCopied, setIsCopied] = useState<boolean>(false);
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">("card");
+  // Use a ref to track if component is mounted - prevents unwanted resets
+  const isMounted = useRef(false);
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">(getInitialPaymentMethod);
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
   const [discountVerified, setDiscountVerified] = useState<boolean>(false);
+  
+  // Track mount state
+  useEffect(() => {
+    isMounted.current = true;
+    console.log("[DEBUG] EnhancedBookingForm mounted");
+    return () => {
+      isMounted.current = false;
+      console.log("[DEBUG] EnhancedBookingForm unmounted");
+    };
+  }, []);
 
-  // DEBUG: Log payment method changes
+  // DEBUG: Log payment method changes with stack trace
   const handlePaymentMethodChange = (method: "card" | "gcash") => {
+    if (!isMounted.current) {
+      console.log("[DEBUG] handlePaymentMethodChange called but component not mounted");
+      return;
+    }
     console.log("[DEBUG] Payment method changing from:", paymentMethod, "to:", method);
+    console.log("[DEBUG] Stack trace:", new Error().stack);
+    // Persist to localStorage so it survives remounts
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("booking_paymentMethod", method);
+    }
     setPaymentMethod(method);
   };
 

@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import * as apiClient from "./../api-client";
 import { AiFillStar } from "react-icons/ai";
@@ -10,7 +10,7 @@ import SocialShareButtons from "../components/SocialShareButtons";
 import SmartImage from "../components/SmartImage";
 import ImageCarousel from "../components/ImageCarousel";
 import { useBookingSelection } from "../contexts/BookingSelectionContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { parseHotelTypes } from "../utils/typeUtils";
 import {
   MapPin,
@@ -41,10 +41,25 @@ const isValidExternalUrl = (url: string | undefined): boolean => {
 
 const Detail = () => {
   const { id } = useParams();
+  const location = useLocation();
   const { setRateType } = useBookingSelection();
   const [selectedRateType, setSelectedRateType] = useState<'day' | 'night'>('night');
   const [isCarouselOpen, setIsCarouselOpen] = useState(false);
   const [carouselInitialIndex, setCarouselInitialIndex] = useState(0);
+
+  // Check if we're in edit mode and extract booking data
+  const editMode = location.state?.editMode || false;
+  const bookingId = location.state?.bookingId;
+  const bookingData = location.state?.bookingData;
+
+  useEffect(() => {
+    if (editMode && bookingData) {
+      // Set the rate type based on the booking data
+      // You might need to determine this based on the booking's check-in/check-out times
+      setSelectedRateType('night'); // Default to night, adjust as needed
+      setRateType('night');
+    }
+  }, [editMode, bookingData, setRateType]);
 
   const { data: hotel } = useQueryWithLoading(
     "fetchHotelById",
@@ -549,6 +564,9 @@ const Detail = () => {
             pricePerNight={hotel.hasDayRate ? hotel.dayRate || 0 : hotel.nightRate || 0}
             hotelId={hotel._id}
             initialRateType={selectedRateType}
+            editMode={editMode}
+            bookingId={bookingId}
+            bookingData={bookingData}
           />
         </div>
       </div>

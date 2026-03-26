@@ -51,6 +51,7 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
     const file = e.target.files?.[0];
     if (file) {
       console.log("[DEBUG] File selected:", file.name, file.size, file.type);
+      console.log("[DEBUG] Stack trace for setScreenshotFile:", new Error().stack);
       setScreenshotFile(file);
       
       // Abort any existing FileReader
@@ -127,10 +128,8 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
         </div>
       </div>
 
-      <form 
-        onSubmit={handleSubmit} 
+      <div 
         className="space-y-4"
-        noValidate
         onClick={(e) => e.stopPropagation()}
         onMouseDown={(e) => e.stopPropagation()}
         onMouseUp={(e) => e.stopPropagation()}
@@ -271,7 +270,8 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
 
         {/* Submit Button */}
         <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={isLoading || !screenshotFile || amountPaid < downPaymentAmount}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200"
         >
@@ -284,7 +284,7 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
             "Submit Payment Screenshot"
           )}
         </button>
-      </form>
+      </div>
     </div>
   );
 };

@@ -393,7 +393,7 @@ const Booking = () => {
               <CardHeader className="pb-4">
                 <CardTitle className="flex items-center gap-2 text-lg font-semibold">
                   <Users className="h-5 w-5 text-blue-600" />
-                  Hotel Information
+                  Resort Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">

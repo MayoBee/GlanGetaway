@@ -340,6 +340,16 @@ export const fetchMyBookings = async (): Promise<HotelWithBookingsType[]> => {
   return response.data;
 };
 
+export const deleteBooking = async (bookingId: string) => {
+  const response = await axiosInstance.delete(`/api/my-bookings/${bookingId}`);
+  return response.data;
+};
+
+export const updateBooking = async (bookingId: string, bookingData: any) => {
+  const response = await axiosInstance.put(`/api/my-bookings/${bookingId}`, bookingData);
+  return response.data;
+};
+
 export const fetchHotelBookings = async (
   hotelId: string
 ): Promise<BookingType[]> => {

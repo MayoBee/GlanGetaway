@@ -26,12 +26,18 @@ import {
   DollarSign,
   LogIn,
   UserCircle,
+  Trash,
+  Edit,
 } from "lucide-react";
 import useAppContext from "../hooks/useAppContext";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const MyBookings = () => {
   const { isLoggedIn } = useAppContext();
-  const { data: hotels } = useQueryWithLoading<HotelWithBookingsType[]>(
+  const navigate = useNavigate();
+  const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
+  const { data: hotels, refetch: refetchBookings } = useQueryWithLoading<HotelWithBookingsType[]>(
     "fetchMyBookings",
     apiClient.fetchMyBookings,
     {
@@ -176,6 +182,51 @@ const MyBookings = () => {
     }
   };
 
+  const handleDelete = async (bookingId: string) => {
+    if (!window.confirm("Are you sure you want to delete this booking? This action cannot be undone.")) {
+      return;
+    }
+
+    setDeletingBookingId(bookingId);
+    
+    try {
+      await apiClient.deleteBooking(bookingId);
+      alert("Booking deleted successfully!");
+      refetchBookings(); // Refresh the bookings list
+    } catch (error: any) {
+      console.error("Error deleting booking:", error);
+      alert(error.response?.data?.message || "Failed to delete booking. Please try again.");
+    } finally {
+      setDeletingBookingId(null);
+    }
+  };
+
+  const handleEdit = (booking: BookingType, hotel: any) => {
+    // Navigate to resort detail page with booking data for editing
+    navigate(`/detail/${hotel._id}`, {
+      state: {
+        editMode: true,
+        bookingId: booking._id,
+        bookingData: {
+          firstName: booking.firstName,
+          lastName: booking.lastName,
+          email: booking.email,
+          phone: booking.phone,
+          adultCount: booking.adultCount,
+          childCount: booking.childCount,
+          checkIn: booking.checkIn,
+          checkOut: booking.checkOut,
+          specialRequests: booking.specialRequests,
+          isPwdBooking: booking.isPwdBooking,
+          isSeniorCitizenBooking: booking.isSeniorCitizenBooking,
+          selectedRooms: booking.selectedRooms,
+          selectedCottages: booking.selectedCottages,
+          selectedAmenities: booking.selectedAmenities,
+        }
+      }
+    });
+  };
+
   return (
     <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
       <div className="space-y-8">
@@ -290,31 +341,58 @@ const MyBookings = () => {
                               </p>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Badge
-                              className={`${getStatusColor(
-                                booking.status || "pending",
-                              )} border`}
-                            >
-                              {getStatusIcon(booking.status || "pending")}
-                              <span className="ml-1">
-                                {booking.status || "pending"}
-                              </span>
-                            </Badge>
-                            <Badge
-                              className={`${getPaymentStatusColor(
-                                booking.paymentStatus || "pending",
-                              )} border`}
-                            >
-                              {booking.paymentStatus || "pending"}
-                            </Badge>
-                            {booking.paymentMethod && (
+                          <div className="flex gap-2 items-center">
+                            <div className="flex gap-2">
                               <Badge
-                                variant="outline"
-                                className="border-gray-300"
+                                className={`${getStatusColor(
+                                  booking.status || "pending",
+                                )} border`}
                               >
-                                {booking.paymentMethod}
+                                {getStatusIcon(booking.status || "pending")}
+                                <span className="ml-1">
+                                  {booking.status || "pending"}
+                                </span>
                               </Badge>
+                              <Badge
+                                className={`${getPaymentStatusColor(
+                                  booking.paymentStatus || "pending",
+                                )} border`}
+                              >
+                                {booking.paymentStatus || "pending"}
+                              </Badge>
+                              {booking.paymentMethod && (
+                                <Badge
+                                  variant="outline"
+                                  className="border-gray-300"
+                                >
+                                  {booking.paymentMethod}
+                                </Badge>
+                              )}
+                            </div>
+                            {/* Delete button - only show for confirmed bookings */}
+                            {(booking.status === "confirmed") && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDelete(booking._id)}
+                                disabled={deletingBookingId === booking._id}
+                                className="ml-2"
+                              >
+                                <Trash className="w-4 h-4 mr-1" />
+                                {deletingBookingId === booking._id ? "Deleting..." : "Delete"}
+                              </Button>
+                            )}
+                            {/* Edit button - only show for pending/unconfirmed bookings */}
+                            {(booking.status === "pending" || !booking.status) && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(booking, hotel)}
+                                className="ml-2"
+                              >
+                                <Edit className="w-4 h-4 mr-1" />
+                                Edit
+                              </Button>
                             )}
                           </div>
                         </div>

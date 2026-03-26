@@ -25,6 +25,9 @@ type Props = {
   hotelId: string;
   pricePerNight: number;
   initialRateType?: 'day' | 'night';
+  editMode?: boolean;
+  bookingId?: string;
+  bookingData?: any;
 };
 
 type GuestInfoFormData = {
@@ -36,7 +39,14 @@ type GuestInfoFormData = {
   pwdCount: number;
 };
 
-const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Props) => {
+const GuestInfoForm = ({ 
+  hotelId, 
+  pricePerNight, 
+  initialRateType = 'night', 
+  editMode = false, 
+  bookingId, 
+  bookingData 
+}: Props) => {
   const search = useSearchContext();
   const { isLoggedIn } = useAppContext();
   const navigate = useNavigate();
@@ -63,22 +73,56 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
     setRateType
   } = useBookingSelection();
 
-  // Time state variables
-  const [checkInTime, setCheckInTime] = useState<string>(search.checkInTime);
-  const [checkOutTime, setCheckOutTime] = useState<string>(search.checkOutTime);
+  // Time state variables - initialize with booking data if in edit mode
+  const [checkInTime, setCheckInTime] = useState<string>(
+    editMode && bookingData?.checkInTime ? bookingData.checkInTime : search.checkInTime
+  );
+  const [checkOutTime, setCheckOutTime] = useState<string>(
+    editMode && bookingData?.checkOutTime ? bookingData.checkOutTime : search.checkOutTime
+  );
   const [childAges, setChildAges] = useState<number[]>(() => []);
   
-  // Senior/PWD verification state
-  const [hasSeniorGuest, setHasSeniorGuest] = useState<boolean>(search.seniorCount > 0);
-  const [hasPwdGuest, setHasPwdGuest] = useState<boolean>(search.pwdCount > 0);
-  const [seniorCount, setSeniorCount] = useState<number>(search.seniorCount);
-  const [pwdCount, setPwdCount] = useState<number>(search.pwdCount);
+  // Senior/PWD verification state - initialize with booking data if in edit mode
+  const [hasSeniorGuest, setHasSeniorGuest] = useState<boolean>(
+    editMode ? (bookingData?.isSeniorCitizenBooking || false) : (search.seniorCount > 0)
+  );
+  const [hasPwdGuest, setHasPwdGuest] = useState<boolean>(
+    editMode ? (bookingData?.isPwdBooking || false) : (search.pwdCount > 0)
+  );
+  const [seniorCount, setSeniorCount] = useState<number>(
+    editMode ? (bookingData?.isSeniorCitizenBooking ? 1 : 0) : search.seniorCount
+  );
+  const [pwdCount, setPwdCount] = useState<number>(
+    editMode ? (bookingData?.isPwdBooking ? 1 : 0) : search.pwdCount
+  );
   
   // Verification files state
   const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
 
   // Rate type state - use from context instead of local state
   const [selectedNights, setSelectedNights] = useState<number>(1);
+
+  // Initialize form with booking data if in edit mode
+  const getDefaultValues = () => {
+    if (editMode && bookingData) {
+      return {
+        checkIn: new Date(bookingData.checkIn),
+        checkOut: new Date(bookingData.checkOut),
+        adultCount: bookingData.adultCount || 1,
+        childCount: bookingData.childCount || 0,
+        seniorCount: bookingData.isSeniorCitizenBooking ? 1 : 0,
+        pwdCount: bookingData.isPwdBooking ? 1 : 0,
+      };
+    }
+    return {
+      checkIn: search.checkIn,
+      checkOut: search.checkOut,
+      adultCount: search.adultCount,
+      childCount: search.childCount,
+      seniorCount: search.seniorCount,
+      pwdCount: search.pwdCount,
+    };
+  };
 
   // Calculate entrance fee total based on adults, children, and their ages
   const calculateEntranceFeeTotal = () => {
@@ -162,12 +206,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
     setValue,
     formState: { errors },
   } = useForm<GuestInfoFormData>({
-    defaultValues: {
-      checkIn: search.checkIn,
-      checkOut: search.checkOut,
-      adultCount: search.adultCount,
-      childCount: search.childCount,
-    },
+    defaultValues: getDefaultValues(),
   });
 
   const checkIn = watch("checkIn");
@@ -237,22 +276,54 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
     navigate("/sign-in", { state: { from: location } });
   };
 
-  const onSubmit = (data: GuestInfoFormData) => {
-    search.saveSearchValues(
-      "",
-      data.checkIn,
-      data.checkOut,
-      data.adultCount,
-      data.childCount,
-      childAges,
-      checkInTime,
-      checkOutTime,
-      "PM",
-      "AM",
-      seniorCount,
-      pwdCount
-    );
-    navigate(`/hotel/${hotelId}/booking`);
+  const onSubmit = async (data: GuestInfoFormData) => {
+    if (editMode && bookingId) {
+      // Edit mode - update existing booking
+      try {
+        const updatedBookingData = {
+          firstName: bookingData?.firstName || '',
+          lastName: bookingData?.lastName || '',
+          email: bookingData?.email || '',
+          phone: bookingData?.phone || '',
+          adultCount: data.adultCount,
+          childCount: data.childCount,
+          checkIn: data.checkIn,
+          checkOut: data.checkOut,
+          checkInTime,
+          checkOutTime,
+          specialRequests: bookingData?.specialRequests || '',
+          isPwdBooking: hasPwdGuest,
+          isSeniorCitizenBooking: hasSeniorGuest,
+          selectedRooms,
+          selectedCottages,
+          selectedAmenities,
+        };
+
+        await apiClient.updateBooking(bookingId, updatedBookingData);
+        alert("Booking updated successfully!");
+        navigate("/my-bookings");
+      } catch (error: any) {
+        console.error("Error updating booking:", error);
+        alert(error.response?.data?.message || "Failed to update booking. Please try again.");
+      }
+    } else {
+      // New booking mode - proceed to booking page
+      search.saveSearchValues(
+        "",
+        data.checkIn,
+        data.checkOut,
+        data.adultCount,
+        data.childCount,
+        childAges,
+        checkInTime,
+        checkOutTime,
+        "PM",
+        "AM",
+        seniorCount,
+        pwdCount
+      );
+      navigate(`/hotel/${hotelId}/booking`);
+    }
   };
 
 
@@ -317,7 +388,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
           <CardTitle className="flex items-center justify-between text-lg font-semibold">
             <div className="flex items-center gap-2">
               <CreditCard className="h-5 w-5 text-blue-600" />
-              <span>Booking Summary</span>
+              <span>{editMode ? "Edit Booking" : "Booking Summary"}</span>
             </div>
             <Badge variant="outline" className="text-sm">
               {selectedRateType === 'day' ? 'Day Rate' : 'Night Rate'}
@@ -792,7 +863,7 @@ const GuestInfoForm = ({ hotelId, pricePerNight, initialRateType = 'night' }: Pr
               {isLoggedIn ? (
                 <div className="flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
-                  Book Now
+                  {editMode ? "Update Booking" : "Book Now"}
                 </div>
               ) : (
                 <div className="flex items-center gap-2">

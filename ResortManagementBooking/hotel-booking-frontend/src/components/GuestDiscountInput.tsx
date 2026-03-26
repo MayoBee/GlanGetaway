@@ -59,7 +59,11 @@ const GuestDiscountInputComponent = ({
   const [validationError, setValidationError] = useState<string | null>(null);
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
 
-    // Calculate discount whenever inputs change
+  // Store discountConfig in ref to avoid triggering useEffect on every render
+  const discountConfigRef = useRef(discountConfig);
+  discountConfigRef.current = discountConfig;
+
+  // Calculate discount whenever inputs change - WITHOUT discountConfig in deps
   useEffect(() => {
     const guestInput = {
       totalGuests,
@@ -74,7 +78,7 @@ const GuestDiscountInputComponent = ({
       numberOfNights,
       totalGuests,
       guestDiscountInput: guestInput,
-      discountConfig
+      discountConfig: discountConfigRef.current
     };
 
     const result = calculateDiscountSimple(pricingInput);
@@ -86,9 +90,7 @@ const GuestDiscountInputComponent = ({
 
     setValidationError(null);
     setDiscountResult(result);
-    // Removed direct call to onDiscountChange to prevent infinite loop
-    // The separate useEffect below handles calling the stable callback
-  }, [hasDiscount, seniorCitizens, pwdGuests, totalGuests, pricePerNight, numberOfNights, discountConfig]);
+  }, [hasDiscount, seniorCitizens, pwdGuests, totalGuests, pricePerNight, numberOfNights]);
 
   // Use ref to store the callback - this won't cause re-renders or infinite loops
   const onDiscountChangeRef = useRef(onDiscountChange);

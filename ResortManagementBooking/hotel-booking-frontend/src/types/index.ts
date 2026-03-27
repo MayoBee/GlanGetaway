@@ -63,6 +63,8 @@ export interface BookingType {
     percentage: number;
     amount: number;
   };
+  phone?: string;
+  specialRequests?: string;
 }
 
 export interface PaymentIntentResponse {
@@ -145,6 +147,7 @@ export interface UserDocument {
 }
 
 export interface HotelFormData {
+  _id?: string;
   name: string;
   city: string;
   country: string;

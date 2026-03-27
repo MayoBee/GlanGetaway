@@ -3,10 +3,11 @@ import mongoose from "mongoose";
 // Local types file to replace shared directory dependency
 
 export enum UserRole {
-  Admin = "Admin",
-  User = "User",
-  Owner = "Owner",
-  SuperAdmin = "SuperAdmin",
+  Admin = "admin",
+  User = "user", 
+  Owner = "owner",
+  SuperAdmin = "superadmin",
+  ResortOwner = "resort_owner",
 }
 
 export interface UserDocument extends mongoose.Document {
@@ -21,10 +22,23 @@ export interface UserDocument extends mongoose.Document {
   isPWD?: boolean;
   pwdId?: string;
   pwdIdVerified?: boolean;
+  pwdVerifiedBy?: string;
+  pwdVerifiedAt?: Date;
   accountVerified?: boolean;
+  accountVerifiedBy?: string;
+  accountVerifiedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
   birthdate?: Date;
+  phone?: string;
+  staffProfile?: {
+    department?: string;
+    employeeId?: string;
+    shiftSchedule?: any;
+    hourlyRate?: number;
+    isActive?: boolean;
+  };
+  permissions?: any;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -40,8 +54,10 @@ export interface HotelType {
   childCount: number;
   facilities: string[];
   imageUrls: string[];
-  lastUpdated: number;
+  lastUpdated: number | Date;
+  createdAt?: Date;
   starRating: number;
+  averageRating?: number;
   dayRate?: number;
   nightRate?: number;
   hasDayRate?: boolean;
@@ -49,9 +65,15 @@ export interface HotelType {
   rooms?: any[];
   cottages?: any[];
   packages?: any[];
-  policies?: any[];
+  policies?: any;
   gcashNumber?: string;
   downPaymentPercentage?: number;
+  isApproved?: boolean;
+  approvedBy?: string;
+  rejectionReason?: string;
+  approvedAt?: Date;
+  location?: any;
+  contact?: any;
 }
 
 export interface BookingType {

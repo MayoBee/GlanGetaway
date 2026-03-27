@@ -18,7 +18,10 @@
     "promote-admin": "npx ts-node scripts/promote-user-to-admin.ts",
     "test-auth-perf": "npx ts-node scripts/test-auth-performance.ts",
     "test-admin-mgmt": "npx ts-node scripts/test-admin-management.ts",
-    "optimize-auth": "npx ts-node scripts/optimize-auth-indexes.ts"
+    "optimize-auth": "npx ts-node scripts/optimize-auth-indexes.ts",
+    "migrate-to-atlas": "npx ts-node scripts/migrate-to-atlas.ts",
+    "simple-migrate": "npx ts-node scripts/simple-migrate.ts",
+    "full-migrate": "npx ts-node scripts/full-database-migrate.ts"
   },
   "author": "Arnob Mahmud",
   "license": "ISC",

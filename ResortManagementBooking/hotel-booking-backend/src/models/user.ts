@@ -1,13 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-
-// Define UserType locally since shared directory is not available in Docker
-export enum UserType {
-  Admin = "Admin",
-  User = "User",
-  Owner = "Owner",
-  SuperAdmin = "SuperAdmin",
-}
+import { UserRole, UserDocument } from "../types";
 
 const userSchema = new mongoose.Schema(
   {
@@ -110,6 +103,6 @@ userSchema.pre("save", async function (next) {
 userSchema.index({ email: 1, isActive: 1 }); // Compound index for active users
 userSchema.index({ createdAt: -1 }); // For user listing queries
 
-const User = mongoose.model<UserType>("User", userSchema);
+const User = mongoose.model<UserDocument>("User", userSchema);
 
 export default User;

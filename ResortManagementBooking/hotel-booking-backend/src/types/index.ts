@@ -1,10 +1,31 @@
+import mongoose from "mongoose";
+
 // Local types file to replace shared directory dependency
 
-export enum UserType {
+export enum UserRole {
   Admin = "Admin",
   User = "User",
   Owner = "Owner",
   SuperAdmin = "SuperAdmin",
+}
+
+export interface UserDocument extends mongoose.Document {
+  _id: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  image?: string;
+  role: UserRole;
+  isActive: boolean;
+  isPWD?: boolean;
+  pwdId?: string;
+  pwdIdVerified?: boolean;
+  accountVerified?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  birthdate?: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 export interface HotelType {

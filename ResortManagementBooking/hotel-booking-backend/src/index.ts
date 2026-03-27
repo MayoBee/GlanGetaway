@@ -55,7 +55,8 @@ const requiredEnvVars = [
   "CLOUDINARY_CLOUD_NAME",
   "CLOUDINARY_API_KEY",
   "CLOUDINARY_API_SECRET",
-  "STRIPE_API_KEY",
+  "STRIPE_PUBLISHABLE_KEY",
+  "STRIPE_SECRET_KEY",
 ];
 
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
@@ -162,6 +163,7 @@ const allowedOrigins = [
   "https://mern-booking-hotel.netlify.app/",
   "https://hotel-mern-booking.vercel.app",
   "https://hotel-mern-booking.vercel.app/",
+  "https://glan-getaway-tjuzxei5z-mayobees-projects.vercel.app",
 ].filter((origin): origin is string => Boolean(origin));
 app.use(
   cors({

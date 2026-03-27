@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import { UserType } from "../../../shared/types";
+
+// Define UserType locally since shared directory is not available in Docker
+export enum UserType {
+  Admin = "Admin",
+  User = "User",
+  Owner = "Owner",
+  SuperAdmin = "SuperAdmin",
+}
 
 const userSchema = new mongoose.Schema(
   {

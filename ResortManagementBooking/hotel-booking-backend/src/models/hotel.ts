@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "../types";
 
 // Define subdocument schemas explicitly
 const RoomSchema = new mongoose.Schema({

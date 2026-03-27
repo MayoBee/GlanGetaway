@@ -5,7 +5,7 @@ import path from "path";
 import Hotel from "../models/hotel";
 import Booking from "../models/booking";
 import User from "../models/user";
-import { BookingType, HotelSearchResponse } from "../../../shared/types";
+import { BookingType, HotelSearchResponse } from "../types";
 import { param, body, validationResult } from "express-validator";
 import Stripe from "stripe";
 import verifyToken from "../middleware/auth";

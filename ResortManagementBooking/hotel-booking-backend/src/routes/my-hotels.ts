@@ -6,7 +6,7 @@ import Hotel from "../models/hotel";
 import Booking from "../models/booking";
 import verifyToken from "../middleware/auth";
 import { body } from "express-validator";
-import { HotelType } from "../../../shared/types";
+import { HotelType } from "../types";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";

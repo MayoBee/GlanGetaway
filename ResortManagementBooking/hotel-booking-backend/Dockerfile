@@ -37,4 +37,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 5000) + '/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
 # Start application directly with ts-node (no build step)
-CMD ["npx", "ts-node", "--skipLibCheck", "src/index.ts"]
+CMD ["npx", "ts-node", "src/index.ts"]

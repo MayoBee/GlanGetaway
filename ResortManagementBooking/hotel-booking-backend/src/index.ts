@@ -153,14 +153,16 @@ app.use(compression());
 app.use(morgan("combined"));
 
 const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:5173",
   "http://127.0.0.1:55112",
+  "https://mern-booking-hotel.netlify.app",
+  "https://mern-booking-hotel.netlify.app/",
   "https://hotel-mern-booking.vercel.app",
-  "https://glan-getaway.vercel.app", // Add your Vercel domain
-  "https://*.vercel.app", // Allow all Vercel domains
-  "https://*.netlify.app", // Allow all Netlify domains
-  "https://glan-getaway-backend.onrender.com", // Allow backend to call itself
-];
-
+  "https://hotel-mern-booking.vercel.app/",
+].filter((origin): origin is string => Boolean(origin));
 app.use(
   cors({
     origin: (origin, callback) => {

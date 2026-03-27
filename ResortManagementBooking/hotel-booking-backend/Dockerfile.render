@@ -1,7 +1,7 @@
 # ========================================================================
-# Hotel Booking Backend - Dockerfile
+# Hotel Booking Backend - Render Dockerfile
 # ========================================================================
-# Simplified Dockerfile for Render deployment
+# This Dockerfile is configured for Render deployment
 # Build context: hotel-booking-backend directory
 # ========================================================================
 

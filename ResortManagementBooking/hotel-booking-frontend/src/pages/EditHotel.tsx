@@ -325,7 +325,7 @@ const EditHotel = () => {
           } else if (value && typeof value === 'object' && value[0]) {
             console.log("Processing object with numeric keys");
             // Handle DataTransfer files object
-            files = Object.values(value).filter(item => item instanceof File) as File[];
+            files = Object.values(value).filter((item: any) => item instanceof File) as File[];
           }
           
           console.log("Final files array:", files.length, "files");

@@ -336,7 +336,7 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
     console.log('Complete form data:', JSON.stringify(formDataJson, null, 2));
     
     // Extract and save units data to local storage (for persistence when backend doesn't handle it)
-    const hotelId = formDataJson._id || 'new_hotel';
+    const hotelId = (formDataJson as any)._id || 'new_hotel';
     extractUnitsFromFormData(formDataJson, hotelId);
     
     // Convert units from strings to numbers for cottages and amenities

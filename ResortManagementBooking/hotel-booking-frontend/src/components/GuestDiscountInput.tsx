@@ -18,7 +18,9 @@ import {
   Percent,
   AlertCircle,
   Calculator,
-  Info
+  Info,
+  Upload,
+  FileText
 } from "lucide-react";
 import { 
   calculateDiscountSimple, 
@@ -26,6 +28,7 @@ import {
   DiscountCalculationResult,
   validateDiscountInput
 } from "../lib/discountCalculation";
+import axiosInstance from "../lib/api-client";
 
 export type { DiscountCalculationResult };
 
@@ -35,6 +38,7 @@ interface GuestDiscountInputProps {
   numberOfNights: number;
   discountConfig: DiscountConfig;
   onDiscountChange: (result: DiscountCalculationResult) => void;
+  bookingId?: string; // Add booking ID for document upload
 }
 
 const defaultDiscountConfig: DiscountConfig = {
@@ -50,7 +54,8 @@ const GuestDiscountInputComponent = ({
   pricePerNight,
   numberOfNights,
   discountConfig = defaultDiscountConfig,
-  onDiscountChange
+  onDiscountChange,
+  bookingId
 }: GuestDiscountInputProps) => {
   const [hasDiscount, setHasDiscount] = useState(false);
   const [seniorCitizens, setSeniorCitizens] = useState(0);
@@ -58,6 +63,8 @@ const GuestDiscountInputComponent = ({
   const [agreedToDisclaimer, setAgreedToDisclaimer] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   // Store discountConfig in ref to avoid triggering useEffect on every render
   const discountConfigRef = useRef(discountConfig);
@@ -124,6 +131,38 @@ const GuestDiscountInputComponent = ({
   const handlePwdGuestsChange = (value: string) => {
     const count = parseInt(value) || 0;
     setPwdGuests(Math.min(count, totalGuests));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const newFiles = Array.from(files);
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+
+    // If we have a booking ID, upload documents immediately
+    if (bookingId) {
+      setUploading(true);
+      try {
+        for (const file of newFiles) {
+          const formData = new FormData();
+          formData.append('document', file);
+          formData.append('bookingId', bookingId);
+          formData.append('documentType', seniorCitizens > 0 ? 'senior_citizen_id' : 'pwd_id');
+
+          await axiosInstance.post('/api/verification-documents/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        alert('Failed to upload documents');
+      } finally {
+        setUploading(false);
+      }
+    }
   };
 
   const discountedGuests = seniorCitizens + pwdGuests;
@@ -232,6 +271,80 @@ const GuestDiscountInputComponent = ({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        <hr className="my-4" />
+
+        {/* File Upload Section */}
+        {hasDiscount && (seniorCitizens > 0 || pwdGuests > 0) && (
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            <Label className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2 text-sm font-medium text-gray-700">
+              <FileText className="h-4 w-4" />
+              Guest Discount Verification
+            </Label>
+            <p className="text-xs text-gray-500">Select if any guest is a Senior Citizen or Person with Disability (PWD) to avail of discounts. Valid ID must be presented upon check-in.</p>
+            
+            <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+              <input type="checkbox" id="hasSeniorGuest" className="h-4 w-4 text-amber-600" />
+              <label htmlFor="hasSeniorGuest" className="flex-1 cursor-pointer">
+                <span className="font-medium text-amber-800">Senior Citizen</span>
+                <span className="text-xs text-amber-600 block">20% discount</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <button type="button" className="w-8 h-8 flex items-center justify-center bg-amber-200 rounded hover:bg-amber-300">-</button>
+                <span className="w-8 text-center font-medium">{seniorCitizens}</span>
+                <button type="button" className="w-8 h-8 flex items-center justify-center bg-amber-200 rounded hover:bg-amber-300">+</button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200">
+              <input type="checkbox" id="hasPwdGuest" className="h-4 w-4 text-purple-600" />
+              <label htmlFor="hasPwdGuest" className="flex-1 cursor-pointer">
+                <span className="font-medium text-purple-800">Person with Disability (PWD)</span>
+                <span className="text-xs text-purple-600 block">20% discount</span>
+              </label>
+            </div>
+
+            <div className="mt-4 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-amber-800 mb-2">Verification Instructions</h4>
+                    <p className="text-sm text-amber-700 mb-3">Send a PDF or DOCX file containing following:</p>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-amber-700">
+                      <li><strong>Full names</strong> of Senior Citizens/PWDs (organized by person based on quantity you specified above)</li>
+                      <li><strong>Clear pictures</strong> of each person holding their National ID or PWD ID</li>
+                    </ol>
+                    <p className="text-sm text-amber-600 mt-3 font-medium">⚠️ Final downpayment confirmation will be pending until resort owner verifies the legitimacy of your submitted document.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex items-center gap-2" htmlFor="verificationFiles">
+                <Upload className="h-4 w-4" />
+                Upload Verification Document
+              </Label>
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <input 
+                  id="verificationFiles" 
+                  type="file" 
+                  accept=".pdf,.doc,.docx" 
+                  multiple 
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+                <label htmlFor="verificationFiles" className="cursor-pointer flex flex-col items-center gap-2">
+                  <Upload className="h-8 w-8 text-gray-400" />
+                  <span className="text-sm text-gray-600">Click to upload PDF or DOCX files</span>
+                  <span className="text-xs text-gray-500">Maximum file size: 10MB per file</span>
+                </label>
+              </div>
+            </div>
           </div>
         )}
 

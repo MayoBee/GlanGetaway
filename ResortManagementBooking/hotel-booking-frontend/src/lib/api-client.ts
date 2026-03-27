@@ -12,7 +12,7 @@ const getBaseURL = () => {
     window.location.hostname === "mern-booking-hotel.netlify.app" ||
     window.location.hostname.includes("vercel.app")
   ) {
-    return "https://hotel-booking-backend.duckdns.org";
+    return import.meta.env.VITE_API_URL || "https://your-backend-app.onrender.com";
   }
 
   if (window.location.hostname === "localhost") {

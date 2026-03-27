@@ -98,7 +98,8 @@ const EnhancedBookingForm = ({
   const isMounted = useRef(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "gcash">(getInitialPaymentMethod);
   const [discountResult, setDiscountResult] = useState<DiscountCalculationResult | null>(null);
-  const [discountVerified, setDiscountVerified] = useState<boolean>(false);
+  const [bookingId, setBookingId] = useState<string | null>(null);
+  const [discountGuestCounts, setDiscountGuestCounts] = useState({ seniorCitizens: 0, pwdGuests: 0 });
   
   // Track mount state
   useEffect(() => {
@@ -139,7 +140,8 @@ const EnhancedBookingForm = ({
   const { mutate: bookRoom, isLoading: isCardLoading } = useMutation(
     apiClient.createRoomBooking,
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        setBookingId(data._id || data.bookingId); // Set booking ID from response
         showToast({
           title: "Booking Successful",
           description: "Your hotel booking has been confirmed successfully!",
@@ -165,7 +167,8 @@ const EnhancedBookingForm = ({
   const { mutate: bookWithGCash, isLoading: isGCashLoading } = useMutation(
     apiClient.createGCashBooking,
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        setBookingId(data._id || data.bookingId); // Set booking ID from response
         showToast({
           title: "Payment Submitted",
           description: "Your GCash payment has been submitted for verification. The resort owner will review your payment screenshot.",
@@ -248,7 +251,11 @@ MM/YY: 12/35 CVC: 123`;
   const handleDiscountChange = useCallback((result: DiscountCalculationResult) => {
     console.log("[DEBUG] handleDiscountChange called with result:", result);
     setDiscountResult(result);
-    setDiscountVerified(false); // Reset verification when discount changes
+    
+    // Extract guest counts from discount breakdown
+    const seniorCount = result.discountBreakdown.find(item => item.category === "Senior Citizens")?.count || 0;
+    const pwdCount = result.discountBreakdown.find(item => item.category === "PWD Guests")?.count || 0;
+    setDiscountGuestCounts({ seniorCitizens: seniorCount, pwdGuests: pwdCount });
   }, []);
 
   const onCardSubmit = async (formData: BookingFormData) => {
@@ -449,6 +456,7 @@ MM/YY: 12/35 CVC: 123`;
             customDiscounts: []
           }}
           onDiscountChange={handleDiscountChange}
+          bookingId={bookingId || undefined}
         />
 
         {/* Price Summary */}

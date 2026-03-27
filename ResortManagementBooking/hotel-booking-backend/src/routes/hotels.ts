@@ -404,10 +404,14 @@ router.post(
         paymentMethod: "gcash",
         specialRequests: specialRequests || "",
         status: "pending",
-        // PWD/Senior Citizen tracking (default to false for now, will be updated in future)
-        isPwdBooking: false,
-        isSeniorCitizenBooking: false,
-        discountApplied: undefined,
+        // Handle discount information from form
+        isPwdBooking: req.body.pwdGuests > 0,
+        isSeniorCitizenBooking: req.body.seniorCitizens > 0,
+        discountApplied: (req.body.seniorCitizens > 0 || req.body.pwdGuests > 0) ? {
+          type: req.body.seniorCitizens > 0 ? "senior_citizen" : "pwd",
+          percentage: 20,
+          amount: (parseFloat(totalCost) || parseFloat(basePrice) || 0) * 0.2
+        } : undefined,
         // GCash payments always remain pending per business rules
         paymentStatus: "pending",
         // Set 8-hour change window

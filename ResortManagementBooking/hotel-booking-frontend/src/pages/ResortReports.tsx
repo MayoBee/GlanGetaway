@@ -589,18 +589,27 @@ const BookingDetailModal: React.FC<BookingDetailModalProps> = ({ bookingId, isOp
                   {data.data.documents.map((doc: any) => (
                     <div key={doc._id} className="bg-gray-50 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <div>
+                        <div className="flex-1">
                           <p><strong>Type:</strong> {doc.documentType.replace("_", " ").toUpperCase()}</p>
-                          <p><strong>File:</strong> {doc.originalName}</p>
+                          <p className="flex items-center gap-2">
+                            <strong>File:</strong> 
+                            <a 
+                              href={doc.fileUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1"
+                              download={doc.originalName}
+                            >
+                              <Download className="w-4 h-4" />
+                              {doc.originalName}
+                            </a>
+                          </p>
                           <p><strong>Status:</strong> <span className={`px-2 py-1 rounded-full text-sm ${
                             doc.status === "approved" ? "bg-green-100 text-green-800" :
                             doc.status === "rejected" ? "bg-red-100 text-red-800" :
                             "bg-yellow-100 text-yellow-800"
                           }`}>{doc.status}</span></p>
                         </div>
-                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          <Download className="w-4 h-4" />
-                        </a>
                       </div>
                       {doc.status === "pending" && (
                         <div className="flex gap-2 mt-3">

@@ -39,5 +39,5 @@ RUN echo 'const express = require("express"); const app = express(); app.get("/a
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
   CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start with simple server first, then try full app
-CMD ["sh", "-c", "node simple-start.js || npx ts-node src/index.ts"]
+# Start with full app first, then fallback to simple server
+CMD ["sh", "-c", "npx ts-node src/index.ts || node simple-start.js"]

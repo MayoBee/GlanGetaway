@@ -311,8 +311,8 @@ app.use('/uploads', (req, res, next) => {
   next();
 }, express.static(path.join(__dirname, '..', '..', 'uploads')));
 
-// Dynamic Port Configuration (for Coolify/VPS and local development)
-const PORT = process.env.PORT || 7002;
+// Dynamic Port Configuration (for Render, Coolify/VPS and local development)
+const PORT = process.env.PORT || 5000;
 
 const backendBaseUrl =
   process.env.BACKEND_URL?.replace(/\/$/, "") || `http://localhost:${PORT}`;

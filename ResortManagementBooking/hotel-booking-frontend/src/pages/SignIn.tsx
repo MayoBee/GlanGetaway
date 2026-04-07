@@ -34,10 +34,6 @@ export type SignInFormData = {
 };
 
 const testAccounts = {
-  "admin": {
-    email: "admin@glangetaway.com",
-    password: "admin123",
-  },
   "resort-owner": {
     email: "biennickwadingan@gmail.com",
     password: "password123",
@@ -101,11 +97,28 @@ const SignIn = () => {
     },
     onError: (error: Error) => {
       console.log('❌ Mutation error:', error);
-      showToast({
-        title: "Sign In Failed",
-        description: error.message,
-        type: "ERROR",
-      });
+      
+      // Check if this is an admin access restriction error
+      if (error.message.includes("ADMIN_ACCESS_RESTRICTED") || 
+          error.message.includes("admin portal")) {
+        showToast({
+          title: "Admin Access Restricted",
+          description: "Please use the admin portal to sign in as an administrator.",
+          type: "ERROR",
+        });
+        
+        // Redirect to admin portal after a brief delay
+        setTimeout(() => {
+          const adminUrl = import.meta.env.VITE_ADMIN_URL || "/admin";
+          window.location.href = adminUrl;
+        }, 2000);
+      } else {
+        showToast({
+          title: "Sign In Failed",
+          description: error.message,
+          type: "ERROR",
+        });
+      }
     },
     onSettled: () => {
       console.log('🔍 Mutation settled');
@@ -187,12 +200,6 @@ const SignIn = () => {
                     <SelectValue placeholder="Select Role Based Test Account" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200 bg-white">
-                    <SelectItem
-                      value="admin"
-                      className="cursor-pointer text-gray-900 focus:bg-primary-50 focus:text-primary-900"
-                    >
-                      Admin (admin@glangetaway.com)
-                    </SelectItem>
                     <SelectItem
                       value="resort-owner"
                       className="cursor-pointer text-gray-900 focus:bg-primary-50 focus:text-primary-900"

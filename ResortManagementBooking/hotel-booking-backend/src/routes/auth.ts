@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import verifyToken from "../middleware/auth";
+import { restrictAdminToSubdirectory } from "../middleware/admin-access-control";
 
 const router = express.Router();
 
@@ -214,6 +215,7 @@ router.get("/callback/google", async (req: Request, res: Response) => {
 router.post(
   "/login",
   loginRateLimiter,
+  restrictAdminToSubdirectory,
   [
     check("email", "Email is required").isEmail(),
     check("password", "Password with 6 or more characters required").isLength({
@@ -227,6 +229,7 @@ router.post(
     }
 
     const { email, password } = req.body;
+    const originType = (req as any).originType || "unknown";
 
     try {
       // Optimized user lookup - fetch password without lean to ensure proper _id handling
@@ -236,6 +239,15 @@ router.post(
       
       if (!user) {
         return res.status(400).json({ message: "Invalid Credentials" });
+      }
+
+      // Check if admin is trying to login from main website
+      if ((user.role === "admin" || user.role === "super_admin") && originType === "main") {
+        return res.status(403).json({
+          message: "Admin access is restricted to the admin portal only.",
+          redirectUrl: "/admin",
+          error: "ADMIN_ACCESS_RESTRICTED"
+        });
       }
 
       // Optimized bcrypt comparison with async/await
@@ -261,6 +273,7 @@ router.post(
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
+          role: user.role,
         },
       });
     } catch (error) {

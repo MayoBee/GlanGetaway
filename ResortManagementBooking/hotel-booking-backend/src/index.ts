@@ -155,8 +155,9 @@ app.use(morgan("combined"));
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  "http://localhost:5174",
-  "http://localhost:5175",
+  `${process.env.FRONTEND_URL}/admin`, // Admin subdirectory
+  "http://localhost:5174", // Main frontend dev
+  "http://localhost:5175", // Admin frontend dev
   "http://localhost:5173",
   "http://127.0.0.1:55112",
   "https://mern-booking-hotel.netlify.app",
@@ -173,6 +174,11 @@ app.use(
 
       // Allow all Netlify and Vercel preview URLs
       if (origin.includes("netlify.app") || origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+
+      // Allow admin subdirectory access
+      if (origin.includes("/admin")) {
         return callback(null, true);
       }
 
@@ -208,6 +214,11 @@ app.options(
 
       // Allow all Netlify and Vercel preview URLs
       if (origin.includes("netlify.app") || origin.includes("vercel.app")) {
+        return callback(null, true);
+      }
+
+      // Allow admin subdirectory access
+      if (origin.includes("/admin")) {
         return callback(null, true);
       }
 

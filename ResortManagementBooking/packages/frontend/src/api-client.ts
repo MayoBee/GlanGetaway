@@ -455,6 +455,32 @@ export const toggleUserStatus = async (userId: string) => {
   return response.data;
 };
 
+// Role Promotion Requests (for users applying to become resort owners)
+export const fetchPendingRoleRequests = async (): Promise<any[]> => {
+  const response = await axiosInstance.get("/api/admin-management/role-requests/pending");
+  return response.data;
+};
+
+export const approveRoleRequest = async (requestId: string): Promise<any> => {
+  const response = await axiosInstance.put(`/api/admin-management/role-requests/${requestId}/approve`);
+  return response.data;
+};
+
+export const declineRoleRequest = async (requestId: string, reason?: string): Promise<any> => {
+  const response = await axiosInstance.put(`/api/admin-management/role-requests/${requestId}/decline`, { reason });
+  return response.data;
+};
+
+export const fetchExistingResortOwners = async (): Promise<any[]> => {
+  const response = await axiosInstance.get("/api/admin-management/resort-owners");
+  return response.data;
+};
+
+export const demoteResortOwner = async (userId: string): Promise<any> => {
+  const response = await axiosInstance.put(`/api/admin-management/demote-resort-owner/${userId}`);
+  return response.data;
+};
+
 // ==================== ADMIN REPORT MODULE - STRICTLY ADMIN ONLY ====================
 
 // Reservation Reports

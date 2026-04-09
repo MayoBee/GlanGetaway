@@ -368,4 +368,132 @@ router.put("/notifications/read-all", verifyToken, async (req: Request, res: Res
   }
 });
 
+// Get real-time dashboard data
+router.get("/real-time", verifyToken, requireRole(["admin", "resort_owner", "front_desk"]), async (req: Request, res: Response) => {
+  try {
+    const { hotelId } = req.query;
+    const filter = hotelId ? { hotelId: hotelId as string } : {};
+
+    const today = new Date();
+    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+    // Occupancy rate using aggregation
+    const occupancyAgg = await Room.aggregate([
+      { $match: { ...filter, isActive: true } },
+      {
+        $group: {
+          _id: null,
+          totalRooms: { $sum: 1 },
+          occupiedRooms: {
+            $sum: {
+              $cond: [{ $in: ["$status", ["occupied", "reserved"]] }, 1, 0]
+            }
+          }
+        }
+      }
+    ]);
+    const occupancyData = occupancyAgg[0] || { totalRooms: 0, occupiedRooms: 0 };
+    const occupancyRate = occupancyData.totalRooms > 0 ? Math.round((occupancyData.occupiedRooms / occupancyData.totalRooms) * 100) : 0;
+
+    // Today's revenue using aggregation
+    const todayRevenueAgg = await Booking.aggregate([
+      {
+        $match: {
+          ...filter,
+          paymentStatus: "paid",
+          createdAt: { $gte: startOfDay, $lt: endOfDay },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$totalCost" },
+        },
+      },
+    ]);
+    const todayRevenue = todayRevenueAgg[0]?.total || 0;
+
+    // Upcoming arrivals (next 7 days) using aggregation
+    const nextWeek = new Date(today);
+    nextWeek.setDate(nextWeek.getDate() + 7);
+    const upcomingArrivalsAgg = await Booking.aggregate([
+      {
+        $match: {
+          ...filter,
+          checkIn: { $gte: today, $lte: nextWeek },
+          status: { $in: ["confirmed", "pending"] },
+        },
+      },
+      {
+        $project: {
+          firstName: 1,
+          lastName: 1,
+          checkIn: 1,
+          roomNumber: 1,
+        },
+      },
+      { $sort: { checkIn: 1 } },
+      { $limit: 10 },
+    ]);
+    const upcomingArrivals = upcomingArrivalsAgg;
+
+    // Pending approvals (pending bookings) using aggregation
+    const pendingApprovalsAgg = await Booking.aggregate([
+      { $match: { ...filter, status: "pending" } },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const pendingApprovals = pendingApprovalsAgg[0]?.count || 0;
+
+    // Maintenance alerts (pending maintenance) using aggregation
+    const maintenanceAlertsAgg = await Maintenance.aggregate([
+      { $match: { ...filter, status: { $in: ["reported", "assigned"] } } },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const maintenanceAlerts = maintenanceAlertsAgg[0]?.count || 0;
+
+    // Recent activity (recent bookings) using aggregation
+    const recentActivityAgg = await Booking.aggregate([
+      { $match: filter },
+      {
+        $project: {
+          firstName: 1,
+          lastName: 1,
+          status: 1,
+          checkIn: 1,
+          updatedAt: 1,
+        },
+      },
+      { $sort: { updatedAt: -1 } },
+      { $limit: 10 },
+    ]);
+    const recentActivity = recentActivityAgg;
+
+    res.json({
+      success: true,
+      data: {
+        occupancyRate,
+        todayRevenue,
+        upcomingArrivals,
+        pendingApprovals,
+        maintenanceAlerts,
+        recentActivity,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching real-time dashboard:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 export default router;

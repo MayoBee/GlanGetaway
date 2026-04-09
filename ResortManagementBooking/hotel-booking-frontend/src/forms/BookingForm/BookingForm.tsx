@@ -150,6 +150,7 @@ const BookingForm = ({ currentUser, paymentIntent }: Props) => {
   const [isCopied, setIsCopied] = useState<boolean>(false);
   const [isPwdBooking, setIsPwdBooking] = useState<boolean>(false);
   const [isSeniorCitizenBooking, setIsSeniorCitizenBooking] = useState<boolean>(false);
+  const [availabilityError, setAvailabilityError] = useState<string | null>(null);
 
   // Update discount info when checkboxes change
   const handlePwdChange = (checked: boolean) => {
@@ -263,6 +264,38 @@ MM/YY: 12/35 CVC: 123`;
       discountInfo,
       totalCost: totalCost, // Use the calculated total cost with discounts
     };
+
+    // Check availability before proceeding with payment
+    setAvailabilityError(null);
+    try {
+      const availability = await apiClient.checkAvailability({
+        hotelId: formData.hotelId,
+        checkIn: formData.checkIn,
+        checkOut: formData.checkOut,
+        selectedRooms: formData.selectedRooms?.map(r => ({ id: r.id, units: r.units })),
+        selectedCottages: formData.selectedCottages?.map(c => ({ id: c.id, units: c.units })),
+        selectedAmenities: formData.selectedAmenities?.map(a => ({ id: a.id, units: a.units })),
+        selectedPackages: formData.selectedPackages?.map(p => ({ id: p.id })),
+      });
+
+      if (!availability.available) {
+        const errorMessage = availability.message || "The selected items are not available for the chosen dates.";
+        setAvailabilityError(errorMessage);
+        showToast({
+          title: "Availability Conflict",
+          description: errorMessage,
+          type: "ERROR",
+        });
+        return;
+      }
+    } catch (error: any) {
+      showToast({
+        title: "Availability Check Failed",
+        description: "Failed to check availability. Please try again.",
+        type: "ERROR",
+      });
+      return;
+    }
 
     const result = await stripe.confirmCardPayment(paymentIntent.clientSecret, {
       payment_method: {

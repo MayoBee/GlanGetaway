@@ -1,6 +1,9 @@
 import express, { Request, Response } from "express";
 import { verifyToken, requireSuperAdmin, requireAdmin } from "../middleware/role-based-auth";
 import User from "../models/user";
+import Hotel from "../models/hotel";
+import Booking from "../models/booking";
+import RolePromotionRequest from "../models/role-promotion-request";
 import { check, validationResult } from "express-validator";
 
 const router = express.Router();
@@ -465,6 +468,81 @@ router.get("/user-details/:userId", verifyToken, requireSuperAdmin, [
   } catch (error) {
     console.error("Error fetching user details:", error);
     res.status(500).json({ message: "Failed to fetch user details" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin-management/users/{userId}:
+ *   delete:
+ *     summary: Delete user account with cascade (Admin only)
+ *     description: Permanently delete a user account and all associated data (bookings, hotels, promotion requests)
+ *     tags: [Admin Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User and associated data deleted successfully
+ *       400:
+ *         description: Invalid user ID or cannot delete own account
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only
+ *       404:
+ *         description: User not found
+ */
+router.delete("/users/:userId", verifyToken, requireAdmin, [
+  check("userId").isMongoId().withMessage("Invalid user ID")
+], async (req: Request, res: Response) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: "Invalid user ID", errors: errors.array() });
+  }
+
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Prevent self-deletion
+    if (user._id.toString() === req.userId) {
+      return res.status(400).json({ message: "Cannot delete your own account" });
+    }
+
+    // Cascade delete associated data
+    const [bookingDeleteResult, hotelDeleteResult, promotionRequestDeleteResult] = await Promise.all([
+      Booking.deleteMany({ userId }),
+      Hotel.deleteMany({ userId }),
+      RolePromotionRequest.deleteMany({ userId })
+    ]);
+
+    // Delete the user
+    await User.findByIdAndDelete(userId);
+
+    console.log(`🗑️ User deleted with cascade: ${user.email} by admin ${req.userId}`);
+    console.log(`Deleted: ${bookingDeleteResult.deletedCount} bookings, ${hotelDeleteResult.deletedCount} hotels, ${promotionRequestDeleteResult.deletedCount} promotion requests`);
+
+    res.json({
+      message: "User and associated data deleted successfully",
+      deletedData: {
+        bookings: bookingDeleteResult.deletedCount,
+        hotels: hotelDeleteResult.deletedCount,
+        promotionRequests: promotionRequestDeleteResult.deletedCount
+      }
+    });
+  } catch (error) {
+    console.error("Error deleting user with cascade:", error);
+    res.status(500).json({ message: "Failed to delete user" });
   }
 });
 

@@ -68,6 +68,7 @@ export interface HotelType {
   policies?: any;
   gcashNumber?: string;
   downPaymentPercentage?: number;
+  status?: 'pending' | 'approved' | 'declined';
   isApproved?: boolean;
   approvedBy?: string;
   rejectionReason?: string;

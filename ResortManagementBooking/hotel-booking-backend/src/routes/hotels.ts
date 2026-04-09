@@ -9,6 +9,7 @@ import { BookingType, HotelSearchResponse } from "../types";
 import { param, body, validationResult } from "express-validator";
 import Stripe from "stripe";
 import verifyToken from "../middleware/auth";
+import { checkAvailability } from "../services/availabilityService";
 
 const stripe = new Stripe(process.env.STRIPE_API_KEY as string);
 
@@ -156,10 +157,37 @@ router.get(
         });
       }
       
-      res.json(hotel);
+       res.json(hotel);
+     } catch (error) {
+       console.log(error);
+       res.status(500).json({ message: "Error fetching hotel" });
+     }
+   }
+ );
+
+router.get(
+  "/:hotelId/availability",
+  async (req: Request, res: Response) => {
+    try {
+      const { hotelId } = req.params;
+      const { checkIn, checkOut, roomIds, cottageIds } = req.query;
+
+      if (!checkIn || !checkOut) {
+        return res.status(400).json({ message: "checkIn and checkOut are required" });
+      }
+
+      const roomIdsArray = roomIds ? (typeof roomIds === 'string' ? roomIds.split(',') : roomIds) : [];
+      const cottageIdsArray = cottageIds ? (typeof cottageIds === 'string' ? cottageIds.split(',') : cottageIds) : [];
+
+      const availability = await checkAvailability(hotelId, new Date(checkIn as string), new Date(checkOut as string), roomIdsArray as string[], cottageIdsArray as string[]);
+
+      res.json({
+        available: availability.available,
+        conflicts: availability.conflicts
+      });
     } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: "Error fetching hotel" });
+      console.error("Availability check error:", error);
+      res.status(500).json({ message: "Error checking availability" });
     }
   }
 );
@@ -255,13 +283,23 @@ router.post(
         isSeniorCitizenBooking,
         discountInfo
       } = req.body;
-      
+
       // Verify hotel exists
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
         return res.status(404).json({ message: "Hotel not found" });
       }
-      
+
+      // Extract IDs
+      const roomIds = selectedRooms.map((room: any) => room.id);
+      const cottageIds = selectedCottages.map((cottage: any) => cottage.id);
+
+      // Check availability
+      const availability = await checkAvailability(hotelId, new Date(checkIn), new Date(checkOut), roomIds, cottageIds);
+      if (!availability.available) {
+        return res.status(409).json({ message: "Some rooms or cottages are not available for the selected dates", conflicts: availability.conflicts });
+      }
+
       // Create the booking
       const booking = new Booking({
         userId,
@@ -365,13 +403,25 @@ router.post(
       const amountPaid = req.body['gcashPayment.amountPaid'];
       const gcashStatus = req.body['gcashPayment.status'];
       const paymentTime = req.body['gcashPayment.paymentTime'];
-      
+
       // Verify hotel exists
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
         return res.status(404).json({ message: "Hotel not found" });
       }
-      
+
+      // Extract IDs from parsed arrays
+      const parsedRooms = selectedRooms ? JSON.parse(selectedRooms) : [];
+      const parsedCottages = selectedCottages ? JSON.parse(selectedCottages) : [];
+      const roomIds = parsedRooms.map((room: any) => room.id);
+      const cottageIds = parsedCottages.map((cottage: any) => cottage.id);
+
+      // Check availability
+      const availability = await checkAvailability(hotelId, new Date(checkIn), new Date(checkOut), roomIds, cottageIds);
+      if (!availability.available) {
+        return res.status(409).json({ message: "Some rooms or cottages are not available for the selected dates", conflicts: availability.conflicts });
+      }
+
       // Create GCash payment details
       const gcashPaymentDetails = {
         gcashNumber: gcashNumber || '',

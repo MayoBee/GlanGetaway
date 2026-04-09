@@ -137,8 +137,8 @@ const hotelSchema = new mongoose.Schema<HotelType>(
       ],
     },
     // Approval system fields
-    status: { type: String, enum: ['pending', 'approved', 'declined'], default: 'pending' },
-    isApproved: { type: Boolean, default: false },
+    isApproved: { type: Boolean, default: true },
+    status: { type: String, enum: ['approved', 'pending'], default: 'pending' },
     approvedBy: { type: String },
     approvedAt: { type: Date },
     rejectionReason: { type: String },

@@ -27,6 +27,7 @@ import AdminReports from "./pages/AdminReports";
 import AdminManagement from "./pages/AdminManagement";
 import BusinessInsights from "./pages/BusinessInsights";
 import ResortApproval from "./pages/Admin/ResortApproval";
+import ApplyForResortOwner from "./pages/ApplyForResortOwner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import WebsiteFeedbackManagement from "./pages/Admin/WebsiteFeedbackManagement";
 import WebsiteFeedback from "./components/WebsiteFeedback";
@@ -225,7 +226,17 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
-            
+            <Route
+              path="/apply-resort-owner"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ApplyForResortOwner />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
             {/* Resort Management Routes */}
             <Route
               path="/resort/dashboard"

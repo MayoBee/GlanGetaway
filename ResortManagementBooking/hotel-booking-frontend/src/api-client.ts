@@ -297,6 +297,22 @@ export const createPaymentIntent = async (
   return response.data;
 };
 
+export const checkAvailability = async (params: {
+  hotelId: string;
+  checkIn: string;
+  checkOut: string;
+  selectedRooms?: Array<{ id: string; units: number }>;
+  selectedCottages?: Array<{ id: string; units: number }>;
+  selectedAmenities?: Array<{ id: string; units: number }>;
+  selectedPackages?: Array<{ id: string }>;
+}) => {
+  const response = await axiosInstance.post(
+    `/api/hotels/${params.hotelId}/availability`,
+    params
+  );
+  return response.data;
+};
+
 export const createRoomBooking = async (formData: BookingFormData) => {
   const response = await axiosInstance.post(
     `/api/hotels/${formData.hotelId}/bookings`,

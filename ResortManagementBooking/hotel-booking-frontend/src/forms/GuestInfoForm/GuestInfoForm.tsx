@@ -99,6 +99,10 @@ const GuestInfoForm = ({
   // Verification files state
   const [verificationFiles, setVerificationFiles] = useState<File[]>([]);
 
+  // Availability state
+  const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
+  const [availabilityConflict, setAvailabilityConflict] = useState<string | null>(null);
+
   // Rate type state - use from context instead of local state
   const [selectedNights, setSelectedNights] = useState<number>(1);
 
@@ -193,6 +197,71 @@ const GuestInfoForm = ({
     return total;
   };
 
+  // Fetch availability for the selected dates
+  const fetchAvailability = async () => {
+    if (!checkIn || !checkOut) return;
+
+    try {
+      const bookings = await apiClient.fetchHotelBookings(hotelId);
+      const unavailable: Date[] = [];
+      const selectedStart = new Date(checkIn);
+      const selectedEnd = new Date(checkOut);
+
+      // Check for overlapping bookings
+      bookings.forEach((booking: any) => {
+        if (booking.status === 'cancelled') return; // Skip cancelled bookings
+
+        const bookingStart = new Date(booking.checkIn);
+        const bookingEnd = new Date(booking.checkOut);
+
+        // Check if dates overlap
+        if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
+          // Add all dates in the range to unavailable
+        let currentDate = new Date(bookingStart);
+        while (currentDate < bookingEnd) {
+          unavailable.push(new Date(currentDate));
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        }
+      });
+
+      setUnavailableDates(unavailable);
+      setAvailabilityConflict(null);
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+    }
+  };
+
+  // Check availability before submission
+  const checkAvailabilityBeforeSubmit = async (): Promise<boolean> => {
+    if (!checkIn || !checkOut) return false;
+
+    try {
+      const bookings = await apiClient.fetchHotelBookings(hotelId);
+      const selectedStart = new Date(checkIn);
+      const selectedEnd = new Date(checkOut);
+
+      for (const booking of bookings) {
+        if (booking.status === 'cancelled') continue;
+
+        const bookingStart = new Date(booking.checkIn);
+        const bookingEnd = new Date(booking.checkOut);
+
+        if (selectedStart < bookingEnd && selectedEnd > bookingStart) {
+          setAvailabilityConflict('The selected dates are no longer available. Please choose different dates.');
+          return false;
+        }
+      }
+
+      setAvailabilityConflict(null);
+      return true;
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      setAvailabilityConflict('Unable to verify availability. Please try again.');
+      return false;
+    }
+  };
+
   // Determine available rate types based on entrance fees
   const hasDayRate = hotel?.adultEntranceFee?.dayRate && hotel.adultEntranceFee.dayRate > 0 || 
                     hotel?.childEntranceFee?.some(child => child.dayRate > 0);
@@ -254,6 +323,13 @@ const GuestInfoForm = ({
     }
   }, [selectedRateType]);
 
+  // Fetch availability when dates change
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      fetchAvailability();
+    }
+  }, [checkIn, checkOut, hotelId]);
+
   const minDate = new Date();
   const maxDate = new Date();
   maxDate.setFullYear(maxDate.getFullYear() + 1);
@@ -277,6 +353,12 @@ const GuestInfoForm = ({
   };
 
   const onSubmit = async (data: GuestInfoFormData) => {
+    // Check availability before proceeding
+    const isAvailable = await checkAvailabilityBeforeSubmit();
+    if (!isAvailable) {
+      return;
+    }
+
     if (editMode && bookingId) {
       // Edit mode - update existing booking
       try {
@@ -420,6 +502,17 @@ const GuestInfoForm = ({
           {/* Booking Summary */}
           <BookingSummary />
 
+          {/* Availability Conflict Message */}
+          {availabilityConflict && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 text-red-700">
+                <AlertCircle className="h-5 w-5" />
+                <span className="font-medium">Availability Conflict</span>
+              </div>
+              <p className="text-sm text-red-600 mt-1">{availabilityConflict}</p>
+            </div>
+          )}
+
           <form
             onSubmit={
               isLoggedIn ? handleSubmit(onSubmit) : handleSubmit(onSignInClick)
@@ -450,6 +543,7 @@ const GuestInfoForm = ({
                       }}
                       minDate={minDate}
                       maxDate={maxDate}
+                      excludeDates={unavailableDates}
                       placeholderText="Check-in Date"
                       className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                       wrapperClassName="w-full"
@@ -486,6 +580,7 @@ const GuestInfoForm = ({
                         }}
                         minDate={minDate}
                         maxDate={maxDate}
+                        excludeDates={unavailableDates}
                         placeholderText="Check-in Date"
                         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         wrapperClassName="w-full"
@@ -513,6 +608,7 @@ const GuestInfoForm = ({
                           }
                         }}
                         minDate={checkIn || minDate}
+                        excludeDates={unavailableDates}
                         placeholderText="Check-out Date"
                         className="w-full bg-white border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         wrapperClassName="w-full"

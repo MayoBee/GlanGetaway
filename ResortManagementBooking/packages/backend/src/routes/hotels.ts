@@ -281,6 +281,8 @@ router.post(
         selectedRooms: selectedRooms || [],
         selectedCottages: selectedCottages || [],
         selectedAmenities: selectedAmenities || [],
+        roomIds: selectedRooms ? selectedRooms.map((room: any) => room.id) : [],
+        cottageIds: selectedCottages ? selectedCottages.map((cottage: any) => cottage.id) : [],
         paymentMethod: paymentMethod || "card",
         specialRequests: specialRequests || "",
         status: "pending",
@@ -383,6 +385,8 @@ router.post(
       };
       
       // Create the booking with GCash payment
+      const parsedSelectedRooms = selectedRooms ? JSON.parse(selectedRooms) : [];
+      const parsedSelectedCottages = selectedCottages ? JSON.parse(selectedCottages) : [];
       const booking = new Booking({
         userId,
         hotelId,
@@ -398,9 +402,11 @@ router.post(
         checkOutTime: checkOutTime || "11:00",
         totalCost: parseFloat(totalCost) || parseFloat(basePrice) || 0,
         basePrice: parseFloat(basePrice) || parseFloat(totalCost) || 0,
-        selectedRooms: selectedRooms ? JSON.parse(selectedRooms) : [],
-        selectedCottages: selectedCottages ? JSON.parse(selectedCottages) : [],
+        selectedRooms: parsedSelectedRooms,
+        selectedCottages: parsedSelectedCottages,
         selectedAmenities: selectedAmenities ? JSON.parse(selectedAmenities) : [],
+        roomIds: parsedSelectedRooms.map((room: any) => room.id),
+        cottageIds: parsedSelectedCottages.map((cottage: any) => cottage.id),
         paymentMethod: "gcash",
         specialRequests: specialRequests || "",
         status: "pending",

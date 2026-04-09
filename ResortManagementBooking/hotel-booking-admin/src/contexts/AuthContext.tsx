@@ -16,42 +16,40 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem("admin_token"));
-  const [isLoading, setIsLoading] = useState(true);
+// Helper to get stored auth data
+const getStoredAuth = () => {
+  try {
+    const token = localStorage.getItem("admin_token");
+    const userStr = localStorage.getItem("admin_user");
+    const user = userStr ? JSON.parse(userStr) : null;
+    return { token, user };
+  } catch {
+    return { token: null, user: null };
+  }
+};
 
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const stored = getStoredAuth();
+  const [user, setUser] = useState<User | null>(stored.user);
+  const [token, setToken] = useState<string | null>(stored.token);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!stored.token && !!stored.user);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Simple validation on mount - just check if data exists
   useEffect(() => {
-    validateToken();
+    const { token: storedToken, user: storedUser } = getStoredAuth();
+    const hasAuth = !!storedToken && !!storedUser;
+    setIsAuthenticated(hasAuth);
+    setIsInitializing(false);
+    console.log("Auth check on mount:", hasAuth ? "Authenticated" : "Not authenticated");
   }, []);
 
-  const validateToken = async (): Promise<boolean> => {
-    const storedToken = localStorage.getItem("admin_token");
-    if (!storedToken) {
-      setIsLoading(false);
-      return false;
-    }
-
-    try {
-      await authApi.validateToken();
-      setToken(storedToken);
-      setIsLoading(false);
-      return true;
-    } catch (error) {
-      localStorage.removeItem("admin_token");
-      localStorage.removeItem("admin_user");
-      setToken(null);
-      setUser(null);
-      setIsLoading(false);
-      return false;
-    }
-  };
-
   const login = async (email: string, password: string): Promise<void> => {
+    setIsLoading(true);
     try {
       const response = await authApi.login(email, password);
       
-      // Check if user is admin
       if (response.user.role !== "admin" && response.user.role !== "super_admin") {
         throw new Error("Access denied. Admin privileges required.");
       }
@@ -60,11 +58,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.setItem("admin_user", JSON.stringify(response.user));
       setToken(response.token);
       setUser(response.user);
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error("Login failed");
+      setIsAuthenticated(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -78,14 +74,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       localStorage.removeItem("admin_user");
       setToken(null);
       setUser(null);
+      setIsAuthenticated(false);
+    }
+  };
+
+  const validateToken = async (): Promise<boolean> => {
+    const { token: storedToken, user: storedUser } = getStoredAuth();
+    if (!storedToken || !storedUser) return false;
+    
+    try {
+      await authApi.validateToken();
+      setToken(storedToken);
+      setUser(storedUser);
+      setIsAuthenticated(true);
+      return true;
+    } catch {
+      return false;
     }
   };
 
   const value: AuthContextType = {
     user,
     token,
-    isAuthenticated: !!token && !!user,
+    isAuthenticated,
     isLoading,
+    isInitializing,
     login,
     logout,
     validateToken,

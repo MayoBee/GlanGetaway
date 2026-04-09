@@ -1,5 +1,5 @@
 import { useForm, FormProvider } from "react-hook-form";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import DetailsSection from "./DetailsSection";
 import GuestsSection from "./GuestsSection";
 import TypeSection from "./TypeSection";
@@ -161,6 +161,41 @@ type Props = {
 };
 
 const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
+  const [currentStep, setCurrentStep] = useState(1);
+
+  const steps = [
+    {
+      id: 1,
+      title: "Basic Information",
+      sections: ["DetailsSection", "TypeSection"]
+    },
+    {
+      id: 2,
+      title: "Rates & Facilities",
+      sections: ["GuestsSection", "FacilitiesSection"]
+    },
+    {
+      id: 3,
+      title: "Accommodations",
+      sections: ["FreshRoomsSection", "FreshCottagesSection"]
+    },
+    {
+      id: 4,
+      title: "Amenities & Packages",
+      sections: ["AmenitiesSection", "FreshPackagesSection"]
+    },
+    {
+      id: 5,
+      title: "Contact & Policies",
+      sections: ["ContactSection", "PoliciesSection", "PaymentModuleSection", "DiscountsSection"]
+    },
+    {
+      id: 6,
+      title: "Images & Review",
+      sections: ["ImagesSection", "ReviewSection"]
+    }
+  ];
+
   const formMethods = useForm<HotelFormData>({
     mode: 'onChange',
     shouldFocusError: true,
@@ -400,31 +435,175 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
 
   const onSubmit = handleSubmit(handleSave);
 
+  const handleNext = () => {
+    if (currentStep < 6) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const renderCurrentStepSections = () => {
+    const currentStepData = steps.find(step => step.id === currentStep);
+    if (!currentStepData) return null;
+
+    return currentStepData.sections.map(sectionName => {
+      switch (sectionName) {
+        case "DetailsSection":
+          return <DetailsSection key={sectionName} />;
+        case "GuestsSection":
+          return <GuestsSection key={sectionName} />;
+        case "TypeSection":
+          return <TypeSection key={sectionName} />;
+        case "FacilitiesSection":
+          return <FacilitiesSection key={sectionName} />;
+        case "FreshRoomsSection":
+          return <FreshRoomsSection key={sectionName} />;
+        case "FreshCottagesSection":
+          return <FreshCottagesSection key={sectionName} />;
+        case "AmenitiesSection":
+          return <AmenitiesSection key={sectionName} />;
+        case "FreshPackagesSection":
+          return <FreshPackagesSection key={sectionName} />;
+        case "ContactSection":
+          return <ContactSection key={sectionName} />;
+        case "PoliciesSection":
+          return <PoliciesSection key={sectionName} />;
+        case "ImagesSection":
+          return <ImagesSection key={sectionName} />;
+        case "PaymentModuleSection":
+          return <PaymentModuleSection key={sectionName} />;
+        case "DiscountsSection":
+          return <DiscountsSection key={sectionName} />;
+        case "ReviewSection":
+          return <ReviewSection key={sectionName} />;
+        default:
+          return null;
+      }
+    });
+  };
+
+  const ReviewSection = () => {
+    const watchedValues = formMethods.watch();
+
+    return (
+      <div className="space-y-6">
+        <h3 className="text-2xl font-semibold text-gray-800">Review & Submit</h3>
+        <div className="bg-gray-50 p-6 rounded-lg space-y-4">
+          <div>
+            <h4 className="text-lg font-medium">Basic Information</h4>
+            <p><strong>Name:</strong> {watchedValues.name}</p>
+            <p><strong>City:</strong> {watchedValues.city}</p>
+            <p><strong>Country:</strong> {watchedValues.country}</p>
+            <p><strong>Description:</strong> {watchedValues.description}</p>
+            <p><strong>Type:</strong> {watchedValues.type?.join(", ")}</p>
+            <p><strong>Star Rating:</strong> {watchedValues.starRating}</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Rates</h4>
+            <p><strong>Day Rate:</strong> {watchedValues.hasDayRate ? `₱${watchedValues.dayRate}` : "Not available"}</p>
+            <p><strong>Night Rate:</strong> {watchedValues.hasNightRate ? `₱${watchedValues.nightRate}` : "Not available"}</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Facilities</h4>
+            <p>{watchedValues.facilities?.join(", ") || "None"}</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Rooms</h4>
+            <p>{watchedValues.rooms?.length || 0} room types configured</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Cottages</h4>
+            <p>{watchedValues.cottages?.length || 0} cottage types configured</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Amenities</h4>
+            <p>{watchedValues.amenities?.length || 0} amenities configured</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Packages</h4>
+            <p>{watchedValues.packages?.length || 0} packages configured</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Contact</h4>
+            <p><strong>Phone:</strong> {watchedValues.contact?.phone}</p>
+            <p><strong>Email:</strong> {watchedValues.contact?.email}</p>
+            <p><strong>Website:</strong> {watchedValues.contact?.website}</p>
+          </div>
+          <div>
+            <h4 className="text-lg font-medium">Images</h4>
+            <p>{watchedValues.imageUrls?.length || 0} images uploaded</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <FormProvider {...formMethods}>
       <form className="flex flex-col gap-10" onSubmit={onSubmit}>
-        <DetailsSection />
-        <GuestsSection />
-        <TypeSection />
-        <FacilitiesSection />
-        <FreshRoomsSection />
-        <FreshCottagesSection />
-        <AmenitiesSection />
-        <FreshPackagesSection />
-        <ContactSection />
-        <PoliciesSection />
-        <PaymentModuleSection />
-        <DiscountsSection />
-        <ImagesSection />
-        <span className="flex justify-end">
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-2">
+            {steps.map((step) => (
+              <div key={step.id} className="flex flex-col items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold ${
+                  step.id < currentStep ? "bg-green-500 text-white" :
+                  step.id === currentStep ? "bg-blue-500 text-white" :
+                  "bg-gray-300 text-gray-600"
+                }`}>
+                  {step.id}
+                </div>
+                <span className={`mt-2 text-xs text-center ${step.id === currentStep ? "font-semibold text-blue-600" : "text-gray-500"}`}>
+                  {step.title}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div
+              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Current Step Content */}
+        {renderCurrentStepSections()}
+
+        {/* Navigation Buttons */}
+        <div className="flex justify-between mt-8">
           <button
-            disabled={isLoading}
-            type="submit"
-            className="bg-blue-600 text-white  px-6 py-2 rounded-lg font-semibold hover:bg-blue-500 text-xl disabled:bg-gray-500"
+            type="button"
+            onClick={handlePrevious}
+            disabled={currentStep === 1}
+            className="px-6 py-2 rounded-lg font-semibold text-gray-700 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Saving..." : "Save"}
+            Previous
           </button>
-        </span>
+
+          {currentStep < 6 ? (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="px-6 py-2 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-500"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              disabled={isLoading}
+              type="submit"
+              className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-500 text-xl disabled:bg-gray-500"
+            >
+              {isLoading ? "Saving..." : "Save"}
+            </button>
+          )}
+        </div>
       </form>
     </FormProvider>
   );

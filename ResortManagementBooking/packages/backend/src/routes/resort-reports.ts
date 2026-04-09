@@ -1,4 +1,5 @@
 import express, { Request, Response } from "express";
+import * as converter from 'json-2-csv';
 import Booking from "../models/booking";
 import Room from "../models/room";
 import Billing from "../models/billing";
@@ -68,15 +69,31 @@ router.get("/reservations/summary", verifyToken, requireRole(["admin"]), async (
       }
     });
 
-    res.json({
-      success: true,
-      data: {
-        total: bookings.length,
-        revenue: bookings.filter(b => b.paymentStatus === "paid").reduce((sum, b) => sum + b.totalCost, 0),
-        cancelled: bookings.filter(b => b.status === "cancelled").length,
-        byPeriod: grouped,
-      },
-    });
+    const reportData = {
+      total: bookings.length,
+      revenue: bookings.filter(b => b.paymentStatus === "paid").reduce((sum, b) => sum + b.totalCost, 0),
+      cancelled: bookings.filter(b => b.status === "cancelled").length,
+      byPeriod: grouped,
+    };
+
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csvData = Object.entries(reportData.byPeriod).map(([period, stats]: [string, any]) => ({
+        period,
+        bookings: stats.bookings,
+        revenue: stats.revenue,
+        cancelled: stats.cancelled
+      }));
+      const csv = converter.json2csv(csvData);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="booking-summary.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: reportData,
+      });
+    }
   } catch (error) {
     console.error("Error generating booking summary:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -151,17 +168,27 @@ router.get("/reservations/occupancy", verifyToken, requireRole(["admin"]), async
       },
     ]);
 
-    res.json({
-      success: true,
-      data: {
-        totalRooms,
-        occupiedRoomNights,
-        availableRoomNights,
-        occupancyRate: Math.round(occupancyRate * 100) / 100,
-        daysInPeriod,
-        byRoomType: occupancyByRoomType,
-      },
-    });
+    const reportData = {
+      totalRooms,
+      occupiedRoomNights,
+      availableRoomNights,
+      occupancyRate: Math.round(occupancyRate * 100) / 100,
+      daysInPeriod,
+      byRoomType: occupancyByRoomType,
+    };
+
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(reportData.byRoomType);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="occupancy-report.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: reportData,
+      });
+    }
   } catch (error) {
     console.error("Error generating occupancy report:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -190,16 +217,24 @@ router.get("/reservations/cancelled", verifyToken, requireRole(["admin"]), async
 
     const total = await Booking.countDocuments(filter);
 
-    res.json({
-      success: true,
-      data: cancelledBookings,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
-      },
-    });
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(cancelledBookings);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="cancelled-reservations.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: cancelledBookings,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
+      });
+    }
   } catch (error) {
     console.error("Error generating cancelled reservations report:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -260,17 +295,28 @@ router.get("/financial/revenue", verifyToken, requireRole(["admin"]), async (req
       },
     ]);
 
-    res.json({
-      success: true,
-      data: {
-        totalRevenue: totalRevenue[0]?.total || 0,
-        totalBookings: totalRevenue[0]?.count || 0,
-        byCategory: {
-          rooms: roomRevenue,
-          amenities: amenityRevenue,
-        },
+    const reportData = {
+      totalRevenue: totalRevenue[0]?.total || 0,
+      totalBookings: totalRevenue[0]?.count || 0,
+      byCategory: {
+        rooms: roomRevenue,
+        amenities: amenityRevenue,
       },
-    });
+    };
+
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csvData = [...reportData.byCategory.rooms, ...reportData.byCategory.amenities];
+      const csv = converter.json2csv(csvData);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="revenue-report.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: reportData,
+      });
+    }
   } catch (error) {
     console.error("Error generating revenue report:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -280,10 +326,17 @@ router.get("/financial/revenue", verifyToken, requireRole(["admin"]), async (req
 // Daily Transaction Summary - ADMIN ONLY
 router.get("/financial/daily", verifyToken, requireRole(["admin"]), async (req: Request, res: Response) => {
   try {
-    const { hotelId, date } = req.query;
-    const targetDate = date ? new Date(date as string) : new Date();
-    const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+    const { hotelId, startDate, endDate, date } = req.query;
+    let startOfDay: Date;
+    let endOfDay: Date;
+    if (startDate && endDate) {
+      startOfDay = new Date(startDate as string);
+      endOfDay = new Date(endDate as string);
+    } else {
+      const targetDate = date ? new Date(date as string) : new Date();
+      startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
+      endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+    }
 
     const filter: any = {
       createdAt: { $gte: startOfDay, $lte: endOfDay },
@@ -325,15 +378,26 @@ router.get("/financial/daily", verifyToken, requireRole(["admin"]), async (req: 
       },
     ]);
 
-    res.json({
-      success: true,
-      data: {
-        date: startOfDay.toISOString().split("T")[0],
-        transactions,
-        byPaymentMethod,
-        byStatus,
-      },
-    });
+    const reportData = {
+      startDate: startOfDay.toISOString().split("T")[0],
+      endDate: endOfDay.toISOString().split("T")[0],
+      transactions,
+      byPaymentMethod,
+      byStatus,
+    };
+
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(reportData.transactions);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="daily-transactions.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: reportData,
+      });
+    }
   } catch (error) {
     console.error("Error generating daily transaction report:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -370,17 +434,27 @@ router.get("/financial/taxes", verifyToken, requireRole(["admin"]), async (req: 
     const baseAmount = taxData[0]?.baseAmount || 0;
     const taxCollected = totalSales - baseAmount;
 
-    res.json({
-      success: true,
-      data: {
-        totalSales,
-        baseAmount,
-        taxRate: 0.12,
-        taxCollected,
-        startDate,
-        endDate,
-      },
-    });
+    const reportData = {
+      totalSales,
+      baseAmount,
+      taxRate: 0.12,
+      taxCollected,
+      startDate,
+      endDate,
+    };
+
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv([reportData]);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="tax-report.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: reportData,
+      });
+    }
   } catch (error) {
     console.error("Error generating tax report:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -411,16 +485,24 @@ router.get("/operational/guests", verifyToken, requireRole(["admin"]), async (re
 
     const total = await Booking.countDocuments(filter);
 
-    res.json({
-      success: true,
-      data: guests,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
-      },
-    });
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(guests);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="guest-list.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: guests,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
+      });
+    }
   } catch (error) {
     console.error("Error generating guest list:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -456,10 +538,18 @@ router.get("/operational/activities", verifyToken, requireRole(["admin"]), async
       },
     ]);
 
-    res.json({
-      success: true,
-      data: activityBookings,
-    });
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(activityBookings);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="activity-participation.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: activityBookings,
+      });
+    }
   } catch (error) {
     console.error("Error generating activity participation report:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -500,17 +590,25 @@ router.get("/operational/maintenance", verifyToken, requireRole(["admin"]), asyn
       },
     ]);
 
-    res.json({
-      success: true,
-      data: maintenance,
-      stats,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
-      },
-    });
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(maintenance);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="maintenance-history.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: maintenance,
+        stats,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
+      });
+    }
   } catch (error) {
     console.error("Error generating maintenance history:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -546,10 +644,18 @@ router.get("/amenity-usage", verifyToken, requireRole(["admin"]), async (req: Re
       },
     ]);
 
-    res.json({
-      success: true,
-      data: amenityBookings,
-    });
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(amenityBookings);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="amenity-usage.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: amenityBookings,
+      });
+    }
   } catch (error) {
     console.error("Error generating amenity usage report:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -606,16 +712,24 @@ router.get("/pending-bookings", verifyToken, requireRole(["admin", "resort_owner
       })
     );
 
-    res.json({
-      success: true,
-      data: bookingsWithDetails,
-      pagination: {
-        page: Number(page),
-        limit: Number(limit),
-        total,
-        pages: Math.ceil(total / Number(limit)),
-      },
-    });
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv(bookingsWithDetails);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="pending-bookings.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: bookingsWithDetails,
+        pagination: {
+          page: Number(page),
+          limit: Number(limit),
+          total,
+          pages: Math.ceil(total / Number(limit)),
+        },
+      });
+    }
   } catch (error) {
     console.error("Error fetching pending bookings:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
@@ -663,15 +777,25 @@ router.get("/booking-details/:bookingId", verifyToken, requireRole(["admin", "re
       ];
     }
 
-    res.json({
-      success: true,
-      data: {
-        booking,
-        payment: paymentInfo,
-        documents: allDocuments,
-        user,
-      },
-    });
+    const reportData = {
+      booking,
+      payment: paymentInfo,
+      documents: allDocuments,
+      user,
+    };
+
+    const { format } = req.query;
+    if (format === 'csv') {
+      const csv = converter.json2csv([reportData]);
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="booking-details.csv"');
+      res.send(csv);
+    } else {
+      res.json({
+        success: true,
+        data: reportData,
+      });
+    }
   } catch (error) {
     console.error("Error fetching booking details:", error);
     res.status(500).json({ success: false, message: "Internal server error" });

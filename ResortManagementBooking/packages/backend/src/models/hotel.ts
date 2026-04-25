@@ -161,8 +161,8 @@ const hotelSchema = new mongoose.Schema<HotelType>(
       },
     ],
     downPaymentPercentage: { type: Number, default: 50, min: 10, max: 100 },
-    gcashNumber: { 
-      type: String, 
+    gcashNumber: {
+      type: String,
       validate: {
         validator: function(v: string) {
           return !v || /^09\d{9}$/.test(v);
@@ -170,6 +170,31 @@ const hotelSchema = new mongoose.Schema<HotelType>(
         message: 'GCash number must be 11 digits starting with 09 (e.g., 09XXXXXXXXX)'
       }
     },
+    // Staff management - directly stored in hotel
+    staff: [
+      {
+        staffUserId: { type: String, required: true },
+        firstName: { type: String, required: true },
+        lastName: { type: String, required: true },
+        email: { type: String, required: true },
+        role: { type: String, enum: ["front_desk", "housekeeping"], required: true },
+        permissions: {
+          canManageBookings: { type: Boolean, default: true },
+          canManageRooms: { type: Boolean, default: true },
+          canManagePricing: { type: Boolean, default: false },
+          canManageAmenities: { type: Boolean, default: false },
+          canManageActivities: { type: Boolean, default: true },
+          canViewReports: { type: Boolean, default: true },
+          canManageBilling: { type: Boolean, default: true },
+          canManageHousekeeping: { type: Boolean, default: false },
+          canManageMaintenance: { type: Boolean, default: false },
+          canManageUsers: { type: Boolean, default: false },
+        },
+        isActive: { type: Boolean, default: true },
+        mustChangePassword: { type: Boolean, default: false },
+        assignedAt: { type: Date, default: Date.now },
+      },
+    ],
     // Audit fields
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

@@ -9,7 +9,7 @@ import { Separator } from "../../../shared/ui/separator";
 import { Button } from "../../../shared/ui/button";
 import { useState } from "react";
 import * as apiClient from "../api-client";
-import { Plus, LogOut, Building, UserCheck, BarChart3 } from "lucide-react";
+import { Plus, LogOut, Building, UserCheck, BarChart3, Users } from "lucide-react";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 
@@ -121,6 +121,21 @@ const UsernameMenu = () => {
             >
               <BarChart3 className="h-4 w-4" />
               Resort Analytics
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {permissions.canManageOwnResorts && (
+          <DropdownMenuItem
+            onClick={handleMenuClick}
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/manage-front-desk"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <Users className="h-4 w-4" />
+              Manage Front Desk
             </Link>
           </DropdownMenuItem>
         )}

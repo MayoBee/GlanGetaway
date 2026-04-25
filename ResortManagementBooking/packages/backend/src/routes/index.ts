@@ -31,6 +31,7 @@ import weatherTriggerRoutes from "./weather-triggers";
 import amenitySlotsRoutes from "./amenity-slots";
 import housekeepingTasksRoutes from "./housekeeping-tasks";
 import rolePromotionRoutes from "./role-promotion-requests";
+import resortStaffRoutes from "./resort-staff";
 
 export const registerRoutes = (app: Express): void => {
   app.use("/api/auth", authRoutes);
@@ -67,5 +68,6 @@ export const registerRoutes = (app: Express): void => {
   app.use("/api/weather-triggers", weatherTriggerRoutes);
   app.use("/api/amenity-slots", amenitySlotsRoutes);
   app.use("/api/housekeeping-tasks", housekeepingTasksRoutes);
+  app.use("/api/resort-staff", resortStaffRoutes);
   app.use("/api/role-promotion-requests", rolePromotionRoutes);
 };

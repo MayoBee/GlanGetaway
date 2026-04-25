@@ -1,9 +1,10 @@
 import express, { Request, Response } from "express";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import Hotel from "../models/hotel";
 import User from "../models/user";
 import verifyToken from "../middleware/auth";
-import { body, param, validationResult } from "express-validator";
+import { body, param, query, validationResult } from "express-validator";
+import { generateReceiptData, generateHTMLReceipt, generateTextReceipt } from "../utils/receiptGenerator";
 
 const router = express.Router();
 
@@ -618,9 +619,8 @@ router.post(
     body("childCount").isInt({ min: 0 }).withMessage("Child count must be non-negative"),
     body("checkIn").isISO8601().toDate().withMessage("Valid check-in date is required"),
     body("checkOut").isISO8601().toDate().withMessage("Valid check-out date is required"),
-    body("totalCost").isFloat({ min: 0 }).withMessage("Total cost must be non-negative"),
     body("selectedRooms").isArray().withMessage("Selected rooms must be an array"),
-    body("onSitePaymentMethod").notEmpty().withMessage("On-site payment method is required"),
+    body("walkInDetails.paymentMethod").isIn(["cash", "card", "gcash", "other"]).withMessage("Invalid payment method"),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -641,83 +641,69 @@ router.post(
         checkOut,
         checkInTime,
         checkOutTime,
-        totalCost,
-        basePrice,
         selectedRooms,
         selectedCottages,
         selectedAmenities,
+        walkInDetails,
         specialRequests,
         isPwdBooking,
         isSeniorCitizenBooking,
-        discountApplied,
-        // Walk-in specific fields
-        guestIdType,
-        guestIdNumber,
-        onSitePaymentMethod,
-        receiptNumber,
       } = req.body;
 
-      // Verify the hotel belongs to the authenticated user (resort owner/staff)
+      // Verify the hotel belongs to the authenticated user (resort owner)
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
         return res.status(404).json({ message: "Hotel not found" });
       }
 
       if (hotel.userId !== req.userId) {
-        return res.status(403).json({ message: "Access denied. Only resort owners/staff can create walk-in bookings." });
+        return res.status(403).json({ message: "Access denied. Only resort owners can create walk-in bookings." });
       }
 
-      // Check room availability for walk-in dates
-      const checkInDate = new Date(checkIn);
-      const checkOutDate = new Date(checkOut);
+      // Calculate total cost
+      let totalCost = 0;
+      let basePrice = 0;
 
-      // Find conflicting bookings for the same rooms/cottages
-      const conflictingBookings = await Booking.find({
-        hotelId,
-        status: { $in: ["pending", "confirmed"] },
-        $or: [
-          {
-            checkIn: { $lt: checkOutDate },
-            checkOut: { $gt: checkInDate },
-          },
-        ],
-      });
-
-      // Check for room conflicts
-      const bookedRoomIds = conflictingBookings
-        .flatMap((b) => b.selectedRooms || [])
-        .map((r) => r.id);
-
-      const requestedRoomIds = selectedRooms.map((r: any) => r.id);
-      const roomConflicts = requestedRoomIds.filter((id: string) => bookedRoomIds.includes(id));
-
-      if (roomConflicts.length > 0) {
-        return res.status(409).json({ 
-          message: "Some rooms are already booked for these dates",
-          conflictingRooms: roomConflicts
+      if (selectedRooms && selectedRooms.length > 0) {
+        selectedRooms.forEach((room: any) => {
+          const nights = Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24));
+          const roomCost = room.pricePerNight * nights;
+          totalCost += roomCost;
+          basePrice += roomCost;
         });
       }
 
-      // Check for cottage conflicts
       if (selectedCottages && selectedCottages.length > 0) {
-        const bookedCottageIds = conflictingBookings
-          .flatMap((b) => b.selectedCottages || [])
-          .map((c) => c.id);
+        selectedCottages.forEach((cottage: any) => {
+          const nights = Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24));
+          const cottageCost = cottage.pricePerNight * nights;
+          totalCost += cottageCost;
+          basePrice += cottageCost;
+        });
+      }
 
-        const requestedCottageIds = selectedCottages.map((c: any) => c.id);
-        const cottageConflicts = requestedCottageIds.filter((id: string) => bookedCottageIds.includes(id));
+      if (selectedAmenities && selectedAmenities.length > 0) {
+        selectedAmenities.forEach((amenity: any) => {
+          totalCost += amenity.price;
+        });
+      }
 
-        if (cottageConflicts.length > 0) {
-          return res.status(409).json({ 
-            message: "Some cottages are already booked for these dates",
-            conflictingCottages: cottageConflicts
-          });
-        }
+      // Apply discounts if applicable
+      let discountApplied = null;
+      if (isPwdBooking || isSeniorCitizenBooking) {
+        const discountPercentage = isPwdBooking ? 0.20 : 0.12; // 20% for PWD, 12% for Senior
+        const discountAmount = totalCost * discountPercentage;
+        totalCost -= discountAmount;
+        discountApplied = {
+          type: isPwdBooking ? "pwd" : "senior_citizen",
+          percentage: discountPercentage * 100,
+          amount: discountAmount,
+        };
       }
 
       // Create walk-in booking
-      const walkInBooking = new Booking({
-        userId: undefined, // Walk-ins don't have user accounts
+      const newBooking = new Booking({
+        userId: undefined, // Walk-in bookings may not have a user account
         hotelId,
         firstName,
         lastName,
@@ -725,37 +711,38 @@ router.post(
         phone,
         adultCount,
         childCount,
-        checkIn: checkInDate,
-        checkOut: checkOutDate,
+        checkIn: new Date(checkIn),
+        checkOut: new Date(checkOut),
         checkInTime: checkInTime || "12:00",
         checkOutTime: checkOutTime || "11:00",
         totalCost,
-        basePrice: basePrice || totalCost,
-        selectedRooms,
-        selectedCottages,
-        selectedAmenities,
+        basePrice,
+        selectedRooms: selectedRooms || [],
+        selectedCottages: selectedCottages || [],
+        selectedAmenities: selectedAmenities || [],
         status: "confirmed", // Walk-ins are immediately confirmed
-        paymentStatus: "paid", // Walk-ins pay on-site
-        paymentMethod: onSitePaymentMethod,
+        paymentStatus: "paid", // Walk-ins are paid on-site
+        paymentMethod: walkInDetails.paymentMethod,
         specialRequests: specialRequests || "",
-        bookingType: "walk_in",
         isPwdBooking: isPwdBooking || false,
         isSeniorCitizenBooking: isSeniorCitizenBooking || false,
-        discountApplied: discountApplied || null,
+        discountApplied,
+        source: "walk_in", // Mark as walk-in booking
+        walkInDetails: {
+          guestId: walkInDetails.guestId,
+          paymentMethod: walkInDetails.paymentMethod,
+          idType: walkInDetails.idType,
+          idNumber: walkInDetails.idNumber,
+          notes: walkInDetails.notes,
+          processedByStaffId: req.userId, // Staff member who created the booking
+        },
         canModify: false, // Walk-ins cannot be modified online
-        verifiedByOwner: true, // Auto-verified by resort staff
+        verifiedByOwner: true, // Auto-verified by owner since processed on-site
         ownerVerificationNote: "Walk-in booking processed on-site",
         ownerVerifiedAt: new Date(),
-        walkInDetails: {
-          guestIdType,
-          guestIdNumber,
-          onSitePaymentMethod,
-          receiptNumber,
-          processedBy: req.userId, // Staff member who processed it
-        },
       });
 
-      await walkInBooking.save();
+      await newBooking.save();
 
       // Update hotel analytics
       await Hotel.findByIdAndUpdate(hotelId, {
@@ -765,13 +752,82 @@ router.post(
         },
       });
 
+      // Update user analytics if user account exists
+      if (req.userId) {
+        await User.findByIdAndUpdate(req.userId, {
+          $inc: {
+            totalBookings: 1,
+            totalSpent: totalCost,
+          },
+        });
+      }
+
       res.status(201).json({
         message: "Walk-in booking created successfully",
-        booking: walkInBooking,
+        booking: newBooking,
       });
     } catch (error) {
       console.error("Error creating walk-in booking:", error);
       res.status(500).json({ message: "Unable to create walk-in booking" });
+    }
+  }
+);
+
+// Generate receipt for booking
+router.get(
+  "/:id/receipt",
+  verifyToken,
+  [
+    param("id").notEmpty().withMessage("Booking ID is required"),
+    query("format").optional().isIn(["html", "json", "text"]).withMessage("Invalid format"),
+  ],
+  async (req: Request, res: Response) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || "Validation error" });
+    }
+
+    try {
+      const { id } = req.params;
+      const format = (req.query.format as string) || "json";
+
+      const booking = await Booking.findById(id).populate("hotelId", "name city country");
+      
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+
+      // Check if user has access to this booking
+      const hotel = await Hotel.findById(booking.hotelId);
+      if (!hotel) {
+        return res.status(404).json({ message: "Hotel not found" });
+      }
+
+      // Allow access if: booking owner, hotel owner, or admin
+      const isBookingOwner = booking.userId && booking.userId.toString() === req.userId;
+      const isHotelOwner = hotel.userId === req.userId;
+      
+      if (!isBookingOwner && !isHotelOwner) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      // Generate receipt data
+      const hotelAddress = `${hotel.city}, ${hotel.country}`;
+      const receiptData = generateReceiptData(booking, hotel.name, hotelAddress);
+
+      // Return based on requested format
+      if (format === "html") {
+        res.setHeader("Content-Type", "text/html");
+        res.send(generateHTMLReceipt(receiptData));
+      } else if (format === "text") {
+        res.setHeader("Content-Type", "text/plain");
+        res.send(generateTextReceipt(receiptData));
+      } else {
+        res.json(receiptData);
+      }
+    } catch (error) {
+      console.error("Error generating receipt:", error);
+      res.status(500).json({ message: "Unable to generate receipt" });
     }
   }
 );

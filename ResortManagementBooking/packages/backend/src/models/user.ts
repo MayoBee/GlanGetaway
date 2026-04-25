@@ -82,6 +82,8 @@ const userSchema = new mongoose.Schema(
     accountVerified: { type: Boolean, default: false }, // Verified by super admin
     accountVerifiedBy: { type: String }, // ID of super admin who verified
     accountVerifiedAt: { type: Date },
+    // Password reset requirement for staff accounts
+    mustChangePassword: { type: Boolean, default: false },
     // Audit fields
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },

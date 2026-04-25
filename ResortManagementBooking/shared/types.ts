@@ -232,7 +232,7 @@ export type HotelType = {
 
 export type BookingType = {
   _id: string;
-  userId?: string;
+  userId: string;
   hotelId: string;
   firstName: string;
   lastName: string;
@@ -246,7 +246,6 @@ export type BookingType = {
   checkOutTime: string;
   totalCost: number;
   basePrice: number;
-  bookingType?: "online" | "walk_in";
   selectedRooms?: Array<{
     id: string;
     name: string;
@@ -314,35 +313,12 @@ export type BookingType = {
     verifiedAt?: Date;
     rejectionReason?: string;
   };
-  // Walk-in specific details
-  walkInDetails?: {
-    guestIdType?: string;
-    guestIdNumber?: string;
-    onSitePaymentMethod?: string;
-    receiptNumber?: string;
-    processedBy?: string;
-  };
-  status?: "pending" | "confirmed" | "cancelled" | "completed" | "refunded";
+  status?: "pending" | "confirmed" | "cancelled" | "completed";
   bookingStatus?: "Pending" | "Confirmed" | "Cancelled" | "Completed";
   refundAmount?: number;
   paymentStatus?: "pending" | "paid" | "failed" | "refunded";
   specialRequests?: string;
   cancellationReason?: string;
-  // PWD/Senior Citizen tracking
-  isPwdBooking?: boolean;
-  isSeniorCitizenBooking?: boolean;
-  discountApplied?: {
-    type: "pwd" | "senior_citizen" | null;
-    percentage: number;
-    amount: number;
-  };
-  // 8-hour change window
-  changeWindowDeadline?: Date;
-  canModify?: boolean;
-  // Resort owner verification
-  verifiedByOwner?: boolean;
-  ownerVerificationNote?: string;
-  ownerVerifiedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 };

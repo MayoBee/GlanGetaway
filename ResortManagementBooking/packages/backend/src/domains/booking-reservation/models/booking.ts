@@ -1,8 +1,7 @@
 import mongoose, { Document } from "mongoose";
 
 export interface IBooking extends Document {
-  _id: string;
-  userId?: string;
+  userId?: string; // Made optional for walk-in bookings
   hotelId: string;
   firstName: string;
   lastName: string;
@@ -16,7 +15,16 @@ export interface IBooking extends Document {
   checkOutTime: string;
   totalCost: number;
   basePrice: number;
-  bookingType: "online" | "walk_in";
+  // Walk-in/Kiosk support
+  source: "online" | "walk_in"; // Distinguish between online and walk-in bookings
+  walkInDetails?: {
+    guestId?: string; // Guest ID for walk-in customers
+    paymentMethod: "cash" | "card" | "gcash" | "other";
+    idType?: "government_id" | "driver_license" | "passport" | "other";
+    idNumber?: string;
+    notes?: string;
+    processedByStaffId: string; // Staff member who processed the walk-in
+  };
   selectedRooms?: Array<{
     id: string;
     name: string;
@@ -92,21 +100,13 @@ export interface IBooking extends Document {
     screenshotFile?: string;
     rejectionReason?: string;
   };
-  // Walk-in specific details
-  walkInDetails?: {
-    guestIdType?: string;
-    guestIdNumber?: string;
-    onSitePaymentMethod?: string;
-    receiptNumber?: string;
-    processedBy?: string; // Staff member who processed the walk-in
-  };
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 const bookingSchema = new mongoose.Schema(
   {
-    userId: { type: String, required: false },
+    userId: { type: String, required: false }, // Made optional for walk-in bookings
     hotelId: { type: String, required: true },
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
@@ -120,10 +120,27 @@ const bookingSchema = new mongoose.Schema(
     checkOutTime: { type: String, required: true, default: "11:00" },
     totalCost: { type: Number, required: true },
     basePrice: { type: Number, required: true },
-    bookingType: {
+    // Walk-in/Kiosk support
+    source: {
       type: String,
       enum: ["online", "walk_in"],
       default: "online",
+      required: true
+    },
+    walkInDetails: {
+      guestId: { type: String },
+      paymentMethod: {
+        type: String,
+        enum: ["cash", "card", "gcash", "other"],
+        required: true
+      },
+      idType: {
+        type: String,
+        enum: ["government_id", "driver_license", "passport", "other"]
+      },
+      idNumber: { type: String },
+      notes: { type: String },
+      processedByStaffId: { type: String, required: true }
     },
     selectedRooms: [{
       id: { type: String, required: true },
@@ -212,14 +229,6 @@ const bookingSchema = new mongoose.Schema(
       screenshotFile: { type: String },
       rejectionReason: { type: String }
     },
-    // Walk-in specific details
-    walkInDetails: {
-      guestIdType: { type: String },
-      guestIdNumber: { type: String },
-      onSitePaymentMethod: { type: String },
-      receiptNumber: { type: String },
-      processedBy: { type: String } // Staff member who processed the walk-in
-    },
     // Audit fields
     // createdAt and updatedAt are automatically handled by timestamps: true
   },
@@ -234,6 +243,10 @@ bookingSchema.index({ hotelId: 1, checkIn: 1 });
 bookingSchema.index({ status: 1, createdAt: -1 });
 bookingSchema.index({ paymentStatus: 1, createdAt: -1 });
 bookingSchema.index({ checkIn: 1, status: 1 });
+// Walk-in/kiosk specific indexes
+bookingSchema.index({ source: 1, createdAt: -1 });
+bookingSchema.index({ hotelId: 1, source: 1, createdAt: -1 });
+bookingSchema.index({ "walkInDetails.processedByStaffId": 1, createdAt: -1 });
 
 // Critical unique compound index to prevent double bookings
 // This enforces at database level that same room cannot be booked for overlapping dates

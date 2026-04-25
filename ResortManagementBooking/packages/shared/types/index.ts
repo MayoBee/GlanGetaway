@@ -235,7 +235,7 @@ export type HotelType = {
 
 export type BookingType = {
   _id: string;
-  userId: string;
+  userId?: string; // Made optional for walk-in bookings
   hotelId: string;
   firstName: string;
   lastName: string;
@@ -249,6 +249,16 @@ export type BookingType = {
   checkOutTime: string;
   totalCost: number;
   basePrice: number;
+  // Walk-in/Kiosk support
+  source?: "online" | "walk_in"; // Distinguish between online and walk-in bookings
+  walkInDetails?: {
+    guestId?: string; // Guest ID for walk-in customers
+    paymentMethod: "cash" | "card" | "gcash" | "other";
+    idType?: "government_id" | "driver_license" | "passport" | "other";
+    idNumber?: string;
+    notes?: string;
+    processedByStaffId: string; // Staff member who processed the walk-in
+  };
   selectedRooms?: Array<{
     id: string;
     name: string;

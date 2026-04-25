@@ -496,4 +496,126 @@ router.get("/real-time", verifyToken, requireRole(["admin", "resort_owner", "fro
   }
 });
 
+// Get walk-in vs online sales analytics
+router.get("/sales-by-source", verifyToken, requireRole(["admin", "resort_owner"]), async (req: Request, res: Response) => {
+  try {
+    const { hotelId, startDate, endDate } = req.query;
+    const filter = hotelId ? { hotelId: hotelId as string } : {};
+
+    // Set date range (default to current month)
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const dateFilter: any = {};
+    if (startDate) {
+      dateFilter.$gte = new Date(startDate as string);
+    } else {
+      dateFilter.$gte = startOfMonth;
+    }
+    if (endDate) {
+      dateFilter.$lte = new Date(endDate as string);
+    } else {
+      dateFilter.$lte = endOfMonth;
+    }
+
+    // Get online bookings stats
+    const onlineBookings = await Booking.aggregate([
+      {
+        $match: {
+          ...filter,
+          source: "online",
+          paymentStatus: "paid",
+          createdAt: dateFilter,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+          revenue: { $sum: "$totalCost" },
+        },
+      },
+    ]);
+
+    // Get walk-in bookings stats
+    const walkInBookings = await Booking.aggregate([
+      {
+        $match: {
+          ...filter,
+          source: "walk_in",
+          paymentStatus: "paid",
+          createdAt: dateFilter,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+          revenue: { $sum: "$totalCost" },
+        },
+      },
+    ]);
+
+    // Get daily breakdown for the period
+    const dailyBreakdown = await Booking.aggregate([
+      {
+        $match: {
+          ...filter,
+          paymentStatus: "paid",
+          createdAt: dateFilter,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+            source: "$source",
+          },
+          count: { $sum: 1 },
+          revenue: { $sum: "$totalCost" },
+        },
+      },
+      {
+        $sort: { "_id.date": 1 },
+      },
+    ]);
+
+    const onlineStats = onlineBookings[0] || { count: 0, revenue: 0 };
+    const walkInStats = walkInBookings[0] || { count: 0, revenue: 0 };
+    const totalRevenue = onlineStats.revenue + walkInStats.revenue;
+    const totalBookings = onlineStats.count + walkInStats.count;
+
+    res.json({
+      success: true,
+      data: {
+        summary: {
+          online: {
+            bookings: onlineStats.count,
+            revenue: onlineStats.revenue,
+            percentage: totalRevenue > 0 ? (onlineStats.revenue / totalRevenue) * 100 : 0,
+          },
+          walkIn: {
+            bookings: walkInStats.count,
+            revenue: walkInStats.revenue,
+            percentage: totalRevenue > 0 ? (walkInStats.revenue / totalRevenue) * 100 : 0,
+          },
+          total: {
+            bookings: totalBookings,
+            revenue: totalRevenue,
+          },
+        },
+        dailyBreakdown,
+        dateRange: {
+          start: dateFilter.$gte,
+          end: dateFilter.$lte,
+        },
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching sales by source:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
 export default router;

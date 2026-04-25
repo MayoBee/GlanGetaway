@@ -378,6 +378,20 @@ export const verifyGCashPayment = async (
   return response.data;
 };
 
+// Walk-in booking API functions
+export const createWalkInBooking = async (formData: any) => {
+  const response = await axiosInstance.post("/api/bookings/walk-in", formData);
+  return response.data;
+};
+
+export const fetchBookingReceipt = async (
+  bookingId: string,
+  format: "json" | "html" | "text" = "json"
+) => {
+  const response = await axiosInstance.get(`/api/bookings/${bookingId}/receipt?format=${format}`);
+  return response.data;
+};
+
 // Business Insights API functions (public endpoints - no auth required)
 export const fetchBusinessInsightsDashboard = async () => {
   const response = await axiosInstance.get("/api/business-insights/dashboard/public");
@@ -808,5 +822,46 @@ export const submitResortOwnerApplication = async (formData: FormData) => {
       "Content-Type": "multipart/form-data",
     },
   });
+  return response.data;
+};
+
+// Resort Staff Management API functions
+export const getResortStaff = async () => {
+  const response = await axiosInstance.get("/api/resort-staff");
+  return response.data;
+};
+
+export const createResortStaff = async (staffData: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: string;
+  resortIds: string[];
+  permissions?: any;
+}) => {
+  const response = await axiosInstance.post("/api/resort-staff", staffData);
+  return response.data;
+};
+
+export const updateResortStaff = async (staffId: string, staffData: {
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  permissions?: any;
+  isActive?: boolean;
+  resortIds?: string[];
+}) => {
+  const response = await axiosInstance.put(`/api/resort-staff/${staffId}`, staffData);
+  return response.data;
+};
+
+export const deleteResortStaff = async (staffId: string) => {
+  const response = await axiosInstance.delete(`/api/resort-staff/${staffId}`);
+  return response.data;
+};
+
+export const getAssignedResorts = async () => {
+  const response = await axiosInstance.get("/api/resort-staff/assigned-resorts");
   return response.data;
 };

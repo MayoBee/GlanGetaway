@@ -12,7 +12,7 @@ export const configureSecurityMiddleware = (app: Express): void => {
   // Rate limiting
   const generalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 200,
+    max: process.env.NODE_ENV === "development" ? 10000 : 200, // Further increased for development to prevent 429 during testing
     message: "Too many requests from this IP, please try again later.",
     standardHeaders: true,
     legacyHeaders: false,

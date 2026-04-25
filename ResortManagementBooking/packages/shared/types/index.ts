@@ -5,7 +5,6 @@ export enum UserRole {
   Admin = "admin",
   User = "user", 
   Owner = "owner",
-  SuperAdmin = "superadmin",
   ResortOwner = "resort_owner",
   FrontDesk = "front_desk",
   Housekeeping = "housekeeping",

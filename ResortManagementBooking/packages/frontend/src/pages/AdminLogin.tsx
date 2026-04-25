@@ -1,5 +1,5 @@
 import { useForm } from "react-hook-form";
-import { useMutation } from "react-query";
+import { useMutation, useQueryClient } from "react-query";
 import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +26,7 @@ export type AdminSignInFormData = {
 const AdminLogin = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -35,14 +36,19 @@ const AdminLogin = () => {
   } = useForm<AdminSignInFormData>();
 
   const mutation = useMutation(apiClient.signIn, {
-    onSuccess: async (data) => {
+    onSuccess: async () => {
       showToast({
-        title: "Admin Sign In Successful",
+        title: "Sign In Successful",
         description: "Welcome to the admin dashboard.",
         type: "SUCCESS",
       });
       
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Refetch user data to get the updated role
+      await queryClient.invalidateQueries("validateToken");
+      await queryClient.invalidateQueries("currentUser");
+      
+      // Wait a bit for the data to be loaded
+      await new Promise(resolve => setTimeout(resolve, 500));
       navigate("/admin-dashboard");
     },
     onError: (error: Error) => {

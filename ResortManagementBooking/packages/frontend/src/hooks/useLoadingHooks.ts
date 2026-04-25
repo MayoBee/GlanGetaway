@@ -35,6 +35,15 @@ export const useMutationWithLoading = <TData, TError, TVariables>(
   
   return useMutation(mutationFn, {
     ...options,
+    retry: (failureCount, error: any) => {
+      // Don't retry on client errors (4xx) to prevent infinite loops
+      if (error?.response?.status >= 400 && error?.response?.status < 500) {
+        return false;
+      }
+      // Retry up to 1 time for other errors
+      return failureCount < 1;
+    },
+    retryDelay: 1000,
     onMutate: (variables) => {
       if (options?.loadingMessage) {
         showGlobalLoading(options.loadingMessage);

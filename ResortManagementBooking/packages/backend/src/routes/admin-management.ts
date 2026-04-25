@@ -1,6 +1,7 @@
 import express, { Request, Response } from "express";
-import { verifyToken, requireSuperAdmin, requireAdmin } from "../middleware/role-based-auth";
+import { verifyToken, requireAdmin } from "../middleware/role-based-auth";
 import User from "../models/user";
+import RolePromotionRequest from "../domains/identity-access/models/role-promotion-request";
 import { check, validationResult } from "express-validator";
 
 const router = express.Router();
@@ -60,7 +61,7 @@ router.get("/users", verifyToken, requireAdmin, async (req: Request, res: Respon
  *       403:
  *         description: Forbidden - Admin only
  */
-router.put("/promote-to-admin/:userId", verifyToken, requireSuperAdmin, [
+router.put("/promote-to-admin/:userId", verifyToken, requireAdmin, [
   check("userId").isMongoId().withMessage("Invalid user ID")
 ], async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -70,7 +71,7 @@ router.put("/promote-to-admin/:userId", verifyToken, requireSuperAdmin, [
 
   try {
     const { userId } = req.params;
-    
+
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -78,6 +79,18 @@ router.put("/promote-to-admin/:userId", verifyToken, requireSuperAdmin, [
 
     if (user.role === "admin") {
       return res.status(400).json({ message: "Cannot modify Admin role" });
+    }
+
+    // Check if user has an approved role promotion request
+    const approvedRequest = await RolePromotionRequest.findOne({
+      userId,
+      status: "approved",
+    });
+
+    if (!approvedRequest) {
+      return res.status(400).json({
+        message: "User must have an approved resort owner application before being promoted",
+      });
     }
 
     const oldRole = user.role || "user";
@@ -128,7 +141,7 @@ router.put("/promote-to-admin/:userId", verifyToken, requireSuperAdmin, [
  *       403:
  *         description: Forbidden - Admin only
  */
-router.put("/demote-to-user/:userId", verifyToken, requireSuperAdmin, [
+router.put("/demote-to-user/:userId", verifyToken, requireAdmin, [
   check("userId").isMongoId().withMessage("Invalid user ID")
 ], async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -246,7 +259,7 @@ router.get("/search-users", verifyToken, requireAdmin, async (req: Request, res:
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.put("/verify-pwd/:userId", verifyToken, requireSuperAdmin, [
+router.put("/verify-pwd/:userId", verifyToken, requireAdmin, [
   check("userId").isMongoId().withMessage("Invalid user ID"),
   check("verified").isBoolean().withMessage("Verification status is required"),
 ], async (req: Request, res: Response) => {
@@ -334,7 +347,7 @@ router.put("/verify-pwd/:userId", verifyToken, requireSuperAdmin, [
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.put("/verify-account/:userId", verifyToken, requireSuperAdmin, [
+router.put("/verify-account/:userId", verifyToken, requireAdmin, [
   check("userId").isMongoId().withMessage("Invalid user ID"),
   check("verified").isBoolean().withMessage("Verification status is required"),
 ], async (req: Request, res: Response) => {
@@ -397,7 +410,7 @@ router.put("/verify-account/:userId", verifyToken, requireSuperAdmin, [
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.get("/users-pending-verification", verifyToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get("/users-pending-verification", verifyToken, requireAdmin, async (req: Request, res: Response) => {
   try {
     // Get users who are PWD but not verified, or accounts pending verification
     const users = await User.find({
@@ -441,7 +454,7 @@ router.get("/users-pending-verification", verifyToken, requireSuperAdmin, async 
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.get("/user-details/:userId", verifyToken, requireSuperAdmin, [
+router.get("/user-details/:userId", verifyToken, requireAdmin, [
   check("userId").isMongoId().withMessage("Invalid user ID")
 ], async (req: Request, res: Response) => {
   const errors = validationResult(req);

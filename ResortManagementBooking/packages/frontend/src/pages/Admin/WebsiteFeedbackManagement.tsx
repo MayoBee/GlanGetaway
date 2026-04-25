@@ -51,7 +51,7 @@ interface WebsiteFeedbackItem {
 
 const WebsiteFeedbackManagement: React.FC = () => {
   const { showToast } = useAppContext();
-  const { isAdmin, isSuperAdmin } = useRoleBasedAccess();
+  const { isAdmin } = useRoleBasedAccess();
   const [filter, setFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -60,7 +60,7 @@ const WebsiteFeedbackManagement: React.FC = () => {
   const queryClient = useQueryClient();
 
   // Check if user has access
-  if (!isAdmin && !isSuperAdmin) {
+  if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">

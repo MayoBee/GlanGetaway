@@ -5,6 +5,7 @@
 export { default as User } from '../domains/identity-access/models/user';
 export { default as IdentityVerification } from '../domains/identity-access/models/identity-verification';
 export { default as VerificationDocument } from '../domains/identity-access/models/verification-document';
+export { default as RolePromotionRequest } from '../domains/identity-access/models/role-promotion-request';
 
 export { default as Booking } from '../domains/booking-reservation/models/booking';
 export { default as RoomBlock } from '../domains/booking-reservation/models/room-block';

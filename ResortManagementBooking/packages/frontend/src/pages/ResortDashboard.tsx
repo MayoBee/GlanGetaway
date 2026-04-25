@@ -36,7 +36,7 @@ interface Notification {
 const ResortDashboard = () => {
   const navigate = useNavigate();
   const { user } = useAppContext();
-  const { isSuperAdmin } = useRoleBasedAccess();
+  const { isAdmin } = useRoleBasedAccess();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
@@ -228,8 +228,8 @@ const ResortDashboard = () => {
           </CardContent>
         </Card>
 
-        {/* User Management - Only visible to Super Admin */}
-        {isSuperAdmin && (
+        {/* User Management - Only visible to Admin */}
+        {isAdmin && (
           <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 border-purple-200" onClick={() => navigate("/admin/management")}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-4">

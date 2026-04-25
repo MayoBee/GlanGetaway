@@ -4,7 +4,7 @@ import { useQuery } from "react-query";
 import * as apiClient from "../api-client";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { useToast } from "../../../shared/hooks/use-toast";
-import { UserType } from "../../../shared/types";
+import { UserType, UserRole } from "@shared/types";
 
 const STRIPE_PUB_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 
@@ -23,7 +23,7 @@ export type AppContext = {
   isGlobalLoading: boolean;
   globalLoadingMessage: string;
   user: UserType | null;
-  userRole: "user" | "admin" | "resort_owner" | "resort-owner" | "front_desk" | "housekeeping" | "superAdmin" | null;
+  userRole: UserRole | null;
   isLoading: boolean;
   isAuthLoading: boolean;
 };
@@ -32,7 +32,8 @@ export const AppContext = React.createContext<AppContext | undefined>(
   undefined
 );
 
-const stripePromise = loadStripe(STRIPE_PUB_KEY);
+// Only load Stripe if the key is available to prevent initialization errors
+const stripePromise = STRIPE_PUB_KEY ? loadStripe(STRIPE_PUB_KEY) : Promise.resolve(null);
 
 export const AppContextProvider = ({
   children,
@@ -43,29 +44,42 @@ export const AppContextProvider = ({
   const [globalLoadingMessage, setGlobalLoadingMessage] = useState(
     "Loading..."
   );
+  const [rateLimited, setRateLimited] = useState(false);
   const { toast } = useToast();
 
   // Simple token check
   const hasToken = !!localStorage.getItem("session_id");
+
+  // Reset rate limit state when token changes
+  React.useEffect(() => {
+    setRateLimited(false);
+  }, [hasToken]);
 
   // Fetch current user data in parallel with token validation for faster login
   const { isError, isLoading } = useQuery(
     "validateToken",
     apiClient.validateToken,
     {
-      enabled: hasToken, // Only run if we have a token
+      enabled: hasToken && !rateLimited, // Only run if we have a token and not rate limited
       retry: false,
       refetchOnWindowFocus: false,
       staleTime: 30 * 60 * 1000, // Increased to 30 minutes cache
       cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-      onError: (error) => {
+      onError: (error: any) => {
         console.log('🔍 Token validation error:', error);
+        // If rate limited, stop further requests
+        if (error.response?.status === 429) {
+          setRateLimited(true);
+          setTimeout(() => setRateLimited(false), 60000); // Retry after 1 minute
+          return;
+        }
         // Clear invalid token
         localStorage.removeItem("session_id");
         localStorage.removeItem("user_id");
       },
       onSuccess: (data) => {
         console.log('🔍 Token validation success:', data);
+        setRateLimited(false);
       },
     }
   );
@@ -75,15 +89,21 @@ export const AppContextProvider = ({
     "currentUser",
     apiClient.fetchCurrentUser,
     {
-      enabled: hasToken, // Enable immediately if we have a token
+      enabled: hasToken && !rateLimited, // Enable immediately if we have a token and not rate limited
       retry: false,
       staleTime: 30 * 60 * 1000, // Increased to 30 minutes cache
       cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-      onError: (error) => {
+      onError: (error: any) => {
         console.log('🔍 Current user fetch error:', error);
+        // If rate limited, stop further requests
+        if (error.response?.status === 429) {
+          setRateLimited(true);
+          setTimeout(() => setRateLimited(false), 60000); // Retry after 1 minute
+        }
       },
       onSuccess: (data) => {
         console.log('🔍 Current user fetch success:', data);
+        setRateLimited(false);
       },
     }
   );

@@ -31,7 +31,7 @@ import {
 
 const AdminAnalytics: React.FC = () => {
   const { showToast } = useAppContext();
-  const { isSuperAdmin } = useRoleBasedAccess();
+  const { isAdmin } = useRoleBasedAccess();
   
   const [activeTab, setActiveTab] = useState("reservations");
   const [dateRange, setDateRange] = useState({
@@ -41,7 +41,7 @@ const AdminAnalytics: React.FC = () => {
   const [groupBy, setGroupBy] = useState<"daily" | "weekly" | "monthly" | "yearly">("monthly");
 
   // Check if user has access
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="w-full max-w-md">

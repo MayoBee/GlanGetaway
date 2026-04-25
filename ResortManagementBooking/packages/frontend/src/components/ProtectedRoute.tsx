@@ -7,7 +7,6 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredPermission?: keyof ReturnType<typeof useRoleBasedAccess>["permissions"];
   requireAdmin?: boolean;
-  requireSuperAdmin?: boolean;
   fallbackPath?: string;
 }
 
@@ -15,10 +14,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredPermission,
   requireAdmin = false,
-  requireSuperAdmin = false,
   fallbackPath = "/",
 }) => {
-  const { isLoggedIn, isLoading, isAdmin, isSuperAdmin, permissions } = useRoleBasedAccess();
+  const { isLoggedIn, isLoading, isAdmin, permissions } = useRoleBasedAccess();
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -41,11 +39,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check for admin requirement
   if (requireAdmin && !isAdmin) {
-    return <Navigate to={fallbackPath} replace />;
-  }
-
-  // Check for super admin requirement
-  if (requireSuperAdmin && !isSuperAdmin) {
     return <Navigate to={fallbackPath} replace />;
   }
 

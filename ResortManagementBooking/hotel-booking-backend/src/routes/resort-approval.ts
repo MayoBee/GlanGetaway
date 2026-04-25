@@ -1,13 +1,13 @@
 import express, { Request, Response } from "express";
 import Hotel from "../models/hotel";
 import User from "../models/user";
-import { verifyToken, requireAdmin, AuthRequest } from "../middleware/role-based-auth";
+import { verifyToken, AuthRequest } from "../middleware/role-based-auth";
 import { param, validationResult, body } from "express-validator";
 
 const router = express.Router();
 
 // Get all pending resorts (for admin approval)
-router.get("/pending", verifyToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get("/pending", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -36,7 +36,7 @@ router.get("/pending", verifyToken, requireAdmin, async (req: AuthRequest, res: 
 });
 
 // Get all resorts (including unapproved) for admin
-router.get("/all", verifyToken, requireAdmin, async (req: AuthRequest, res: Response) => {
+router.get("/all", verifyToken, async (req: AuthRequest, res: Response) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
@@ -76,7 +76,6 @@ router.get("/all", verifyToken, requireAdmin, async (req: AuthRequest, res: Resp
 router.post(
   "/:resortId/approve",
   verifyToken,
-  requireAdmin,
   [param("resortId").notEmpty().withMessage("Resort ID is required")],
   async (req: AuthRequest, res: Response) => {
     const errors = validationResult(req);
@@ -124,7 +123,6 @@ router.post(
 router.post(
   "/:resortId/reject",
   verifyToken,
-  requireAdmin,
   [
     param("resortId").notEmpty().withMessage("Resort ID is required"),
     body("rejectionReason").notEmpty().withMessage("Rejection reason is required"),

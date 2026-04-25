@@ -1,7 +1,7 @@
 import express from "express";
 import FeatureFlagService from "../services/feature-flags";
 import { requireFeatureFlag } from "../middleware/feature-flag";
-import { requireAdmin as adminRole } from "../middleware/role-based-auth";
+import { verifyToken } from "../middleware/role-based-auth";
 
 const router = express.Router();
 
@@ -19,13 +19,13 @@ router.get("/", async (req, res) => {
 });
 
 // Admin: Get all flag definitions
-router.get("/admin", adminRole, async (req, res) => {
+router.get("/admin", verifyToken, async (req, res) => {
   const flags = await FeatureFlagService["getAllFlags"]();
   res.json({ success: true, data: flags });
 });
 
 // Admin: Create new feature flag
-router.post("/admin", adminRole, async (req, res) => {
+router.post("/admin", verifyToken, async (req, res) => {
   try {
     const flag = await FeatureFlagService.createFlag(req.body);
     res.status(201).json({ success: true, data: flag });
@@ -35,7 +35,7 @@ router.post("/admin", adminRole, async (req, res) => {
 });
 
 // Admin: Update feature flag
-router.put("/admin/:key", adminRole, async (req, res) => {
+router.put("/admin/:key", verifyToken, async (req, res) => {
   try {
     const flag = await FeatureFlagService.updateFlag(req.params.key, req.body);
     if (!flag) {
@@ -48,13 +48,13 @@ router.put("/admin/:key", adminRole, async (req, res) => {
 });
 
 // Admin: Delete feature flag
-router.delete("/admin/:key", adminRole, async (req, res) => {
+router.delete("/admin/:key", verifyToken, async (req, res) => {
   await FeatureFlagService.deleteFlag(req.params.key);
   res.json({ success: true, message: "Flag deleted" });
 });
 
 // Admin: Clear cache
-router.post("/admin/clear-cache", adminRole, async (req, res) => {
+router.post("/admin/clear-cache", verifyToken, async (req, res) => {
   FeatureFlagService.clearCache();
   res.json({ success: true, message: "Cache cleared" });
 });

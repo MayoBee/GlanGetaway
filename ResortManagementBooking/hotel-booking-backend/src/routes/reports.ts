@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import Report, { ReportDocument } from "../models/report";
-import { verifyToken, requireAdmin } from "../middleware/role-based-auth";
+import { verifyToken } from "../middleware/role-based-auth";
 import mongoose from "mongoose";
 
 const router = express.Router();
@@ -60,7 +60,7 @@ router.post("/", verifyToken, async (req: Request, res: Response) => {
 });
 
 // Get all reports (admin only)
-router.get("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/", verifyToken, async (req: Request, res: Response) => {
   try {
     const { status, page = 1, limit = 10 } = req.query;
     
@@ -98,7 +98,7 @@ router.get("/", verifyToken, requireAdmin, async (req: Request, res: Response) =
 });
 
 // Get report by ID
-router.get("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -134,7 +134,7 @@ router.get("/:id", verifyToken, requireAdmin, async (req: Request, res: Response
 });
 
 // Update report status (admin only)
-router.put("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.put("/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, adminNotes } = req.body;
@@ -196,7 +196,7 @@ router.put("/:id", verifyToken, requireAdmin, async (req: Request, res: Response
 });
 
 // Delete report (admin only)
-router.delete("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.delete("/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

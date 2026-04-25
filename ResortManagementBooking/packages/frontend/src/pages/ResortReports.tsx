@@ -907,10 +907,10 @@ const TABS = [
 // ─── Main page ───────────────────────────────────────────────────────────────
 
 const ResortReports: React.FC = () => {
-  const { isAdmin, isSuperAdmin, permissions } = useRoleBasedAccess();
+  const { isAdmin, permissions } = useRoleBasedAccess();
   const [activeTab, setActiveTab] = useState("reservation");
 
-  if (!isAdmin && !isSuperAdmin && !permissions.canManageOwnResorts) {
+  if (!isAdmin && !permissions.canManageOwnResorts) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-center">

@@ -9,7 +9,7 @@ import { Separator } from "../../../shared/ui/separator";
 import { Button } from "../../../shared/ui/button";
 import { useState } from "react";
 import * as apiClient from "../api-client";
-import { Plus, LogOut, Building } from "lucide-react";
+import { Plus, LogOut, Building, UserCheck, BarChart3 } from "lucide-react";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 
@@ -62,6 +62,22 @@ const UsernameMenu = () => {
           <p className="text-xs text-muted-foreground truncate">{email}</p>
         </div>
         <Separator className="my-2 bg-gray-200" />
+        {/* Apply for Resort Owner - Only visible to regular users */}
+        {!permissions.canManageOwnResorts && (
+          <DropdownMenuItem
+            onClick={handleMenuClick}
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/apply-resort-owner"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <UserCheck className="h-4 w-4" />
+              Apply for Resort Owner
+            </Link>
+          </DropdownMenuItem>
+        )}
         {/* Add Resort - Only visible to Resort Owners */}
         {permissions.canManageOwnResorts && (
           <DropdownMenuItem
@@ -90,6 +106,21 @@ const UsernameMenu = () => {
             >
               <Building className="h-4 w-4" />
               My Resorts
+            </Link>
+          </DropdownMenuItem>
+        )}
+        {permissions.canManageOwnResorts && (
+          <DropdownMenuItem
+            onClick={handleMenuClick}
+            asChild
+            className="py-1.5 rounded-md cursor-pointer hover:bg-gray-100 focus:bg-gray-100"
+          >
+            <Link
+              to="/resort/reports"
+              className="flex items-center gap-2 w-full font-bold hover:text-primary-600"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Resort Analytics
             </Link>
           </DropdownMenuItem>
         )}

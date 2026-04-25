@@ -57,7 +57,6 @@ export const requireRole = (roles: string[]) => {
 };
 
 // Specific role checkers
-export const requireSuperAdmin = requireRole(["admin"]);
 export const requireAdmin = requireRole(["admin"]);
 export const requireStaff = requireRole(["admin", "resort_owner", "front_desk", "housekeeping"]);
 export const requireUser = requireRole(["user", "admin", "resort_owner", "front_desk", "housekeeping"]);

@@ -16,7 +16,7 @@ const getBaseURL = () => {
   }
 
   if (window.location.hostname === "localhost") {
-    return "http://localhost:7002";
+    return "http://localhost:5000";
   }
 
   // Default to production (VPS backend)

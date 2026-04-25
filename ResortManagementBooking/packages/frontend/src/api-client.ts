@@ -13,14 +13,31 @@ import { BookingFormData } from "./forms/BookingForm/BookingForm";
 
 export { getApiBaseUrl };
 
-export const fetchCurrentUser = async (signal?: AbortSignal): Promise<UserType> => {
-  const response = await axiosInstance.get("/api/users/me", { signal });
+export const fetchCurrentUser = async (): Promise<UserType> => {
+  const response = await axiosInstance.get("/api/users/me");
   return response.data;
 };
 
 export const register = async (formData: RegisterFormData) => {
   try {
     const response = await axiosInstance.post("/api/users/register", formData);
+
+    // Store token and user info after successful registration (same as signIn)
+    const token = response.data?.token;
+    if (token) {
+      localStorage.setItem("session_id", token);
+    }
+
+    if (response.data?.userId) {
+      localStorage.setItem("user_id", response.data.userId);
+    }
+    if (response.data?.user) {
+      const { email, firstName, lastName } = response.data.user;
+      if (email) localStorage.setItem("user_email", email);
+      const name = [firstName, lastName].filter(Boolean).join(" ") || email;
+      if (name) localStorage.setItem("user_name", name);
+    }
+
     return response.data;
   } catch (error: any) {
     // Enhanced error handling
@@ -782,5 +799,14 @@ export const fetchAllBookings = async (filters?: {
 
 export const deleteResort = async (resortId: string) => {
   const response = await axiosInstance.delete(`/api/resort-approval/${resortId}`);
+  return response.data;
+};
+
+export const submitResortOwnerApplication = async (formData: FormData) => {
+  const response = await axiosInstance.post("/api/role-promotion-requests", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data;
 };

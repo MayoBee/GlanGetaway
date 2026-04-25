@@ -36,8 +36,8 @@ import ResortReports from "./pages/ResortReports";
 import AdminAnalytics from "./pages/AdminAnalytics";
 import AuthDebug from "./components/AuthDebug";
 import AdminLogin from "./pages/AdminLogin";
-import AdminDashboard from "./pages/AdminDashboard";
 import AdminLayout from "./layouts/AdminLayout";
+import ApplyResortOwner from "./pages/ApplyResortOwner";
 
 const App = () => {
   return (
@@ -160,6 +160,26 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/apply-resort-owner"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ApplyResortOwner />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/resort/reports"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <ResortReports />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
             {/* Secret Admin Login Route - No public links to this */}
             <Route path="/admin-login" element={<AdminLogin />} />
             <Route
@@ -179,14 +199,10 @@ const App = () => {
                 </AdminProtectedRoute>
               }
             >
-              <Route index element={<AdminDashboard />} />
+              <Route index element={<Navigate to="management" replace />} />
               <Route
                 path="business-insights"
-                element={
-                  <AdminProtectedRoute requireSuperAdmin>
-                    <BusinessInsights />
-                  </AdminProtectedRoute>
-                }
+                element={<BusinessInsights />}
               />
               <Route
                 path="resort-approval"
@@ -198,11 +214,7 @@ const App = () => {
               />
               <Route
                 path="analytics"
-                element={
-                  <AdminProtectedRoute requireSuperAdmin>
-                    <AdminAnalytics />
-                  </AdminProtectedRoute>
-                }
+                element={<AdminAnalytics />}
               />
               <Route
                 path="feedback"

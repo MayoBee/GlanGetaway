@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import multer from "multer";
 import path from "path";
 import { v2 as cloudinary } from "cloudinary";
-import { verifyToken, requireAdmin } from "../middleware/role-based-auth";
+import { verifyToken } from "../middleware/role-based-auth";
 import RolePromotionRequest from "../models/role-promotion-request";
 import User from "../models/user";
 
@@ -116,7 +116,7 @@ router.post(
 );
 
 // GET pending requests - admin only
-router.get("/pending", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/pending", verifyToken, async (req: Request, res: Response) => {
   try {
     const pendingRequests = await RolePromotionRequest.find({ status: 'pending' }).populate('userId', "firstName lastName email profileImage");
 
@@ -128,7 +128,7 @@ router.get("/pending", verifyToken, requireAdmin, async (req: Request, res: Resp
 });
 
 // GET stats - admin only
-router.get("/stats", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/stats", verifyToken, async (req: Request, res: Response) => {
   try {
     const pending = await RolePromotionRequest.countDocuments({ status: 'pending' });
     const approved = await RolePromotionRequest.countDocuments({ status: 'approved' });
@@ -146,7 +146,7 @@ router.get("/stats", verifyToken, requireAdmin, async (req: Request, res: Respon
 });
 
 // POST approve request - admin only
-router.post("/:id/approve", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.post("/:id/approve", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const request = await RolePromotionRequest.findById(id);
@@ -174,7 +174,7 @@ router.post("/:id/approve", verifyToken, requireAdmin, async (req: Request, res:
 });
 
 // POST decline request - admin only
-router.post("/:id/decline", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.post("/:id/decline", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { rejectionReason } = req.body;
@@ -201,7 +201,7 @@ router.post("/:id/decline", verifyToken, requireAdmin, async (req: Request, res:
 });
 
 // DELETE request - admin only
-router.delete("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.delete("/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const request = await RolePromotionRequest.findByIdAndDelete(id);

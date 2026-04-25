@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { verifyToken, requireSuperAdmin, requireAdmin } from "../middleware/role-based-auth";
+import { verifyToken } from "../middleware/role-based-auth";
 import User from "../models/user";
 import Hotel from "../models/hotel";
 import Booking from "../models/booking";
@@ -25,7 +25,7 @@ const router = express.Router();
  *       403:
  *         description: Forbidden - Admin only
  */
-router.get("/users", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/users", verifyToken, async (req: Request, res: Response) => {
   try {
     const users = await User.find({})
       .select("firstName lastName email role createdAt isActive")
@@ -63,7 +63,7 @@ router.get("/users", verifyToken, requireAdmin, async (req: Request, res: Respon
  *       403:
  *         description: Forbidden - Admin only
  */
-router.put("/promote-to-admin/:userId", verifyToken, requireSuperAdmin, [
+router.put("/promote-to-admin/:userId", verifyToken, [
   check("userId").isMongoId().withMessage("Invalid user ID")
 ], async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -131,7 +131,7 @@ router.put("/promote-to-admin/:userId", verifyToken, requireSuperAdmin, [
  *       403:
  *         description: Forbidden - Admin only
  */
-router.put("/demote-to-user/:userId", verifyToken, requireSuperAdmin, [
+router.put("/demote-to-user/:userId", verifyToken, [
   check("userId").isMongoId().withMessage("Invalid user ID")
 ], async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -198,7 +198,7 @@ router.put("/demote-to-user/:userId", verifyToken, requireSuperAdmin, [
  *       403:
  *         description: Forbidden - Admin only
  */
-router.get("/search-users", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/search-users", verifyToken, async (req: Request, res: Response) => {
   try {
     const { query } = req.query;
     
@@ -249,7 +249,7 @@ router.get("/search-users", verifyToken, requireAdmin, async (req: Request, res:
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.put("/verify-pwd/:userId", verifyToken, requireSuperAdmin, [
+router.put("/verify-pwd/:userId", verifyToken, [
   check("userId").isMongoId().withMessage("Invalid user ID"),
   check("verified").isBoolean().withMessage("Verification status is required"),
 ], async (req: Request, res: Response) => {
@@ -337,7 +337,7 @@ router.put("/verify-pwd/:userId", verifyToken, requireSuperAdmin, [
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.put("/verify-account/:userId", verifyToken, requireSuperAdmin, [
+router.put("/verify-account/:userId", verifyToken, [
   check("userId").isMongoId().withMessage("Invalid user ID"),
   check("verified").isBoolean().withMessage("Verification status is required"),
 ], async (req: Request, res: Response) => {
@@ -400,7 +400,7 @@ router.put("/verify-account/:userId", verifyToken, requireSuperAdmin, [
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.get("/users-pending-verification", verifyToken, requireSuperAdmin, async (req: Request, res: Response) => {
+router.get("/users-pending-verification", verifyToken, async (req: Request, res: Response) => {
   try {
     // Get users who are PWD but not verified, or accounts pending verification
     const users = await User.find({
@@ -444,7 +444,7 @@ router.get("/users-pending-verification", verifyToken, requireSuperAdmin, async 
  *       403:
  *         description: Forbidden - Super Admin only
  */
-router.get("/user-details/:userId", verifyToken, requireSuperAdmin, [
+router.get("/user-details/:userId", verifyToken, [
   check("userId").isMongoId().withMessage("Invalid user ID")
 ], async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -498,7 +498,7 @@ router.get("/user-details/:userId", verifyToken, requireSuperAdmin, [
  *       404:
  *         description: User not found
  */
-router.delete("/users/:userId", verifyToken, requireAdmin, [
+router.delete("/users/:userId", verifyToken, [
   check("userId").isMongoId().withMessage("Invalid user ID")
 ], async (req: Request, res: Response) => {
   const errors = validationResult(req);
@@ -572,7 +572,7 @@ router.delete("/users/:userId", verifyToken, requireAdmin, [
  *       404:
  *         description: User not found
  */
-router.delete("/delete-user/:userId", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.delete("/delete-user/:userId", verifyToken, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     
@@ -622,7 +622,7 @@ router.delete("/delete-user/:userId", verifyToken, requireAdmin, async (req: Req
  *       404:
  *         description: User not found
  */
-router.put("/toggle-user-status/:userId", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.put("/toggle-user-status/:userId", verifyToken, async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     
@@ -667,7 +667,7 @@ router.put("/toggle-user-status/:userId", verifyToken, requireAdmin, async (req:
  *       403:
  *         description: Forbidden - Admin only
  */
-router.get("/hotels", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/hotels", verifyToken, async (req: Request, res: Response) => {
   try {
     const hotels = await Hotel.find({})
       .populate("userId", "firstName lastName email")

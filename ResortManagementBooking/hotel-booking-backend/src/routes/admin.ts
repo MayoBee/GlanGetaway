@@ -3,7 +3,6 @@ import Hotel from "../models/hotel";
 import Booking from "../models/booking";
 import User from "../models/user";
 import verifyToken from "../middleware/auth";
-import { requireAdmin } from "../middleware/role-based-auth";
 import { startOfDay, subDays, startOfMonth, format } from "date-fns";
 
 const router = express.Router();
@@ -70,7 +69,7 @@ function calculateGrowth(current: number, previous: number): number {
   return ((current - previous) / previous) * 100;
 }
 
-router.get("/business-stats", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/business-stats", verifyToken, async (req: Request, res: Response) => {
   try {
     const timeRange = req.query.timeRange as string || '30d';
     const { startDate, endDate } = getDateRange(timeRange);

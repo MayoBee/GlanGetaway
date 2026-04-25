@@ -5,7 +5,6 @@ import axiosInstance from "./api-client";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
-  requireSuperAdmin?: boolean;
   requiredPermission?: string;
   bypassRoleCheck?: boolean;
 }
@@ -13,7 +12,6 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requireAdmin = false,
-  requireSuperAdmin = false,
   requiredPermission,
   bypassRoleCheck = false,
 }) => {
@@ -142,19 +140,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   // Validate admin access if required
-  // Accepts both "admin", "superAdmin" (DB value) and legacy "super_admin"
   if (requireAdmin) {
-    const adminRoles = ["admin", "superAdmin", "super_admin"];
+    const adminRoles = ["admin"];
     if (!adminRoles.includes(userRole ?? "")) {
       return <Navigate to="/admin-login" state={{ from: location }} replace />;
-    }
-  }
-
-  // Validate super admin access if required
-  if (requireSuperAdmin) {
-    const superAdminRoles = ["superAdmin", "super_admin"];
-    if (!superAdminRoles.includes(userRole ?? "")) {
-      return <Navigate to="/" replace />;
     }
   }
 

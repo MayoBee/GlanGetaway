@@ -6,7 +6,7 @@ import Notification from "../models/notification";
 import Maintenance from "../models/maintenance";
 import Housekeeping from "../models/housekeeping";
 import Billing from "../models/billing";
-import { verifyToken, requireAdmin, requireRole } from "../middleware/role-based-auth";
+import { verifyToken } from "../middleware/role-based-auth";
 
 const router = express.Router();
 
@@ -221,7 +221,7 @@ router.get("/revenue", verifyToken, async (req: Request, res: Response) => {
 });
 
 // Get occupancy analytics
-router.get("/occupancy", verifyToken, requireRole(["admin", "superAdmin", "resort_owner", "front_desk"]), async (req: Request, res: Response) => {
+router.get("/occupancy", verifyToken, async (req: Request, res: Response) => {
   try {
     const { hotelId, startDate, endDate } = req.query;
     

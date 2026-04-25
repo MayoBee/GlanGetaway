@@ -25,7 +25,7 @@ import { useState } from "react";
 
 const AdminLayout = () => {
   const location = useLocation();
-  const { isAdmin, isSuperAdmin, permissions } = useRoleBasedAccess();
+  const { isAdmin, permissions } = useRoleBasedAccess();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -35,16 +35,10 @@ const AdminLayout = () => {
 
   const navItems = [
     {
-      path: "/admin-dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
-      show: isAdmin || isSuperAdmin,
-    },
-    {
       path: "/admin-dashboard/business-insights",
       label: "Business Insights",
       icon: BarChart3,
-      show: isSuperAdmin,
+      show: isAdmin,
     },
     {
       path: "/admin-dashboard/management",

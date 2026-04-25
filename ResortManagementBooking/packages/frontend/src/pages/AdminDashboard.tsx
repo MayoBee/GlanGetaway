@@ -1,40 +1,129 @@
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 import { Users, Building, BarChart3, MessageSquare, Flag, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import * as apiClient from "../api-client";
+import axiosInstance from "@shared/auth/api-client";
 
 const AdminDashboard = () => {
-  const { isAdmin, isSuperAdmin, permissions } = useRoleBasedAccess();
-
-  const stats = [
+  const { isAdmin, permissions } = useRoleBasedAccess();
+  const [stats, setStats] = useState([
     {
       title: "Total Users",
-      value: "1,234",
+      value: "0",
       icon: Users,
       color: "bg-blue-500",
       show: isAdmin,
     },
     {
       title: "Total Resorts",
-      value: "56",
+      value: "0",
       icon: Building,
       color: "bg-green-500",
       show: isAdmin || permissions.canManageOwnResorts,
     },
     {
       title: "Total Bookings",
-      value: "789",
+      value: "0",
       icon: BarChart3,
       color: "bg-purple-500",
       show: isAdmin || permissions.canManageOwnResorts,
     },
     {
       title: "Pending Feedback",
-      value: "23",
+      value: "0",
       icon: MessageSquare,
       color: "bg-yellow-500",
       show: isAdmin,
     },
-  ];
+  ]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Only fetch if user is authenticated and has admin permissions
+    if (!isAdmin && !permissions.canManageOwnResorts) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch dashboard overview using api-client (more accessible endpoint)
+        const dashboardResponse = await axiosInstance.get('/api/dashboard/overview');
+        const dashboardData = dashboardResponse.data.data;
+
+        // Fetch feedback stats using api-client
+        let pendingFeedback = 0;
+        try {
+          const feedbackData = await apiClient.fetchWebsiteFeedbackStats();
+          pendingFeedback = feedbackData.data.byStatus?.new || 0;
+        } catch (feedbackErr) {
+          console.warn('Failed to fetch feedback stats:', feedbackErr);
+          // Continue without feedback data
+        }
+
+        // Get total users and resorts from separate calls
+        let totalUsers = 0;
+        let totalResorts = 0;
+        try {
+          const users = await apiClient.fetchAllUsers();
+          totalUsers = users.length;
+        } catch (err) {
+          console.warn('Failed to fetch users:', err);
+        }
+
+        try {
+          const hotels = await apiClient.fetchHotels();
+          totalResorts = hotels.length;
+        } catch (err) {
+          console.warn('Failed to fetch hotels:', err);
+        }
+
+        // Update stats with real data
+        setStats([
+          {
+            title: "Total Users",
+            value: totalUsers.toLocaleString(),
+            icon: Users,
+            color: "bg-blue-500",
+            show: isAdmin,
+          },
+          {
+            title: "Total Resorts",
+            value: totalResorts.toLocaleString(),
+            icon: Building,
+            color: "bg-green-500",
+            show: isAdmin || permissions.canManageOwnResorts,
+          },
+          {
+            title: "Total Bookings",
+            value: dashboardData?.stats?.totalBookings?.toLocaleString() || "0",
+            icon: BarChart3,
+            color: "bg-purple-500",
+            show: isAdmin || permissions.canManageOwnResorts,
+          },
+          {
+            title: "Pending Feedback",
+            value: pendingFeedback.toLocaleString(),
+            icon: MessageSquare,
+            color: "bg-yellow-500",
+            show: isAdmin,
+          },
+        ]);
+      } catch (err: any) {
+        console.error('Error fetching dashboard data:', err);
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [isAdmin, permissions.canManageOwnResorts]);
 
   const quickActions = [
     {
@@ -49,7 +138,7 @@ const AdminDashboard = () => {
       description: "View analytics and business metrics",
       icon: BarChart3,
       link: "/admin-dashboard/business-insights",
-      show: isSuperAdmin,
+      show: isAdmin,
     },
     {
       title: "Website Feedback",
@@ -83,6 +172,34 @@ const AdminDashboard = () => {
 
   const visibleStats = stats.filter(item => item.show);
   const visibleActions = quickActions.filter(item => item.show);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-2">Welcome to the administrative control panel</p>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+          <p className="text-gray-600 mt-2">Welcome to the administrative control panel</p>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-800">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

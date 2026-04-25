@@ -9,13 +9,6 @@ import { useState } from "react";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
-import {
   Card,
   CardContent,
   CardDescription,
@@ -33,22 +26,11 @@ export type SignInFormData = {
   password: string;
 };
 
-const testAccounts = {
-  "resort-owner": {
-    email: "biennickwadingan@gmail.com",
-    password: "password123",
-  },
-  "user": {
-    email: "biennickw@gmail.com",
-    password: "password123",
-  },
-};
 
 const SignIn = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string>("");
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
@@ -61,20 +43,6 @@ const SignIn = () => {
     setValue,
   } = useForm<SignInFormData>();
 
-  const handleRoleSelect = (value: string) => {
-    if (value === "clear") {
-      setSelectedRole("");
-      setValue("email", "");
-      setValue("password", "");
-    } else {
-      setSelectedRole(value);
-      const account = testAccounts[value as keyof typeof testAccounts];
-      if (account) {
-        setValue("email", account.email);
-        setValue("password", account.password);
-      }
-    }
-  };
 
   const mutation = useMutation(signIn, {
     onSuccess: async (data) => {
@@ -149,47 +117,6 @@ const SignIn = () => {
           {/* Form */}
           <CardContent className="space-y-6">
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-              {/* Test Credentials Dropdown */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="test-account"
-                  className="text-sm font-semibold text-gray-700"
-                >
-                  Test Accounts To Login With
-                </Label>
-                <Select
-                  key={`select-${selectedRole || "empty"}`}
-                  value={selectedRole || undefined}
-                  onValueChange={handleRoleSelect}
-                >
-                  <SelectTrigger className="border border-gray-300 bg-white/80 text-gray-900">
-                    <SelectValue placeholder="Select Role Based Test Account" />
-                  </SelectTrigger>
-                  <SelectContent className="border-gray-200 bg-white">
-                    <SelectItem
-                      value="resort-owner"
-                      className="cursor-pointer text-gray-900 focus:bg-primary-50 focus:text-primary-900"
-                    >
-                      Resort Owner (biennickwadingan@gmail.com)
-                    </SelectItem>
-                    <SelectItem
-                      value="user"
-                      className="cursor-pointer text-gray-900 focus:bg-primary-50 focus:text-primary-900"
-                    >
-                      User (biennickw@gmail.com)
-                    </SelectItem>
-                    {selectedRole && (
-                      <SelectItem
-                        value="clear"
-                        className="cursor-pointer text-gray-400 opacity-60 focus:bg-gray-100 focus:text-gray-500"
-                      >
-                        Clear Selection
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
               {/* Email Field */}
               <div className="space-y-2">
                 <Label

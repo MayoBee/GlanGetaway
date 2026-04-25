@@ -85,13 +85,24 @@ router.post(
         maxAge: 86400000,
         path: "/",
       });
-      
-      // Return message about pending verification
-      const message = isPWD 
+
+      // Return message about pending verification along with token and userId
+      const message = isPWD
         ? "User registered OK. Your PWD ID is pending verification by a Super Admin."
         : "User registered OK";
-      
-      return res.status(200).send({ message, requiresVerification: isPWD || false });
+
+      return res.status(200).send({
+        message,
+        requiresVerification: isPWD || false,
+        token,
+        userId: user.id,
+        user: {
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.role,
+        }
+      });
     } catch (error) {
       console.log(error);
       res.status(500).send({ message: "Something went wrong" });

@@ -5,16 +5,14 @@ import { Loader2 } from "lucide-react";
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode;
-  requireSuperAdmin?: boolean;
   fallbackPath?: string;
 }
 
 const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({
   children,
-  requireSuperAdmin = false,
   fallbackPath = "/",
 }) => {
-  const { isLoggedIn, isLoading, isAdmin, isSuperAdmin } = useRoleBasedAccess();
+  const { isLoggedIn, isLoading, isAdmin } = useRoleBasedAccess();
 
   // Show loading while checking authentication
   if (isLoading) {
@@ -35,11 +33,8 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({
     return <Navigate to={fallbackPath} replace />;
   }
 
-  // Check for super admin requirement
-  if (requireSuperAdmin && !isSuperAdmin) {
-    return <Navigate to={fallbackPath} replace />;
-  }
-
+  // Allow any authenticated user to access admin dashboard
+  // Security is based on the secret route, not the role
   return <>{children}</>;
 };
 

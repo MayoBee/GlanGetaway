@@ -24,7 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../..
 import { Badge } from "../../../shared/ui/badge";
 
 const BusinessInsights = () => {
-  const { isSuperAdmin } = useRoleBasedAccess();
+  const { isAdmin } = useRoleBasedAccess();
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
 
   // Fetch business statistics
@@ -33,7 +33,7 @@ const BusinessInsights = () => {
     () => apiClient.fetchBusinessStats(timeRange),
     {
       loadingMessage: "Loading business insights...",
-      enabled: isSuperAdmin,
+      enabled: isAdmin,
     }
   );
 
@@ -75,7 +75,7 @@ const BusinessInsights = () => {
     }
   };
 
-  if (!isSuperAdmin) {
+  if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Card className="w-full max-w-md">

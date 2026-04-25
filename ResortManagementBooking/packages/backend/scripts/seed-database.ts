@@ -46,7 +46,7 @@ async function seedDatabase() {
         password: adminPassword,
         firstName: "Admin",
         lastName: "User",
-        role: "superAdmin",
+        role: "admin",
         isApproved: true,
         birthdate: new Date("1990-01-01"),
         createdAt: new Date(),

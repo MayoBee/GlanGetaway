@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 import WebsiteFeedback, { WebsiteFeedbackDocument } from "../models/website-feedback";
 import verifyToken from "../middleware/auth";
-import { requireAdmin } from "../middleware/role-based-auth";
 
 const router = express.Router();
 
@@ -71,8 +70,8 @@ router.post("/", async (req: Request, res: Response) => {
   }
 });
 
-// Get all feedback (admin only)
-router.get("/", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+// Get all feedback (authenticated users)
+router.get("/", verifyToken, async (req: Request, res: Response) => {
   try {
     const { status, page = 1, limit = 10, type } = req.query;
     
@@ -108,8 +107,8 @@ router.get("/", verifyToken, requireAdmin, async (req: Request, res: Response) =
   }
 });
 
-// Get feedback statistics (admin only)
-router.get("/stats", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+// Get feedback statistics (authenticated users)
+router.get("/stats", verifyToken, async (req: Request, res: Response) => {
   try {
     const [total, typeStats, statusStats, recent] = await Promise.all([
       WebsiteFeedback.countDocuments(),
@@ -153,8 +152,8 @@ router.get("/stats", verifyToken, requireAdmin, async (req: Request, res: Respon
   }
 });
 
-// Get feedback by ID (admin only)
-router.get("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+// Get feedback by ID (authenticated users)
+router.get("/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -189,8 +188,8 @@ router.get("/:id", verifyToken, requireAdmin, async (req: Request, res: Response
   }
 });
 
-// Update feedback status (admin only)
-router.put("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+// Update feedback status (authenticated users)
+router.put("/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { status, adminNotes, priority, assignedTo } = req.body;
@@ -257,8 +256,8 @@ router.put("/:id", verifyToken, requireAdmin, async (req: Request, res: Response
   }
 });
 
-// Delete feedback (admin only)
-router.delete("/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+// Delete feedback (authenticated users)
+router.delete("/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

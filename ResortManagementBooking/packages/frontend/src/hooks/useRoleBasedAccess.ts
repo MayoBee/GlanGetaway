@@ -1,15 +1,16 @@
+import { useMemo } from "react";
 import useAppContext from "./useAppContext";
+import { UserRole } from "@shared/types";
 
 export const useRoleBasedAccess = () => {
   const { user, userRole, isLoggedIn, isLoading } = useAppContext();
 
-  // Handle both "resort_owner" and "resort-owner" (hyphen or underscore)
-  const isSuperAdmin = userRole === "superAdmin" || userRole === "super_admin";
-  const isResortOwner = userRole === "resort_owner" || userRole === "resort-owner";
-  const isAdmin = userRole === "admin" || isSuperAdmin; // Include super admins as admins
-  const isFrontDesk = userRole === "front_desk";
-  const isHousekeeping = userRole === "housekeeping";
-  const isUser = userRole === "user" || isFrontDesk || isHousekeeping;
+  // Use the UserRole enum values for comparison
+  const isResortOwner = userRole === UserRole.ResortOwner;
+  const isAdmin = userRole === UserRole.Admin;
+  const isFrontDesk = userRole === UserRole.FrontDesk;
+  const isHousekeeping = userRole === UserRole.Housekeeping;
+  const isUser = userRole === UserRole.User || isFrontDesk || isHousekeeping;
 
   const canCreateResort = isAdmin || isResortOwner; // Admin and Resort Owner can create resorts
   const canApproveResorts = isAdmin; // Only Admin can approve resorts
@@ -51,13 +52,18 @@ export const useRoleBasedAccess = () => {
       ];
     }
 
-    if (isSuperAdmin) {
+    if (isAdmin) {
       return [
         "/",
         "/search",
         "/detail/:id",
         "/my-bookings",
         "/my-hotels",
+        "/admin-dashboard",
+        "/admin-dashboard/analytics",
+        "/admin-dashboard/management",
+        "/admin-dashboard/feedback",
+        "/admin-dashboard/reports",
         "/profile",
       ];
     }
@@ -99,12 +105,47 @@ export const useRoleBasedAccess = () => {
     });
   };
 
+  const permissions = useMemo(() => ({
+    canCreateResort,
+    canApproveResorts,
+    canManageAllUsers,
+    canViewAllResorts,
+    canManageOwnResorts,
+    canBookResorts,
+    canManageBookings,
+    canViewDashboard,
+    canManageRooms,
+    canManageHousekeeping,
+    canManagePricing,
+    canManageAmenities,
+    canManageActivities,
+    canViewReports,
+    canManageBilling,
+    canManageMaintenance,
+  }), [
+    canCreateResort,
+    canApproveResorts,
+    canManageAllUsers,
+    canViewAllResorts,
+    canManageOwnResorts,
+    canBookResorts,
+    canManageBookings,
+    canViewDashboard,
+    canManageRooms,
+    canManageHousekeeping,
+    canManagePricing,
+    canManageAmenities,
+    canManageActivities,
+    canViewReports,
+    canManageBilling,
+    canManageMaintenance,
+  ]);
+
   return {
     user,
     userRole,
     isLoggedIn,
     isLoading,
-    isSuperAdmin,
     isResortOwner,
     isAdmin,
     isFrontDesk,
@@ -126,24 +167,7 @@ export const useRoleBasedAccess = () => {
     canViewReports,
     canManageBilling,
     canManageMaintenance,
-    permissions: {
-      canCreateResort,
-      canApproveResorts,
-      canManageAllUsers,
-      canViewAllResorts,
-      canManageOwnResorts,
-      canBookResorts,
-      canManageBookings,
-      canViewDashboard,
-      canManageRooms,
-      canManageHousekeeping,
-      canManagePricing,
-      canManageAmenities,
-      canManageActivities,
-      canViewReports,
-      canManageBilling,
-      canManageMaintenance,
-    },
+    permissions,
     getAccessibleRoutes,
     canAccessRoute,
   };

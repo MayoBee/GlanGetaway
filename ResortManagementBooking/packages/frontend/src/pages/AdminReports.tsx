@@ -23,7 +23,8 @@ import {
   DollarSign,
   Receipt,
   Activity,
-  Wrench
+  Wrench,
+  XCircle
 } from "lucide-react";
 import { HotelType } from "../../../shared/types";
 
@@ -235,7 +236,7 @@ const ReportTable: React.FC<ReportTableProps> = ({ reportType, data }) => {
 
 const AdminReports: React.FC = () => {
   const { showToast } = useAppContext();
-  const { isAdmin, isSuperAdmin } = useRoleBasedAccess();
+  const { isAdmin } = useRoleBasedAccess();
   const [reportType, setReportType] = useState<ReportType>("occupancy");
   const [startDate, setStartDate] = useState<Date | null>(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)); // 30 days ago
   const [endDate, setEndDate] = useState<Date | null>(new Date());
@@ -244,7 +245,7 @@ const AdminReports: React.FC = () => {
   const [isLoadingReport, setIsLoadingReport] = useState(false);
 
   // Check if user has access
-  if (!isAdmin && !isSuperAdmin) {
+  if (!isAdmin) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -431,7 +432,7 @@ const AdminReports: React.FC = () => {
                 <SelectValue placeholder="All resorts" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Resorts</SelectItem>
+                <SelectItem value="all">All Resorts</SelectItem>
                 {hotels?.map((hotel: HotelType) => (
                   <SelectItem key={hotel._id} value={hotel._id}>
                     {hotel.name}

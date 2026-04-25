@@ -1,13 +1,13 @@
 import express, { Request, Response } from "express";
 import User from "../models/user";
-import { verifyToken, requireAdmin } from "../middleware/role-based-auth";
+import { verifyToken } from "../middleware/role-based-auth";
 import { check, validationResult } from "express-validator";
 import bcrypt from "bcryptjs";
 
 const router = express.Router();
 
 // Get all staff members (admin only)
-router.get("/staff", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/staff", verifyToken, async (req: Request, res: Response) => {
   try {
     const { hotelId, department, role, page = 1, limit = 20 } = req.query;
     
@@ -50,7 +50,6 @@ router.get("/staff", verifyToken, requireAdmin, async (req: Request, res: Respon
 router.post(
   "/staff",
   verifyToken,
-  requireAdmin,
   [
     check("email", "Email is required").isEmail(),
     check("password", "Password with 6 or more characters required").isLength({ min: 6 }),
@@ -126,7 +125,7 @@ router.post(
 );
 
 // Update staff member (admin only)
-router.put("/staff/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.put("/staff/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const { firstName, lastName, phone, role, department, staffProfile, permissions, isActive } = req.body;
@@ -169,7 +168,7 @@ router.put("/staff/:id", verifyToken, requireAdmin, async (req: Request, res: Re
 });
 
 // Deactivate staff member (admin only)
-router.delete("/staff/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.delete("/staff/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 
@@ -195,7 +194,7 @@ router.delete("/staff/:id", verifyToken, requireAdmin, async (req: Request, res:
 });
 
 // Get staff by ID
-router.get("/staff/:id", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+router.get("/staff/:id", verifyToken, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
 

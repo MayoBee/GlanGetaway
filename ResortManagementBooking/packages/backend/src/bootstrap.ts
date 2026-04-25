@@ -13,8 +13,8 @@ import { connectDB } from "./config/database";
 export const createServer = async () => {
   const app = express();
 
-  configureSecurityMiddleware(app);
   configureCors(app);
+  configureSecurityMiddleware(app);
 
   app.get("/", (req: Request, res: Response) => {
     res.send("<h1>Hotel Booking Backend API is running 🚀</h1>");

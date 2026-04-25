@@ -13,6 +13,7 @@ import PoliciesSection from "./PoliciesSection";
 import ImagesSection from "./ImagesSection";
 import PaymentModuleSection from "./PaymentModuleSection";
 import DiscountsSection from "./DiscountsSection";
+import WizardForm from "./WizardForm";
 import { mergeUnitsWithBackendData, extractUnitsFromFormData } from "../../utils/unitsStorage";
 import { HotelType } from "../../types";
 
@@ -428,32 +429,79 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
 
   const onSubmit = handleSubmit(handleSave);
 
+  // Organize form sections into wizard steps
+  const wizardSteps = [
+    {
+      id: "basic-info",
+      title: "Basic Info",
+      component: (
+        <div className="flex flex-col gap-10">
+          <DetailsSection />
+          <GuestsSection />
+          <TypeSection />
+        </div>
+      ),
+    },
+    {
+      id: "facilities",
+      title: "Facilities",
+      component: <FacilitiesSection />,
+    },
+    {
+      id: "rooms",
+      title: "Rooms",
+      component: <FreshRoomsSection />,
+    },
+    {
+      id: "cottages",
+      title: "Cottages",
+      component: <FreshCottagesSection />,
+    },
+    {
+      id: "amenities",
+      title: "Amenities",
+      component: <AmenitiesSection />,
+    },
+    {
+      id: "packages",
+      title: "Packages",
+      component: <FreshPackagesSection />,
+    },
+    {
+      id: "contact",
+      title: "Contact",
+      component: <ContactSection />,
+    },
+    {
+      id: "policies",
+      title: "Policies",
+      component: <PoliciesSection />,
+    },
+    {
+      id: "payment",
+      title: "Payment",
+      component: (
+        <div className="flex flex-col gap-10">
+          <PaymentModuleSection />
+          <DiscountsSection />
+        </div>
+      ),
+    },
+    {
+      id: "images",
+      title: "Images",
+      component: <ImagesSection />,
+    },
+  ];
+
   return (
     <FormProvider {...formMethods}>
-      <form className="flex flex-col gap-10" onSubmit={onSubmit}>
-        <DetailsSection />
-        <GuestsSection />
-        <TypeSection />
-        <FacilitiesSection />
-        <FreshRoomsSection />
-        <FreshCottagesSection />
-        <AmenitiesSection />
-        <FreshPackagesSection />
-        <ContactSection />
-        <PoliciesSection />
-        <PaymentModuleSection />
-        <DiscountsSection />
-        <ImagesSection />
-        <span className="flex justify-end">
-          <button
-            disabled={isLoading}
-            type="submit"
-            className="bg-blue-600 text-white  px-6 py-2 rounded-lg font-semibold hover:bg-blue-500 text-xl disabled:bg-gray-500"
-          >
-            {isLoading ? "Saving..." : "Save"}
-          </button>
-        </span>
-      </form>
+      <WizardForm
+        steps={wizardSteps}
+        onSubmit={onSubmit}
+        isLoading={isLoading}
+        canSubmit={!isLoading}
+      />
     </FormProvider>
   );
 };

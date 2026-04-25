@@ -12,7 +12,7 @@ const userSchema = new mongoose.Schema(
     // Role-based access for resort management system
     role: {
       type: String,
-      enum: ["user", "admin", "resort_owner", "front_desk", "housekeeping", "superAdmin"],
+      enum: ["user", "admin", "resort_owner", "front_desk", "housekeeping"],
       default: "user",
     },
     // Staff-specific fields

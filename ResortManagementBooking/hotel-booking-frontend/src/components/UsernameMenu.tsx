@@ -8,8 +8,8 @@ import { Link } from "react-router-dom";
 import { Separator } from "./ui/separator";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
-import { axiosInstance, signOut } from '@glan-getaway/shared-auth';
-import { Plus, LogOut, Building2, BarChart3, Building } from "lucide-react";
+import { axiosInstance, signOut } from "../api-client";
+import { Plus, LogOut, BarChart3, Building, Building2 } from "lucide-react";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
 
@@ -175,3 +175,4 @@ const UsernameMenu = () => {
 };
 
 export default UsernameMenu;
+

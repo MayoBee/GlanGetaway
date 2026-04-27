@@ -26,3 +26,4 @@ const HotelTypesFilter = ({ selectedHotelTypes, onChange }: Props) => {
 };
 
 export default HotelTypesFilter;
+

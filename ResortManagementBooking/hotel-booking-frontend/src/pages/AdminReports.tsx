@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useMutation, useQueryClient } from "react-query";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { fetchReports, updateReport } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useAdminBypass } from "../hooks/useAdminBypass";
@@ -443,3 +443,4 @@ const AdminReports: React.FC = () => {
 };
 
 export default AdminReports;
+

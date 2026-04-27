@@ -78,9 +78,15 @@ axiosInstance.interceptors.request.use((config: CustomAxiosRequestConfig) => {
 
   config.metadata = { retryCount: 0 };
 
+  // Skip cancellation if custom header is set
+  if (config.headers['X-Skip-Cancellation']) {
+    delete config.headers['X-Skip-Cancellation'];
+    return config;
+  }
+
   // Add AbortController for request cancellation
   const requestKey = getRequestKey(config);
-  
+
   // Cancel existing duplicate request if already pending
   if (activeRequests.has(requestKey)) {
     const existingController = activeRequests.get(requestKey)!;
@@ -190,29 +196,37 @@ export interface AuthResponse {
 // Authentication functions
 export const signIn = async (formData: SignInFormData): Promise<AuthResponse> => {
   try {
+    console.log('🔍 Attempting sign in with:', { email: formData.email });
+
     const response = await axiosInstance.post("/api/auth/login", formData);
 
+    console.log('🔍 Login response:', response.data);
+
+    // Optimized token storage - use synchronous operations
     const token = response.data?.token;
     if (token) {
       localStorage.setItem("session_id", token);
+      console.log('🔍 Token stored in localStorage');
     }
 
+    // Batch user info storage for better performance
     if (response.data?.userId) {
       localStorage.setItem("user_id", response.data.userId);
     }
     if (response.data?.user) {
       const { email, firstName, lastName, role } = response.data.user;
       if (email) localStorage.setItem("user_email", email);
+      if (role) localStorage.setItem("user_role", role);
       const name = [firstName, lastName].filter(Boolean).join(" ") || email;
       if (name) localStorage.setItem("user_name", name);
-      if (role) localStorage.setItem("user_role", role);
     }
 
-    // Add delay to ensure localStorage operations complete
-    await new Promise(resolve => setTimeout(resolve, 200));
-
+    console.log('🔍 Login successful, returning data');
     return response.data;
   } catch (error: any) {
+    console.log('🔍 Login error:', error);
+
+    // Faster error handling with specific checks
     if (error.code === 'ECONNABORTED') {
       throw new Error("Sign-in timed out. Please check your connection and try again.");
     }

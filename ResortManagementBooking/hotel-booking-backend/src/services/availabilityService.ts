@@ -6,6 +6,42 @@ interface AvailabilityResult {
   conflicts: IBooking[];
 }
 
+interface MongoQuery {
+  hotelId: string;
+  status: { $in: string[] };
+  checkIn: { $lt: Date };
+  checkOut: { $gt: Date };
+  $or?: Array<{
+    'selectedRooms.id'?: { $in: string[] };
+    'selectedCottages.id'?: { $in: string[] };
+  }>;
+}
+
+interface MatchCondition {
+  'selectedRooms.id'?: { $in: string[] };
+  'selectedCottages.id'?: { $in: string[] };
+}
+
+interface BookingData {
+  hotelId: string;
+  checkIn: Date | string;
+  checkOut: Date | string;
+  selectedRooms?: Array<{ id: string; [key: string]: any }>;
+  selectedCottages?: Array<{ id: string; [key: string]: any }>;
+}
+
+interface RoomSelection {
+  id: string;
+  units?: number;
+  [key: string]: any;
+}
+
+interface CottageSelection {
+  id: string;
+  units?: number;
+  [key: string]: any;
+}
+
 export const checkAvailability = async (
   hotelId: string,
   checkIn: Date,
@@ -14,7 +50,7 @@ export const checkAvailability = async (
   cottageIds: string[]
 ): Promise<AvailabilityResult> => {
   // Build database query with all filtering at query level
-  const query: any = {
+  const query: MongoQuery = {
     hotelId,
     status: { $in: ['confirmed', 'pending'] },
     checkIn: { $lt: checkOut },
@@ -22,7 +58,7 @@ export const checkAvailability = async (
   };
 
   // Add room/cottage filters directly in MongoDB query
-  const matchConditions: any[] = [];
+  const matchConditions: MatchCondition[] = [];
 
   if (roomIds && roomIds.length > 0) {
     matchConditions.push({
@@ -62,15 +98,15 @@ export const checkAvailability = async (
  * Logic: Insert booking ONLY IF no conflicting booking exists for the same
  * hotel, dates, and room/cottage IDs with status 'confirmed' or 'pending'.
  */
-export const createAtomicBooking = async (bookingData: any): Promise<{ success: boolean; booking?: any; error?: string }> => {
+export const createAtomicBooking = async (bookingData: BookingData): Promise<{ success: boolean; booking?: any; error?: string }> => {
   const { hotelId, checkIn, checkOut, selectedRooms, selectedCottages } = bookingData;
   
   // Extract room and cottage IDs
-  const roomIds = selectedRooms?.map((room: any) => room.id) || [];
-  const cottageIds = selectedCottages?.map((cottage: any) => cottage.id) || [];
+  const roomIds = selectedRooms?.map((room: RoomSelection) => room.id) || [];
+  const cottageIds = selectedCottages?.map((cottage: CottageSelection) => cottage.id) || [];
   
   // Build the conflict detection query
-  const conflictQuery: any = {
+  const conflictQuery: MongoQuery = {
     hotelId,
     status: { $in: ['confirmed', 'pending'] },
     checkIn: { $lt: new Date(checkOut) },
@@ -78,7 +114,7 @@ export const createAtomicBooking = async (bookingData: any): Promise<{ success: 
   };
   
   // Add room/cottage conflict conditions
-  const conflictConditions: any[] = [];
+  const conflictConditions: MatchCondition[] = [];
   
   if (roomIds.length > 0) {
     conflictConditions.push({
@@ -122,9 +158,9 @@ export const createAtomicBooking = async (bookingData: any): Promise<{ success: 
       await booking.save();
       return { success: true, booking };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Check for duplicate key error (MongoDB code 11000)
-    if (error.code === 11000) {
+    if (error instanceof Error && (error as any).code === 11000) {
       return { 
         success: false, 
         error: 'The selected rooms or cottages are no longer available. Please try different dates or accommodations.' 
@@ -132,16 +168,16 @@ export const createAtomicBooking = async (bookingData: any): Promise<{ success: 
     }
     
     // Check for write conflict (MongoDB code 112)
-    if (error.code === 112) {
-      return { 
-        success: false, 
-        error: 'Another user is booking these accommodations. Please try again.' 
+    if (error instanceof Error && (error as any).code === 112) {
+      return {
+        success: false,
+        error: 'A booking conflict occurred. Please try again.'
       };
     }
-    
-    return { 
-      success: false, 
-      error: error.message || 'Failed to create booking' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An error occurred while creating the booking'
     };
   }
 };

@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from '@glan-getaway/shared-auth';
+import { axiosInstance, getApiBaseUrl } from "../api-client";
 
 interface AmenitySlotBookingProps {
   amenityId: string;
-  hotelId: string;
   amenityName: string;
   bookingId?: string;
-  onSlotBooked?: (slot: any) => void;
+  onSlotBooked?: (slot: TimeSlot) => void;
+  currentPrice?: number;
+  basePrice?: number;
+  priceMultiplier?: number;
+  isWeatherLocked?: boolean;
+  weatherLockReason?: string;
+  status?: string;
 }
 
 interface TimeSlot {
@@ -27,7 +32,6 @@ interface TimeSlot {
 
 export const AmenitySlotBooking: React.FC<AmenitySlotBookingProps> = ({
   amenityId,
-  hotelId,
   amenityName,
   bookingId,
   onSlotBooked,
@@ -266,3 +270,4 @@ export const AmenitySlotBooking: React.FC<AmenitySlotBookingProps> = ({
 };
 
 export default AmenitySlotBooking;
+

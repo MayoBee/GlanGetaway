@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Flag, AlertTriangle, MessageSquare, X } from "lucide-react";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { Flag, AlertTriangle, X } from "lucide-react";
+import { axiosInstance } from "../api-client";
 
 interface ReportButtonProps {
   itemId: string;
@@ -189,3 +189,4 @@ const ReportButton: React.FC<ReportButtonProps> = ({
 };
 
 export default ReportButton;
+

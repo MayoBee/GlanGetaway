@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useMutationWithLoading, useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import {
   fetchAllUsers,
   searchUsers,
@@ -634,3 +634,4 @@ const AdminManagement = () => {
 };
 
 export default AdminManagement;
+

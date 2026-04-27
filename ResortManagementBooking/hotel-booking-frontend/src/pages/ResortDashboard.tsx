@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import useAppContext from "../hooks/useAppContext";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import {
   Card,
   CardContent,
@@ -328,3 +328,4 @@ const ResortDashboard = () => {
 };
 
 export default ResortDashboard;
+

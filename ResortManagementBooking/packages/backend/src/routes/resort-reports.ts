@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import * as converter from 'json-2-csv';
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import Room from "../models/room";
 import Billing from "../models/billing";
 import User from "../models/user";

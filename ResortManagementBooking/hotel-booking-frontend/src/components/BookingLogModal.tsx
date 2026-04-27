@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { BookingType } from "../../../shared/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Badge } from "./ui/badge";
@@ -516,3 +516,4 @@ const BookingLogModal: React.FC<BookingLogModalProps> = ({
 };
 
 export default BookingLogModal;
+

@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../co
 import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
-import { toast } from "../components/ui/use-toast";
+import { toast } from "../hooks/use-toast";
 import { fetchAmenitySlots, bookAmenitySlot, cancelAmenitySlotBooking, fetchMyAmenityBookings } from "../api-client";
 import { Calendar, Clock, CheckCircle, XCircle, Plus, Trash2 } from "lucide-react";
 
@@ -345,3 +345,4 @@ const AmenitySlots = () => {
 };
 
 export default AmenitySlots;
+

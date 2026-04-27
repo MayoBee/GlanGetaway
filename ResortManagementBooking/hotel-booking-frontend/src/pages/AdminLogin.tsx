@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useMutation } from "react-query";
-import { signIn } from "@glan-getaway/shared-auth";
+import { signIn } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useAdminAuth } from "../contexts/AdminAuthContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -224,3 +224,4 @@ const AdminLogin = () => {
 };
 
 export default AdminLogin;
+

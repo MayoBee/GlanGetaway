@@ -110,3 +110,4 @@ const LatestDestinationCard = ({ hotel }: Props) => {
 };
 
 export default LatestDestinationCard;
+

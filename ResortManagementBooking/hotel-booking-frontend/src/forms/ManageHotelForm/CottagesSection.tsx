@@ -299,3 +299,4 @@ const CottagesSection = () => {
 };
 
 export default CottagesSection;
+

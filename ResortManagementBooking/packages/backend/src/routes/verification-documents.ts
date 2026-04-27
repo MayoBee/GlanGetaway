@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import VerificationDocument from "../models/verification-document";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import verifyToken from "../middleware/auth";
 
 const router = express.Router();

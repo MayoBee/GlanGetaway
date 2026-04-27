@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Image as ImageIcon, Loader2, RefreshCw } from 'lucide-react';
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 
 const getApiBaseUrl = () => {
   return import.meta.env.VITE_API_BASE_URL || 'http://localhost:7002';
@@ -269,3 +269,4 @@ const SmartImage: React.FC<SmartImageProps> = ({
 };
 
 export default SmartImage;
+

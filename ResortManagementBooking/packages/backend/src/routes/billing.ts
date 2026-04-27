@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import Billing from "../models/billing";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import { verifyToken, requireRole } from "../middleware/role-based-auth";
 
 const router = express.Router();

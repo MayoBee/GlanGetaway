@@ -319,6 +319,14 @@ export type BookingType = {
   paymentStatus?: "pending" | "paid" | "failed" | "refunded";
   specialRequests?: string;
   cancellationReason?: string;
+  // Discount booking flags
+  isPwdBooking?: boolean;
+  isSeniorCitizenBooking?: boolean;
+  discountInfo?: {
+    type: "pwd" | "senior_citizen" | null;
+    percentage: number;
+    amount: number;
+  };
   createdAt?: Date;
   updatedAt?: Date;
 };

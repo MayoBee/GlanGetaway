@@ -13,7 +13,7 @@ import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { toast } from "../components/ui/use-toast";
+import { toast } from "../hooks/use-toast";
 import { fetchIdentityVerifications, verifyPWD, verifyAccount, fetchVerificationDocuments, reviewVerificationDocument } from "../api-client";
 import { CheckCircle, XCircle, Shield, FileText, Search, Eye } from "lucide-react";
 
@@ -456,3 +456,4 @@ const IdentityVerification = () => {
 };
 
 export default IdentityVerification;
+

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 
 interface BusinessStats {
   totalResorts: number;
@@ -451,3 +451,4 @@ const BusinessInsights = () => {
 };
 
 export default BusinessInsights;
+

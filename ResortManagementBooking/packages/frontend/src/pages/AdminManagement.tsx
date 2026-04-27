@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useMutationWithLoading, useQueryWithLoading } from "../hooks/useLoadingHooks";
+import { useQueryClient } from "react-query";
 import * as apiClient from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useRoleBasedAccess } from "../hooks/useRoleBasedAccess";
@@ -45,6 +46,7 @@ import { Separator } from "../../../shared/ui/separator";
 const AdminManagement = () => {
   const { showToast } = useAppContext();
   const { isAdmin } = useRoleBasedAccess();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"users" | "role-promotions">("users");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -52,6 +54,8 @@ const AdminManagement = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<any>(null);
   const [recentPromotions, setRecentPromotions] = useState<any[]>([]);
+  const [selectedRequest, setSelectedRequest] = useState<any>(null);
+  const [isDocumentsDialogOpen, setIsDocumentsDialogOpen] = useState(false);
 
   // Add to recent promotions when promotion succeeds
   const addToRecentPromotions = (user: any) => {
@@ -203,6 +207,8 @@ const AdminManagement = () => {
         description: `User has been promoted to resort owner.`,
         type: "SUCCESS",
       });
+      queryClient.invalidateQueries("pendingRoleRequests");
+      queryClient.invalidateQueries("existingResortOwners");
     },
     onError: (error: Error) => {
       showToast({
@@ -222,6 +228,7 @@ const AdminManagement = () => {
         description: `Request has been declined.`,
         type: "SUCCESS",
       });
+      queryClient.invalidateQueries("pendingRoleRequests");
     },
     onError: (error: Error) => {
       showToast({
@@ -788,19 +795,25 @@ const AdminManagement = () => {
                         <tr key={request._id} className="border-b hover:bg-gray-50">
                           <td className="p-3">
                             <div>
-                              <div className="font-medium">{request.user.firstName} {request.user.lastName}</div>
-                              <div className="text-sm text-gray-600">{request.user.email}</div>
+                              <div className="font-medium">{request.userId?.firstName || 'Unknown'} {request.userId?.lastName || ''}</div>
+                              <div className="text-sm text-gray-600">{request.userId?.email || 'No email'}</div>
                             </div>
                           </td>
                           <td className="p-3">
                             {new Date(request.createdAt).toLocaleDateString()}
                           </td>
                           <td className="p-3">
-                            <SmartImage
-                              src={request.permitUrl}
-                              alt="Permit document"
-                              className="w-16 h-16 object-cover rounded"
-                            />
+                            <Button
+                              onClick={() => {
+                                setSelectedRequest(request);
+                                setIsDocumentsDialogOpen(true);
+                              }}
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-700"
+                            >
+                              View Documents
+                            </Button>
                           </td>
                           <td className="p-3">
                             <div className="flex space-x-2">
@@ -906,6 +919,39 @@ const AdminManagement = () => {
           </Card>
         </>
       )}
+
+      {/* Documents Dialog */}
+      <Dialog open={isDocumentsDialogOpen} onOpenChange={setIsDocumentsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Application Documents</DialogTitle>
+            <DialogDescription>
+              All documents submitted by {selectedRequest?.userId?.firstName} {selectedRequest?.userId?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRequest?.documents && (
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {Object.entries(selectedRequest.documents).map(([key, url]: [string, any]) => (
+                <div key={key} className="border rounded-lg p-4">
+                  <h4 className="font-medium mb-2 capitalize">
+                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                  </h4>
+                  {url && (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm block"
+                    >
+                      View Document
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

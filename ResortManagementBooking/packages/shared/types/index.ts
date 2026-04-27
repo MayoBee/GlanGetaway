@@ -2,6 +2,7 @@
 // No circular dependencies - both frontend and backend import ONLY from this file
 
 export enum UserRole {
+  SuperAdmin = "superadmin",
   Admin = "admin",
   User = "user", 
   Owner = "owner",

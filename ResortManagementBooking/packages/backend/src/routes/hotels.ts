@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import multer from "multer";
 import path from "path";
 import Hotel from "../models/hotel";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import User from "../models/user";
 import { BookingType, HotelSearchResponse } from "../types";
 import { param, body, validationResult } from "express-validator";

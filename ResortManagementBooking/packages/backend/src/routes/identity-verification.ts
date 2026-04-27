@@ -1,7 +1,7 @@
 import express, { Request, Response, NextFunction } from "express";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import IdentityVerification from "../models/identity-verification";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import { v2 as cloudinary } from "cloudinary";
 
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {

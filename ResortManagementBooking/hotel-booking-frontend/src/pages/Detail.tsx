@@ -1,6 +1,6 @@
 import { useParams, useLocation } from "react-router-dom";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { fetchHotelById } from "../api-client";
 import { AiFillStar } from "react-icons/ai";
 import GuestInfoForm from "../forms/GuestInfoForm/GuestInfoForm";
@@ -584,3 +584,4 @@ const Detail = () => {
 };
 
 export default Detail;
+

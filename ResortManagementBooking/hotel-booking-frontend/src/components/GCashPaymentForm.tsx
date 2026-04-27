@@ -338,3 +338,4 @@ const GCashPaymentForm = ({ totalCost, downPaymentAmount, remainingAmount, onPay
 };
 
 export default GCashPaymentForm;
+

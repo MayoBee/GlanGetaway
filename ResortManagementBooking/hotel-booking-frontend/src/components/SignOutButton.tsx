@@ -1,6 +1,6 @@
 import { useQueryClient } from "react-query";
 import { useMutationWithLoading } from "../hooks/useLoadingHooks";
-import { signOut } from '@glan-getaway/shared-auth';
+import { signOut } from "../api-client";
 import { clearAllStorage } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useNavigate } from "react-router-dom";
@@ -153,3 +153,4 @@ const SignOutButton = () => {
 };
 
 export default SignOutButton;
+

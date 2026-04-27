@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import Room from "../models/room";
 import Notification from "../models/notification";
 import Maintenance from "../models/maintenance";

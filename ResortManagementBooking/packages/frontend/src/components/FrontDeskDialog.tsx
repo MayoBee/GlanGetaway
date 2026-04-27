@@ -175,7 +175,7 @@ const FrontDeskDialog = ({ open, onClose, onStaffCreated, editingStaff }: FrontD
 
   return (
     <Dialog open={open} onOpenChange={(open) => !open && onClose(false)}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto z-50">
         <DialogHeader>
           <DialogTitle>{editingStaff ? "Edit Staff Member" : "Add New Staff Member"}</DialogTitle>
           <DialogDescription>

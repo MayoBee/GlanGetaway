@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from '@glan-getaway/shared-auth';
+import { axiosInstance, getApiBaseUrl } from "../api-client";
 
 interface HousekeepingMobileViewProps {
   staffId?: string;
@@ -52,7 +52,6 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
     setError(null);
 
     try {
-      const token = localStorage.getItem("session_id");
       const response = await axios.get(
         `${getApiBaseUrl()}/api/housekeeping-tasks/qr/${qrCode}`
       );
@@ -312,3 +311,4 @@ export const HousekeepingMobileView: React.FC<HousekeepingMobileViewProps> = ({
 };
 
 export default HousekeepingMobileView;
+

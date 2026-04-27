@@ -26,3 +26,4 @@ const FacilitiesFilter = ({ selectedFacilities, onChange }: Props) => {
 };
 
 export default FacilitiesFilter;
+

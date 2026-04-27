@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { 
   Card, 
   CardContent, 
@@ -469,3 +469,4 @@ const DiscountConfig = ({ hotelId, onSave }: DiscountConfigProps) => {
 };
 
 export default DiscountConfig;
+

@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Switch } from "../components/ui/switch";
-import { toast } from "../components/ui/use-toast";
+import { toast } from "../hooks/use-toast";
 import { fetchWeatherTriggers, createWeatherTrigger, updateWeatherTrigger, deleteWeatherTrigger, toggleWeatherTrigger } from "../api-client";
 import { Plus, Pencil, Trash2, Cloud, CloudRain, Sun, Wind, Thermometer, Power, PowerOff } from "lucide-react";
 
@@ -590,3 +590,4 @@ const WeatherTriggers = () => {
 };
 
 export default WeatherTriggers;
+

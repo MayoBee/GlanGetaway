@@ -3,7 +3,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 import crypto from "crypto";
 import HousekeepingTask from "../models/housekeeping-task";
 import Room from "../models/room";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 
 const verifyToken = (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;

@@ -205,3 +205,4 @@ const TermsOfServiceModal: React.FC<TermsOfServiceModalProps> = ({
 };
 
 export default TermsOfServiceModal;
+

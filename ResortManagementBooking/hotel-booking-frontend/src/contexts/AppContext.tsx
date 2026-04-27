@@ -1,10 +1,35 @@
 import React, { useState } from "react";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useQuery } from "react-query";
-import { validateToken, fetchCurrentUser } from "@glan-getaway/shared-auth";
+import axios from "axios";
 import { loadStripe, Stripe } from "@stripe/stripe-js";
 import { useToast } from "../hooks/use-toast";
 import { UserType } from "../../../shared/types";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+const validateToken = async () => {
+  try {
+    const response = await axiosInstance.get("/api/auth/validate-token");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+const fetchCurrentUser = async () => {
+  try {
+    const response = await axiosInstance.get("/api/auth/me");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 const STRIPE_PUB_KEY = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "";
 
@@ -169,3 +194,4 @@ export const AppContextProvider = ({
 };
 
 // ...existing code...
+

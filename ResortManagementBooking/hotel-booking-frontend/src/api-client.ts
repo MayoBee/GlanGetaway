@@ -1,7 +1,42 @@
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import axios from "axios";
 
-// Re-export auth functions
-export { signIn, signOut, validateToken, fetchCurrentUser } from '@glan-getaway/shared-auth';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:7002";
+
+export const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+// Auth functions
+export const signIn = async (formData: any) => {
+  const response = await axiosInstance.post("/api/auth/sign-in", formData);
+  return response.data;
+};
+
+export const signOut = async () => {
+  const response = await axiosInstance.post("/api/auth/sign-out");
+  return response.data;
+};
+
+export const validateToken = async () => {
+  try {
+    const response = await axiosInstance.get("/api/auth/validate-token");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const fetchCurrentUser = async () => {
+  try {
+    const response = await axiosInstance.get("/api/auth/me");
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const getApiBaseUrl = () => API_BASE_URL;
 
 // Hotel Management
 export const fetchMyHotels = async () => {
@@ -654,3 +689,4 @@ export const fetchMyAmenityBookings = async () => {
   const response = await axiosInstance.get('/api/amenity-slots/my-bookings');
   return response.data;
 };
+

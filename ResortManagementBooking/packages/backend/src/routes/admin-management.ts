@@ -585,4 +585,258 @@ router.put("/toggle-user-status/:userId", verifyToken, requireAdmin, async (req:
   }
 });
 
+/**
+ * @swagger
+ * /api/admin-management/role-requests/pending:
+ *   get:
+ *     summary: Get pending role promotion requests (Admin only)
+ *     description: Retrieve all pending resort owner applications
+ *     tags: [Admin Management]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Pending requests retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only
+ */
+router.get("/role-requests/pending", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const requests = await RolePromotionRequest.find({ status: "pending" })
+      .populate("userId", "email firstName lastName")
+      .sort({ createdAt: -1 });
+
+    res.json(requests);
+  } catch (error) {
+    console.error("Error fetching pending role requests:", error);
+    res.status(500).json({ message: "Failed to fetch pending role requests" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin-management/role-requests/{requestId}/approve:
+ *   put:
+ *     summary: Approve a role promotion request (Admin only)
+ *     description: Approve a pending resort owner application
+ *     tags: [Admin Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: requestId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Request approved successfully
+ *       404:
+ *         description: Request not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only
+ */
+router.put("/role-requests/:requestId/approve", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { requestId } = req.params;
+    const adminId = req.userId;
+
+    const request = await RolePromotionRequest.findById(requestId);
+
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    if (request.status !== "pending") {
+      return res.status(400).json({
+        message: "Request has already been processed",
+      });
+    }
+
+    request.status = "approved";
+    request.reviewedBy = adminId;
+    request.reviewedAt = new Date();
+
+    await request.save();
+
+    // Update user role to resort_owner
+    const user = await User.findById(request.userId);
+    if (user) {
+      user.role = "resort_owner";
+      await user.save();
+      console.log(`👤 User promoted to resort owner: ${user.email} via approved request`);
+    }
+
+    res.json({
+      message: "Request approved successfully",
+      request,
+    });
+  } catch (error) {
+    console.error("Error approving request:", error);
+    res.status(500).json({ message: "Failed to approve request" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin-management/role-requests/{requestId}/decline:
+ *   put:
+ *     summary: Decline a role promotion request (Admin only)
+ *     description: Decline a pending resort owner application
+ *     tags: [Admin Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: requestId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Request declined successfully
+ *       404:
+ *         description: Request not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only
+ */
+router.put("/role-requests/:requestId/decline", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { requestId } = req.params;
+    const { reason } = req.body;
+    const adminId = req.userId;
+
+    const request = await RolePromotionRequest.findById(requestId);
+
+    if (!request) {
+      return res.status(404).json({ message: "Request not found" });
+    }
+
+    if (request.status !== "pending") {
+      return res.status(400).json({
+        message: "Request has already been processed",
+      });
+    }
+
+    request.status = "rejected";
+    request.reviewedBy = adminId;
+    request.reviewedAt = new Date();
+    request.rejectionReason = reason;
+
+    await request.save();
+
+    res.json({
+      message: "Request declined successfully",
+      request,
+    });
+  } catch (error) {
+    console.error("Error declining request:", error);
+    res.status(500).json({ message: "Failed to decline request" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin-management/resort-owners:
+ *   get:
+ *     summary: Get existing resort owners (Admin only)
+ *     description: Retrieve all users with resort_owner role
+ *     tags: [Admin Management]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Resort owners retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only
+ */
+router.get("/resort-owners", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const resortOwners = await User.find({ role: "resort_owner" })
+      .select("firstName lastName email role createdAt")
+      .sort({ createdAt: -1 });
+
+    res.json(resortOwners);
+  } catch (error) {
+    console.error("Error fetching resort owners:", error);
+    res.status(500).json({ message: "Failed to fetch resort owners" });
+  }
+});
+
+/**
+ * @swagger
+ * /api/admin-management/demote-resort-owner/{userId}:
+ *   put:
+ *     summary: Demote resort owner to user (Admin only)
+ *     description: Demote a resort owner back to regular user
+ *     tags: [Admin Management]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Resort owner demoted successfully
+ *       404:
+ *         description: User not found
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Admin only
+ */
+router.put("/demote-resort-owner/:userId", verifyToken, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.role !== "resort_owner") {
+      return res.status(400).json({ message: "User is not a resort owner" });
+    }
+
+    user.role = "user";
+    await user.save();
+
+    console.log(`👤 Resort owner demoted to user: ${user.email} by admin ${req.userId}`);
+
+    res.json({
+      message: "Resort owner demoted successfully",
+      user: {
+        id: user._id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        newRole: "user"
+      }
+    });
+  } catch (error) {
+    console.error("Error demoting resort owner:", error);
+    res.status(500).json({ message: "Failed to demote resort owner" });
+  }
+});
+
 export default router;

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
 import { fetchMyHotels, deleteMyHotelById } from "../api-client";
 import { BsBuilding, BsMap } from "react-icons/bs";
-import { BiHotel, BiMoney } from "react-icons/bi";
+import { BiMoney } from "react-icons/bi";
 import {
   Plus,
   Edit,
@@ -415,3 +415,4 @@ const MyHotels = () => {
 };
 
 export default MyHotels;
+

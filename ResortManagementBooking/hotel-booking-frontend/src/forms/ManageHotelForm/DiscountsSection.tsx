@@ -138,3 +138,4 @@ const DiscountsSection = () => {
 };
 
 export default DiscountsSection;
+

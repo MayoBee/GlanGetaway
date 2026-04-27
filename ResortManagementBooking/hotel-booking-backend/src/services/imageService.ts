@@ -1,6 +1,17 @@
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+
+interface UploadedFile {
+  originalname: string;
+  buffer: Buffer;
+  mimetype: string;
+  size: number;
+  fieldname: string;
+  encoding: string;
+  path?: string;
+  filename?: string;
+}
 import { Request, Response } from 'express';
 
 class ImageService {
@@ -34,7 +45,7 @@ class ImageService {
   /**
    * Save uploaded image files and return their URLs
    */
-  async saveImages(files: any[]): Promise<string[]> {
+  async saveImages(files: UploadedFile[]): Promise<string[]> {
     console.log('📸 Starting image upload process...');
     console.log('📁 Upload directory:', this.uploadDir);
     console.log('🔗 Base URL:', this.baseUrl);

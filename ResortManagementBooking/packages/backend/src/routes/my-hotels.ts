@@ -3,7 +3,7 @@ import multer from "multer";
 import imageService from "../services/imageService";
 import { v2 as cloudinary } from "cloudinary";
 import Hotel from "../models/hotel";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import verifyToken from "../middleware/auth";
 import { body } from "express-validator";
 import { HotelType } from "../types";

@@ -75,3 +75,4 @@ const TypeSection = () => {
 };
 
 export default TypeSection;
+

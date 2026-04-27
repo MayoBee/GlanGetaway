@@ -5,7 +5,6 @@ import useSearchContext from "../../hooks/useSearchContext";
 import useAppContext from "../../hooks/useAppContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import {
   Card,
@@ -14,11 +13,11 @@ import {
   CardTitle,
 } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
-import { Calendar, Users, User, Baby, CreditCard, Upload, AlertCircle, CheckCircle } from "lucide-react";
+import { Calendar, Users, User, CreditCard, Upload, AlertCircle, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";
 import BookingSummary from "../../components/BookingSummary";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../../api-client";
 import { fetchHotelById, updateBooking, fetchMyBookings } from "../../api-client";
 import { useQuery } from "react-query";
 
@@ -42,8 +41,6 @@ type GuestInfoFormData = {
 
 const GuestInfoForm = ({ 
   hotelId, 
-  pricePerNight, 
-  initialRateType = 'night', 
   editMode = false, 
   bookingId, 
   bookingData 
@@ -62,16 +59,14 @@ const GuestInfoForm = ({
     }
   );
 
-  const { 
-    setBasePrice, 
-    setNumberOfNights, 
-    totalCost, 
-    selectedRooms, 
-    selectedCottages, 
+  const {
+    setBasePrice,
+    setNumberOfNights,
+    totalCost,
+    selectedRooms,
+    selectedCottages,
     selectedAmenities,
-    clearSelections,
-    selectedRateType,
-    setRateType
+    selectedRateType
   } = useBookingSelection();
 
   // Time state variables - initialize with booking data if in edit mode
@@ -264,12 +259,6 @@ const GuestInfoForm = ({
       return false;
     }
   };
-
-  // Determine available rate types based on entrance fees
-  const hasDayRate = hotel?.adultEntranceFee?.dayRate && hotel.adultEntranceFee.dayRate > 0 || 
-                    hotel?.childEntranceFee?.some(child => child.dayRate > 0);
-  const hasNightRate = hotel?.adultEntranceFee?.nightRate && hotel.adultEntranceFee.nightRate > 0 || 
-                     hotel?.childEntranceFee?.some(child => child.nightRate > 0);
 
   const {
     watch,
@@ -978,3 +967,4 @@ const GuestInfoForm = ({
 };
 
 export default GuestInfoForm;
+

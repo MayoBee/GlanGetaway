@@ -817,17 +817,34 @@ export const deleteResort = async (resortId: string) => {
 };
 
 export const submitResortOwnerApplication = async (formData: FormData) => {
-  const response = await axiosInstance.post("/api/role-promotion-requests", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
+  try {
+    const response = await axiosInstance.post("/api/role-promotion-requests", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('Submit resort owner application error:', error.response?.data);
+    if (error.response?.data?.message) {
+      throw new Error(error.response.data.message);
+    } else if (error.response?.status === 400) {
+      throw new Error(error.response.data?.message || "Invalid request. Please check your documents and try again.");
+    } else if (error.response?.status === 401) {
+      throw new Error("You must be logged in to submit an application.");
+    } else {
+      throw new Error(error.message || "Failed to submit application. Please try again.");
+    }
+  }
 };
 
 // Resort Staff Management API functions
 export const getResortStaff = async () => {
-  const response = await axiosInstance.get("/api/resort-staff");
+  const response = await axiosInstance.get("/api/resort-staff", {
+    headers: {
+      'X-Skip-Cancellation': 'true'
+    }
+  });
   return response.data;
 };
 

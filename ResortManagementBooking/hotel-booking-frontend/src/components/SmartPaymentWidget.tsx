@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from '@glan-getaway/shared-auth';
+import { axiosInstance, getApiBaseUrl } from "../api-client";
 import StripePaymentForm from "./StripePaymentForm";
 
 interface SmartPaymentWidgetProps {
@@ -8,9 +8,6 @@ interface SmartPaymentWidgetProps {
   hotelId: string;
   totalAmount: number;
   depositPercentage?: number;
-  guestName: string;
-  guestEmail: string;
-  guestPhone: string;
   onPaymentSuccess?: (payment: any) => void;
   onPaymentFailed?: (error: any) => void;
 }
@@ -22,9 +19,6 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
   hotelId,
   totalAmount,
   depositPercentage = 50,
-  guestName,
-  guestEmail,
-  guestPhone,
   onPaymentSuccess,
   onPaymentFailed,
 }) => {
@@ -388,3 +382,4 @@ export const SmartPaymentWidget: React.FC<SmartPaymentWidgetProps> = ({
 };
 
 export default SmartPaymentWidget;
+

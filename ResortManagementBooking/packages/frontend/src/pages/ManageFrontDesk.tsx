@@ -48,10 +48,10 @@ const ManageFrontDesk = () => {
       const response = await apiClient.getResortStaff();
       setStaff(response.data || []);
     } catch (error: any) {
-      showToast({ 
-        title: "Error", 
-        description: error.response?.data?.message || "Failed to fetch staff", 
-        type: "ERROR" 
+      showToast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to fetch staff",
+        type: "ERROR"
       });
     } finally {
       setLoading(false);

@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import Hotel from "../models/hotel";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import User from "../models/user";
 import verifyToken from "../middleware/auth";
 import { requireAdmin } from "../middleware/role-based-auth";
@@ -76,40 +76,51 @@ router.get("/business-stats", verifyToken, requireAdmin, async (req: Request, re
     const { startDate, endDate } = getDateRange(timeRange);
     const { startDate: prevStartDate, endDate: prevEndDate } = getPreviousPeriod(timeRange);
 
+    console.log("Fetching business stats for timeRange:", timeRange);
+
     // Get current period stats
-    const [
-      totalUsers,
-      totalResorts,
-      totalBookings,
-      bookings,
-      users,
-      resorts
-    ] = await Promise.all([
-      User.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-      Hotel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-      Booking.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-      Booking.find({ createdAt: { $gte: startDate, $lte: endDate } }),
-      User.find({}),
-      Hotel.find({ isApproved: true })
-    ]);
+    let totalUsers, totalResorts, totalBookings, bookings, users, resorts;
+    try {
+      [totalUsers, totalResorts, totalBookings, bookings, users, resorts] = await Promise.all([
+        User.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+        Hotel.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+        Booking.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+        Booking.find({ createdAt: { $gte: startDate, $lte: endDate } }),
+        User.find({}),
+        Hotel.find({ isApproved: true })
+      ]);
+      console.log("Basic stats fetched successfully");
+    } catch (dbError) {
+      console.error("Error fetching basic stats:", dbError);
+      throw dbError;
+    }
 
     // Get previous period stats for growth calculation
-    const [
-      prevUsers,
-      prevResorts,
-      prevBookings
-    ] = await Promise.all([
-      User.countDocuments({ createdAt: { $gte: prevStartDate, $lte: prevEndDate } }),
-      Hotel.countDocuments({ createdAt: { $gte: prevStartDate, $lte: prevEndDate } }),
-      Booking.countDocuments({ createdAt: { $gte: prevStartDate, $lte: prevEndDate } })
-    ]);
+    let prevUsers, prevResorts, prevBookings;
+    try {
+      [prevUsers, prevResorts, prevBookings] = await Promise.all([
+        User.countDocuments({ createdAt: { $gte: prevStartDate, $lte: prevEndDate } }),
+        Hotel.countDocuments({ createdAt: { $gte: prevStartDate, $lte: prevEndDate } }),
+        Booking.countDocuments({ createdAt: { $gte: prevStartDate, $lte: prevEndDate } })
+      ]);
+      console.log("Previous period stats fetched successfully");
+    } catch (prevError) {
+      console.error("Error fetching previous period stats:", prevError);
+      throw prevError;
+    }
 
     // Calculate total revenue
     const totalRevenue = bookings.reduce((sum, booking) => sum + (booking.totalCost || 0), 0);
-    const prevRevenue = await Booking.aggregate([
-      { $match: { createdAt: { $gte: prevStartDate, $lte: prevEndDate } } },
-      { $group: { _id: null, total: { $sum: "$totalCost" } } }
-    ]).then(result => result[0]?.total || 0);
+    let prevRevenue = 0;
+    try {
+      prevRevenue = await Booking.aggregate([
+        { $match: { createdAt: { $gte: prevStartDate, $lte: prevEndDate } } },
+        { $group: { _id: null, total: { $sum: "$totalCost" } } }
+      ]).then(result => result[0]?.total || 0);
+    } catch (revError) {
+      console.error("Error calculating previous revenue:", revError);
+      prevRevenue = 0;
+    }
 
     // Calculate average rating
     const totalRating = resorts.reduce((sum, resort) => sum + (resort.averageRating || 0), 0);
@@ -125,104 +136,133 @@ router.get("/business-stats", verifyToken, requireAdmin, async (req: Request, re
     const occupancyRate = totalPossibleBookings > 0 ? (totalBookings / totalPossibleBookings) * 100 : 0;
 
     // Get top performing resorts
-    const resortStats = await Booking.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $group: {
-        _id: "$hotelId",
-        totalBookings: { $sum: 1 },
-        totalRevenue: { $sum: "$totalCost" }
-      }},
-      { $sort: { totalRevenue: -1 } },
-      { $limit: 5 },
-      { $lookup: {
-        from: "hotels",
-        localField: "_id",
-        foreignField: "_id",
-        as: "hotel"
-      }},
-      { $unwind: "$hotel" }
-    ]);
+    let topPerformingResorts = [];
+    try {
+      const resortStats = await Booking.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $group: {
+          _id: "$hotelId",
+          totalBookings: { $sum: 1 },
+          totalRevenue: { $sum: "$totalCost" }
+        }},
+        { $sort: { totalRevenue: -1 } },
+        { $limit: 5 },
+        { $lookup: {
+          from: "hotels",
+          localField: "_id",
+          foreignField: "_id",
+          as: "hotel"
+        }},
+        { $unwind: "$hotel" }
+      ]);
 
-    const topPerformingResorts = resortStats.map(stat => ({
-      _id: stat._id,
-      name: stat.hotel.name,
-      totalBookings: stat.totalBookings,
-      totalRevenue: stat.totalRevenue,
-      averageRating: stat.hotel.averageRating || 0,
-      occupancyRate: 0 // Simplified for now
-    }));
+      topPerformingResorts = resortStats.map(stat => ({
+        _id: stat._id,
+        name: stat.hotel.name,
+        totalBookings: stat.totalBookings,
+        totalRevenue: stat.totalRevenue,
+        averageRating: stat.hotel.averageRating || 0,
+        occupancyRate: 0 // Simplified for now
+      }));
+    } catch (resortError) {
+      console.error("Error fetching top performing resorts:", resortError);
+      topPerformingResorts = [];
+    }
 
     // Get recent bookings
-    const recentBookings = await Booking.find({})
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .populate('hotelId', 'name')
-      .populate('userId', 'firstName lastName');
+    let recentBookingsFormatted = [];
+    try {
+      const recentBookings = await Booking.find({})
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .populate('hotelId', 'name')
+        .populate('userId', 'firstName lastName');
 
-    const recentBookingsFormatted = recentBookings.map(booking => ({
-      _id: booking._id,
-      hotelName: (booking.hotelId as any)?.name || 'Unknown',
-      userName: `${(booking.userId as any)?.firstName} ${(booking.userId as any)?.lastName}`,
-      totalCost: booking.totalCost,
-      status: booking.status || 'pending',
-      createdAt: booking.createdAt
-    }));
+      recentBookingsFormatted = recentBookings.map(booking => ({
+        _id: booking._id,
+        hotelName: (booking.hotelId as any)?.name || 'Unknown',
+        userName: `${(booking.userId as any)?.firstName} ${(booking.userId as any)?.lastName}`,
+        totalCost: booking.totalCost,
+        status: booking.status || 'pending',
+        createdAt: booking.createdAt
+      }));
+    } catch (bookingError) {
+      console.error("Error fetching recent bookings:", bookingError);
+      recentBookingsFormatted = [];
+    }
 
     // Get user distribution
-    const userDistribution = await Promise.all([
-      User.countDocuments({ role: 'user' }),
-      User.countDocuments({ role: 'resort_owner' }),
-      User.countDocuments({ role: 'admin' })
-    ]);
+    let userDistribution = [0, 0, 0];
+    try {
+      userDistribution = await Promise.all([
+        User.countDocuments({ role: 'user' }),
+        User.countDocuments({ role: 'resort_owner' }),
+        User.countDocuments({ role: 'admin' })
+      ]);
+    } catch (userError) {
+      console.error("Error fetching user distribution:", userError);
+      userDistribution = [0, 0, 0];
+    }
 
     // Get revenue by month (last 6 months)
     const revenueByMonth = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthStart = startOfMonth(subDays(new Date(), i * 30));
-      const monthEnd = new Date(monthStart);
-      monthEnd.setMonth(monthEnd.getMonth() + 1);
-      monthEnd.setDate(0);
+    try {
+      for (let i = 5; i >= 0; i--) {
+        const monthStart = startOfMonth(subDays(new Date(), i * 30));
+        const monthEnd = new Date(monthStart);
+        monthEnd.setMonth(monthEnd.getMonth() + 1);
+        monthEnd.setDate(0);
 
-      const monthBookings = await Booking.find({
-        createdAt: { $gte: monthStart, $lte: monthEnd }
-      });
+        const monthBookings = await Booking.find({
+          createdAt: { $gte: monthStart, $lte: monthEnd }
+        });
 
-      const monthRevenue = monthBookings.reduce((sum, booking) => sum + (booking.totalCost || 0), 0);
+        const monthRevenue = monthBookings.reduce((sum, booking) => sum + (booking.totalCost || 0), 0);
 
-      revenueByMonth.push({
-        month: format(monthStart, 'MMM yyyy'),
-        revenue: monthRevenue,
-        bookings: monthBookings.length
-      });
+        revenueByMonth.push({
+          month: format(monthStart, 'MMM yyyy'),
+          revenue: monthRevenue,
+          bookings: monthBookings.length
+        });
+      }
+    } catch (monthError) {
+      console.error("Error calculating revenue by month:", monthError);
     }
 
     // Get popular destinations
-    const popularDestinations = await Booking.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
-      { $lookup: {
-        from: "hotels",
-        localField: "hotelId",
-        foreignField: "_id",
-        as: "hotel"
-      }},
-      { $unwind: "$hotel" },
-      { $group: {
-        _id: {
-          city: "$hotel.city",
-          country: "$hotel.country"
-        },
-        totalBookings: { $sum: 1 },
-        resortCount: { $addToSet: "$hotelId" }
-      }},
-      { $project: {
-        city: "$_id.city",
-        country: "$_id.country",
-        totalBookings: 1,
-        resortCount: { $size: "$resortCount" }
-      }},
-      { $sort: { totalBookings: -1 } },
-      { $limit: 5 }
-    ]);
+    let popularDestinations = [];
+    try {
+      popularDestinations = await Booking.aggregate([
+        { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+        { $lookup: {
+          from: "hotels",
+          localField: "hotelId",
+          foreignField: "_id",
+          as: "hotel"
+        }},
+        { $unwind: "$hotel" },
+        { $group: {
+          _id: {
+            city: "$hotel.city",
+            country: "$hotel.country"
+          },
+          totalBookings: { $sum: 1 },
+          resortCount: { $addToSet: "$hotelId" }
+        }},
+        { $project: {
+          city: "$_id.city",
+          country: "$_id.country",
+          totalBookings: 1,
+          resortCount: { $size: "$resortCount" }
+        }},
+        { $sort: { totalBookings: -1 } },
+        { $limit: 5 }
+      ]);
+    } catch (aggError) {
+      console.error("Error in popularDestinations aggregation:", aggError);
+      // Fallback to empty array if aggregation fails
+      popularDestinations = [];
+    }
 
     const response = {
       totalUsers: users.length,
@@ -251,7 +291,7 @@ router.get("/business-stats", verifyToken, requireAdmin, async (req: Request, re
     res.json(response);
   } catch (error) {
     console.error("Error fetching business stats:", error);
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: "Something went wrong", error: error instanceof Error ? error.message : String(error) });
   }
 });
 

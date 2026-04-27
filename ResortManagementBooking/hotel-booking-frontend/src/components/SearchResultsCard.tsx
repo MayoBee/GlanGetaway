@@ -205,3 +205,4 @@ const SearchResultsCard = ({ hotel }: Props) => {
 };
 
 export default SearchResultsCard;
+

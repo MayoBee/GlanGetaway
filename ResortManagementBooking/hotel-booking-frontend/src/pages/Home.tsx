@@ -1,5 +1,5 @@
 import { useQuery } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { fetchHotels } from "../api-client";
 import LatestDestinationCard from "../components/LastestDestinationCard";
 // import AdvancedSearch from "../components/AdvancedSearch";
@@ -76,3 +76,4 @@ const Home = () => {
 };
 
 export default Home;
+

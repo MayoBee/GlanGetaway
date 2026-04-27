@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { cancelAllRequests, isRequestCanceled } from '@glan-getaway/shared-auth';
+import { cancelAllRequests, isRequestCanceled } from "../../lib/auth-api-client";
 import { useQuery, useMutation, useQueryClient } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../../lib/auth-api-client";
 import {
   fetchPendingResorts,
   fetchAllResortsForApproval,
@@ -427,3 +427,4 @@ const ResortApproval: React.FC = () => {
 };
 
 export default ResortApproval;
+

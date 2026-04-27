@@ -2,7 +2,7 @@
  * Utility function to parse hotel types from various formats
  * Handles arrays, JSON strings, and single strings
  */
-export const parseHotelTypes = (hotelType: any): string[] => {
+export const parseHotelTypes = (hotelType: string | string[] | unknown): string[] => {
   if (!hotelType) return [];
   
   if (Array.isArray(hotelType)) {
@@ -22,3 +22,4 @@ export const parseHotelTypes = (hotelType: any): string[] => {
   
   return [];
 };
+

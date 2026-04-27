@@ -1,9 +1,9 @@
 import { useQuery } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { useAdminBypass } from "../hooks/useAdminBypass";
 import { Link, useLocation } from "react-router-dom";
-import { signOut } from "@glan-getaway/shared-auth";
+import { signOut } from "../api-client";
 import {
   Card,
   CardContent,
@@ -611,3 +611,4 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
+

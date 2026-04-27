@@ -13,7 +13,7 @@ import { Badge } from "../components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "../components/ui/dialog";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
-import { toast } from "../components/ui/use-toast";
+import { toast } from "../hooks/use-toast";
 import { fetchMaintenanceRequests, createMaintenanceRequest, updateMaintenanceRequest, deleteMaintenanceRequest, assignMaintenanceRequest } from "../api-client";
 import { Plus, Pencil, Trash2, AlertCircle, CheckCircle, Clock, Search, Wrench } from "lucide-react";
 
@@ -632,3 +632,4 @@ const MaintenanceManagement = () => {
 };
 
 export default MaintenanceManagement;
+

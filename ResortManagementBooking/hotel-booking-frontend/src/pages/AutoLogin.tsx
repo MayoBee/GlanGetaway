@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { Loader2 } from "lucide-react";
 
 interface UserInfo {
@@ -93,3 +93,4 @@ const AutoLogin = () => {
 };
 
 export default AutoLogin;
+

@@ -28,7 +28,7 @@ import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import AuthCallback from "./pages/AuthCallback";
 import AutoLogin from "./pages/AutoLogin";
 import ApplyForResortOwner from "./pages/ApplyForResortOwner";
-import { ProtectedRoute } from "@glan-getaway/shared-auth";
+import ProtectedRoute from "./components/ProtectedRoute";
 import WebsiteFeedback from "./components/WebsiteFeedback";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ResortDashboard from "./pages/ResortDashboard";
@@ -393,3 +393,4 @@ const App = () => {
 };
 
 export default App;
+

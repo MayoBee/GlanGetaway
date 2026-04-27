@@ -26,3 +26,4 @@ const PriceFilter = ({ selectedPrice, onChange }: Props) => {
 };
 
 export default PriceFilter;
+

@@ -5,7 +5,7 @@ import { StripeCardElement } from "@stripe/stripe-js";
 import useSearchContext from "../../hooks/useSearchContext";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMutation } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../../api-client";
 import useAppContext from "../../hooks/useAppContext";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -690,3 +690,4 @@ MM/YY: 12/35 CVC: 123`;
 };
 
 export default EnhancedBookingForm;
+

@@ -146,3 +146,4 @@ const ImageCarousel = ({ images, isOpen, onClose, initialIndex = 0 }: ImageCarou
 };
 
 export default ImageCarousel;
+

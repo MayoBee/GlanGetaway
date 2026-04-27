@@ -11,9 +11,9 @@ import { Label } from "../../components/ui/label";
 import { useBookingSelection } from "../../contexts/BookingSelectionContext";
 import { CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { useMutation, useQuery } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../../api-client";
 import { fetchHotelById, createRoomBooking, checkAvailability } from '../../api-client';
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   User,
   Phone,
@@ -106,7 +106,7 @@ export type BookingFormData = {
     type: "pwd" | "senior_citizen" | null;
     percentage: number;
     amount: number;
-  };
+  } | null;
 };
 
 const BookingForm = ({ currentUser, paymentIntent }: Props) => {
@@ -643,3 +643,4 @@ MM/YY: 12/35 CVC: 123`;
 };
 
 export default BookingForm;
+

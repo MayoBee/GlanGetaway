@@ -361,3 +361,4 @@ const EditHotel = () => {
 };
 
 export default EditHotel;
+

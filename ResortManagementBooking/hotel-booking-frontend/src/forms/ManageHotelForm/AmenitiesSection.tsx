@@ -246,3 +246,4 @@ const AmenitiesSection = () => {
 };
 
 export default AmenitiesSection;
+

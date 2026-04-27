@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import Hotel from "../models/hotel";
 import User from "../models/user";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 import mongoose from "mongoose";
 import verifyToken from "../middleware/auth";
 

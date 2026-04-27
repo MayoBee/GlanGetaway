@@ -325,3 +325,4 @@ const AccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props) => {
 };
 
 export default AccommodationDisplay;
+

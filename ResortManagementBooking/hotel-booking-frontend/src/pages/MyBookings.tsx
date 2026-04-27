@@ -1,5 +1,5 @@
 import { useQueryWithLoading } from "../hooks/useLoadingHooks";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { fetchMyBookings, deleteBooking } from "../api-client";
 import type { BookingType, HotelWithBookingsType } from "../../../shared/types";
 import { Badge } from "../components/ui/badge";
@@ -531,3 +531,4 @@ const MyBookings = () => {
 };
 
 export default MyBookings;
+

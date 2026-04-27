@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
+import {
+  Card,
+  CardContent,
+  CardHeader,
   CardTitle,
-  CardDescription 
+  CardDescription
 } from "../components/ui/card";
-import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Checkbox } from "../components/ui/checkbox";
@@ -22,13 +21,12 @@ import {
   Upload,
   FileText
 } from "lucide-react";
-import { 
-  calculateDiscountSimple, 
+import {
+  calculateDiscountSimple,
   DiscountConfig,
-  DiscountCalculationResult,
-  validateDiscountInput
+  DiscountCalculationResult
 } from "../lib/discountCalculation";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 
 export type { DiscountCalculationResult };
 
@@ -416,3 +414,4 @@ const GuestDiscountInputComponent = ({
 };
 
 export default GuestDiscountInputComponent;
+

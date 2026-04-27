@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import mongoose from "mongoose";
 import verifyToken from "../middleware/auth";
 import Hotel from "../models/hotel";
-import Booking from "../models/booking";
+import Booking from "../domains/booking-reservation/models/booking";
 
 const router = express.Router();
 

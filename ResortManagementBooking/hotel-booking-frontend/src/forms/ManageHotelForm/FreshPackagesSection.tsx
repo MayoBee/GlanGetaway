@@ -1271,3 +1271,4 @@ const FreshPackagesSection = () => {
 };
 
 export default FreshPackagesSection;
+

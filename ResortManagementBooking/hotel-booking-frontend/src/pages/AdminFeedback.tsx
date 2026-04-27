@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "react-query";
-import { axiosInstance } from '@glan-getaway/shared-auth';
+import { axiosInstance } from "../api-client";
 import { Badge } from "../components/ui/badge";
 import { 
   MessageSquare, 
@@ -280,3 +280,4 @@ const AdminFeedback: React.FC = () => {
 };
 
 export default AdminFeedback;
+

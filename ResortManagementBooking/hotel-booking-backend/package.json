@@ -2,9 +2,9 @@
   "name": "booking-backend",
   "version": "0.2.0",
   "description": "booking mern app backend",
-  "main": "./src/index.ts",
+  "main": "./dist/src/index.js",
   "scripts": {
-    "build": "tsc --skipLibCheck",
+    "build-local": "tsc --skipLibCheck",
     "lint": "tsc --noEmit",
     "start": "node dist/src/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
@@ -22,7 +22,10 @@
     "optimize-auth": "npx ts-node scripts/optimize-auth-indexes.ts",
     "migrate-to-atlas": "npx ts-node scripts/migrate-to-atlas.ts",
     "simple-migrate": "npx ts-node scripts/simple-migrate.ts",
-    "full-migrate": "npx ts-node scripts/full-database-migrate.ts"
+    "full-migrate": "npx ts-node scripts/full-database-migrate.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "author": "Arnob Mahmud",
   "license": "ISC",
@@ -66,6 +69,10 @@
     "typescript": "^5.2.2"
   },
   "devDependencies": {
+    "@jest/globals": "^30.3.0",
+    "@types/jest": "^30.0.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
     "ts-node-dev": "^2.0.0"
   }
 }

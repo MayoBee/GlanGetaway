@@ -797,3 +797,4 @@ const FreshAccommodationDisplay = ({ hotel, selectedRateType = 'night' }: Props)
 };
 
 export default FreshAccommodationDisplay;
+

@@ -27,3 +27,6 @@ dist-ssr
 .env.e2e
 node_modules
 .cursorignore
+
+.vercel
+.env*.local

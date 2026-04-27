@@ -8,6 +8,35 @@ interface UnitsData {
   };
 }
 
+interface BackendRoom {
+  id: string;
+  [key: string]: any;
+}
+
+interface BackendCottage {
+  id: string;
+  [key: string]: any;
+}
+
+interface BackendAmenity {
+  id: string;
+  [key: string]: any;
+}
+
+interface BackendData {
+  rooms?: BackendRoom[];
+  cottages?: BackendCottage[];
+  amenities?: BackendAmenity[];
+  [key: string]: any;
+}
+
+interface FormData {
+  rooms?: Array<{ id: string; units: number }>;
+  cottages?: Array<{ id: string; units: number }>;
+  amenities?: Array<{ id: string; units: number }>;
+  [key: string]: any;
+}
+
 const UNITS_STORAGE_KEY = 'hotel_units_data';
 
 export const saveUnitsData = (hotelId: string, unitsData: {
@@ -40,7 +69,7 @@ export const getUnitsData = (hotelId: string): {
   }
 };
 
-export const mergeUnitsWithBackendData = (hotelId: string, backendData: any): any => {
+export const mergeUnitsWithBackendData = (hotelId: string, backendData: BackendData): BackendData => {
   const savedUnits = getUnitsData(hotelId);
   
   if (!savedUnits || (!savedUnits.rooms && !savedUnits.cottages && !savedUnits.amenities)) {
@@ -52,7 +81,7 @@ export const mergeUnitsWithBackendData = (hotelId: string, backendData: any): an
 
   // Merge rooms units
   if (savedUnits.rooms && backendData.rooms) {
-    mergedData.rooms = backendData.rooms.map((room: any) => {
+    mergedData.rooms = backendData.rooms.map((room: BackendRoom) => {
       const savedRoom = savedUnits.rooms?.find(r => r.id === room.id);
       return savedRoom ? { ...room, units: savedRoom.units } : room;
     });
@@ -60,7 +89,7 @@ export const mergeUnitsWithBackendData = (hotelId: string, backendData: any): an
 
   // Merge cottages units
   if (savedUnits.cottages && backendData.cottages) {
-    mergedData.cottages = backendData.cottages.map((cottage: any) => {
+    mergedData.cottages = backendData.cottages.map((cottage: BackendCottage) => {
       const savedCottage = savedUnits.cottages?.find(c => c.id === cottage.id);
       return savedCottage ? { ...cottage, units: savedCottage.units } : cottage;
     });
@@ -68,7 +97,7 @@ export const mergeUnitsWithBackendData = (hotelId: string, backendData: any): an
 
   // Merge amenities units
   if (savedUnits.amenities && backendData.amenities) {
-    mergedData.amenities = backendData.amenities.map((amenity: any) => {
+    mergedData.amenities = backendData.amenities.map((amenity: BackendAmenity) => {
       const savedAmenity = savedUnits.amenities?.find(a => a.id === amenity.id);
       return savedAmenity ? { ...amenity, units: savedAmenity.units } : amenity;
     });
@@ -77,23 +106,23 @@ export const mergeUnitsWithBackendData = (hotelId: string, backendData: any): an
   console.log('=== UNITS STORAGE: Merged backend data with saved units', {
     hotelId,
     savedUnits,
-    mergedRooms: mergedData.rooms?.map((r: any) => ({ id: r.id, units: r.units })),
-    mergedCottages: mergedData.cottages?.map((c: any) => ({ id: c.id, units: c.units })),
-    mergedAmenities: mergedData.amenities?.map((a: any) => ({ id: a.id, units: a.units }))
+    mergedRooms: mergedData.rooms?.map((r: BackendRoom) => ({ id: r.id, units: (r as any).units })),
+    mergedCottages: mergedData.cottages?.map((c: BackendCottage) => ({ id: c.id, units: (c as any).units })),
+    mergedAmenities: mergedData.amenities?.map((a: BackendAmenity) => ({ id: a.id, units: (a as any).units }))
   });
 
   return mergedData;
 };
 
-export const extractUnitsFromFormData = (formData: any, hotelId?: string): {
+export const extractUnitsFromFormData = (formData: FormData, hotelId?: string): {
   rooms?: Array<{ id: string; units: number }>;
   cottages?: Array<{ id: string; units: number }>;
   amenities?: Array<{ id: string; units: number }>;
 } => {
   const unitsData = {
-    rooms: formData.rooms?.map((room: any) => ({ id: room.id, units: parseInt(String(room.units)) || 1 })),
-    cottages: formData.cottages?.map((cottage: any) => ({ id: cottage.id, units: parseInt(String(cottage.units)) || 1 })),
-    amenities: formData.amenities?.map((amenity: any) => ({ id: amenity.id, units: parseInt(String(amenity.units)) || 1 }))
+    rooms: formData.rooms?.map((room: { id: string; units: number }) => ({ id: room.id, units: parseInt(String(room.units)) || 1 })),
+    cottages: formData.cottages?.map((cottage: { id: string; units: number }) => ({ id: cottage.id, units: parseInt(String(cottage.units)) || 1 })),
+    amenities: formData.amenities?.map((amenity: { id: string; units: number }) => ({ id: amenity.id, units: parseInt(String(amenity.units)) || 1 }))
   };
 
   console.log('=== UNITS STORAGE: Extracted units from form data', unitsData);

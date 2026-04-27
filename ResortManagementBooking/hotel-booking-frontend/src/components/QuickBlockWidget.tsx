@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { axiosInstance, getApiBaseUrl } from '@glan-getaway/shared-auth';
+import { axiosInstance, getApiBaseUrl } from "../api-client";
 
 interface QuickBlockWidgetProps {
   hotelId: string;
@@ -308,3 +308,4 @@ export const QuickBlockWidget: React.FC<QuickBlockWidgetProps> = ({
 };
 
 export default QuickBlockWidget;
+

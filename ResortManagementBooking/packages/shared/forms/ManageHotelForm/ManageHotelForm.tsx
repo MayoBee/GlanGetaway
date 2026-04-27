@@ -305,21 +305,21 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
         },
         amenities: preserveConfirmedStates(
           currentValues.amenities || [],
-          (mergedHotelData.amenities || []).map(amenity => ({
+          (mergedHotelData.amenities || []).map((amenity: any) => ({
             ...amenity,
             units: parseInt(String(amenity.units)) || 1
           }))
         ),
         rooms: preserveConfirmedStates(
           currentValues.rooms || [],
-          (mergedHotelData.rooms || []).map(room => ({
+          (mergedHotelData.rooms || []).map((room: any) => ({
             ...room,
             units: parseInt(String(room.units)) || 1
           }))
         ),
         cottages: preserveConfirmedStates(
           currentValues.cottages || [],
-          (mergedHotelData.cottages || []).map(cottage => ({
+          (mergedHotelData.cottages || []).map((cottage: any) => ({
             ...cottage,
             units: parseInt(String(cottage.units)) || 1
           }))
@@ -351,9 +351,9 @@ const ManageHotelForm = ({ onSave, isLoading, hotel }: Props) => {
       
       console.log('=== MANAGE HOTEL FORM: Setting form data with merged units', {
         hotelId: hotel._id,
-        roomsUnits: formData.rooms?.map(r => ({ id: r.id, units: r.units })),
-        cottagesUnits: formData.cottages?.map(c => ({ id: c.id, units: c.units })),
-        amenitiesUnits: formData.amenities?.map(a => ({ id: a.id, units: a.units }))
+        roomsUnits: formData.rooms?.map((r: any) => ({ id: r.id, units: r.units })),
+        cottagesUnits: formData.cottages?.map((c: any) => ({ id: c.id, units: c.units })),
+        amenitiesUnits: formData.amenities?.map((a: any) => ({ id: a.id, units: a.units }))
       });
       
       reset(formData);

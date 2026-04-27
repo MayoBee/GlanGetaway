@@ -1,7 +1,6 @@
 import { useForm } from "react-hook-form";
 import { useMutation } from "react-query";
-import { useMutationWithLoading } from "../hooks/useLoadingHooks";
-import { signIn, getApiBaseUrl } from "@glan-getaway/shared-auth";
+import { signIn, getApiBaseUrl } from "../api-client";
 import useAppContext from "../hooks/useAppContext";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Mail, Lock, Eye, EyeOff, LogIn, Sparkles } from "lucide-react";
@@ -315,3 +314,4 @@ const SignIn = () => {
 };
 
 export default SignIn;
+

@@ -324,3 +324,4 @@ const FreshCottagesSection = () => {
 };
 
 export default FreshCottagesSection;
+

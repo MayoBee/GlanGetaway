@@ -245,3 +245,4 @@ const RoomsSection = () => {
 };
 
 export default RoomsSection;
+

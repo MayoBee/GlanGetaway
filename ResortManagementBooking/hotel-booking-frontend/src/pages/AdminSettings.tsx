@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Badge } from "../components/ui/badge";
 import { Settings as SettingsIcon, Shield, Bell, Lock, User, Globe, Save } from "lucide-react";
-import { signOut } from "@glan-getaway/shared-auth";
+import { signOut } from "../api-client";
 import { useNavigate } from "react-router-dom";
 
 const AdminSettings: React.FC = () => {
@@ -219,3 +219,4 @@ const AdminSettings: React.FC = () => {
 };
 
 export default AdminSettings;
+

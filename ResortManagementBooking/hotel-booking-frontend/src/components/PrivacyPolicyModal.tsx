@@ -291,3 +291,4 @@ const PrivacyPolicyModal: React.FC<PrivacyPolicyModalProps> = ({
 };
 
 export default PrivacyPolicyModal;
+

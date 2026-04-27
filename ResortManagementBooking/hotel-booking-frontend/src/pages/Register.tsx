@@ -58,11 +58,11 @@ const Register = () => {
   } = useForm<RegisterFormData>();
 
   const mutation = useMutationWithLoading(registerUser, {
-    onSuccess: async (data) => {
-      showToast({ 
-        title: "Registration Successful", 
+    onSuccess: async () => {
+      showToast({
+        title: "Registration Successful",
         description: "Your account has been created successfully! Welcome to Glan Getaway.",
-        type: "SUCCESS" 
+        type: "SUCCESS"
       });
       await queryClient.invalidateQueries("validateToken");
       navigate("/");
@@ -504,3 +504,4 @@ const Register = () => {
 };
 
 export default Register;
+

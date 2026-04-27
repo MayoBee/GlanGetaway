@@ -39,6 +39,7 @@ import weatherTriggerRoutes from "./weather-triggers";
 import amenitySlotsRoutes from "./amenity-slots";
 import housekeepingTasksRoutes from "./housekeeping-tasks";
 import featureFlagRoutes from "./feature-flags";
+import resortStaffRoutes from "./resort-staff";
 
 export const mountRoutes = (app: Express) => {
   app.get("/", (req: Request, res: Response) => {
@@ -62,6 +63,7 @@ export const mountRoutes = (app: Express) => {
 
   // New Resort Management API Routes
   app.use("/api/staff", staffManagementRoutes);
+  app.use("/api/resort-staff", resortStaffRoutes);
   app.use("/api/dashboard", dashboardRoutes);
   app.use("/api/rooms", roomRoutes);
   app.use("/api/pricing", pricingRoutes);

@@ -99,14 +99,6 @@ const GuestVerificationLayer = ({
     return "XXXX-" + idNumber.slice(-4);
   };
 
-  // Function to clear file from memory
-  const clearFileFromMemory = () => {
-    if (selectedFile) {
-      URL.revokeObjectURL(selectedFile.name);
-    }
-    setSelectedFile(null);
-  };
-
   // Calculate total discounted guests
   const totalDiscountedGuests = seniorCount + pwdCount;
 
@@ -828,3 +820,4 @@ const GuestVerificationLayer = ({
 };
 
 export default GuestVerificationLayer;
+

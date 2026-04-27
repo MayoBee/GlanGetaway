@@ -26,6 +26,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const userId = req.userId;
+      console.log("🔍 Role promotion request - User ID:", userId);
 
       // Check if user already has a pending request
       const existingRequest = await RolePromotionRequest.findOne({
@@ -34,6 +35,7 @@ router.post(
       });
 
       if (existingRequest) {
+        console.log("❌ User already has a pending request:", existingRequest._id);
         return res.status(400).json({
           message: "You already have a pending resort owner application",
         });
@@ -43,6 +45,8 @@ router.post(
       const files = req.files as {
         [fieldname: string]: Express.Multer.File[];
       };
+
+      console.log("📁 Uploaded files:", files ? Object.keys(files) : "None");
 
       if (!files) {
         return res.status(400).json({ message: "No files uploaded" });

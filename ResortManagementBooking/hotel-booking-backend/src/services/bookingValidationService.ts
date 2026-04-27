@@ -1,9 +1,16 @@
 /**
  * Booking Validation Service
- * 
+ *
  * Centralized service for booking-related validation logic including
  * the 8-hour modification window enforcement.
  */
+
+interface BookingDocument {
+  status: string;
+  changeWindowDeadline?: Date;
+  canModify?: boolean;
+  save(): Promise<void>;
+}
 
 export interface ModificationCheckResult {
   canModify: boolean;
@@ -22,7 +29,7 @@ export interface ModificationCheckResult {
  * @param booking - The booking document to check
  * @returns ModificationCheckResult with canModify flag and reason if not allowed
  */
-export const canModifyBooking = (booking: any): ModificationCheckResult => {
+export const canModifyBooking = (booking: BookingDocument): ModificationCheckResult => {
   const now = new Date();
   
   // If booking is not pending, it cannot be modified
@@ -73,7 +80,7 @@ export const canModifyBooking = (booking: any): ModificationCheckResult => {
  * @param booking - The booking document to check and potentially update
  * @returns Promise<void> - The booking is modified in place
  */
-export const checkAndUpdateBookingStatus = async (booking: any): Promise<void> => {
+export const checkAndUpdateBookingStatus = async (booking: BookingDocument): Promise<void> => {
   const now = new Date();
   
   // If booking is still pending and 8-hour window has passed, auto-confirm

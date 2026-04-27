@@ -302,3 +302,4 @@ const FreshRoomsSection = () => {
 };
 
 export default FreshRoomsSection;
+
